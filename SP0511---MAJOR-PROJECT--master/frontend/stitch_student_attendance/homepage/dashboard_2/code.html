@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MBM University Student Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "card-dark": "#1a2634",
+                        "border-dark": "#2a3b4d",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    backgroundImage: {
+                        'classical-pattern': "url('https://www.transparenttextures.com/patterns/cubes.png')", // Subtle pattern for texture
+                    }
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111a22; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a3b4d; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #137fec; 
+        }
+        .glass-card {
+            background: rgba(26, 38, 52, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden">
+<div class="flex h-screen w-full relative">
+<div class="absolute inset-0 z-0 opacity-[0.03] pointer-events-none bg-classical-pattern"></div>
+<aside class="hidden lg:flex w-[280px] flex-col border-r border-border-dark bg-[#111a22] z-20 h-full">
+<div class="flex h-full flex-col justify-between p-4">
+<div class="flex flex-col gap-6">
+<div class="flex items-center gap-3 px-2">
+<div class="bg-primary/20 flex items-center justify-center aspect-square rounded-xl size-10 text-primary">
+<span class="material-symbols-outlined">school</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-white text-lg font-bold leading-none tracking-tight">MBM Portal</h1>
+<p class="text-slate-400 text-xs font-normal mt-1">University Dashboard</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 px-3 py-3 rounded-xl bg-primary text-white shadow-lg shadow-primary/20 transition-all hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<p class="text-sm font-semibold">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#1a2634] text-slate-400 hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">calendar_month</span>
+<p class="text-sm font-medium">Attendance</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#1a2634] text-slate-400 hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">schedule</span>
+<p class="text-sm font-medium">Timetable</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#1a2634] text-slate-400 hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">bar_chart</span>
+<p class="text-sm font-medium">Results</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#1a2634] text-slate-400 hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">groups</span>
+<p class="text-sm font-medium">Clubs &amp; Events</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#1a2634] text-slate-400 hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">beach_access</span>
+<p class="text-sm font-medium">Holidays</p>
+</a>
+</div>
+</div>
+<div class="flex flex-col gap-2 border-t border-border-dark pt-4">
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#1a2634] text-slate-400 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<p class="text-sm font-medium">Settings</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<p class="text-sm font-medium">Logout</p>
+</a>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col h-full relative z-10 overflow-y-auto">
+<header class="sticky top-0 z-30 flex items-center justify-between border-b border-border-dark bg-[#111a22]/90 backdrop-blur-md px-6 py-4">
+<div class="flex items-center gap-4 lg:hidden">
+<button class="text-white">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="text-white text-lg font-bold">MBM Portal</h2>
+</div>
+<div class="hidden lg:flex flex-col">
+<h2 class="text-white text-xl font-bold tracking-tight">Student Dashboard</h2>
+<p class="text-slate-400 text-xs">Computer Science • Semester 4</p>
+</div>
+<div class="flex items-center gap-4 ml-auto">
+<div class="hidden md:flex items-center bg-[#1a2634] rounded-full h-10 px-4 border border-border-dark focus-within:border-primary transition-colors">
+<span class="material-symbols-outlined text-slate-400 text-[20px]">search</span>
+<input class="bg-transparent border-none text-sm text-white focus:ring-0 placeholder:text-slate-500 w-64" placeholder="Search courses, clubs..." type="text"/>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center justify-center size-10 rounded-full bg-[#1a2634] text-white hover:bg-primary transition-colors relative">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border border-[#1a2634]"></span>
+</button>
+<button class="flex items-center justify-center size-10 rounded-full bg-[#1a2634] text-white hover:bg-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+</button>
+</div>
+<div class="flex items-center gap-3 border-l border-border-dark pl-4 ml-2">
+<div class="text-right hidden md:block">
+<p class="text-sm font-semibold text-white">Alex Morgan</p>
+<p class="text-xs text-slate-400">ID: 2021CS045</p>
+</div>
+<div class="size-10 rounded-full bg-cover bg-center border-2 border-primary/50" data-alt="Professional headshot of a female student with a serious expression" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBDVd3f6IhDVSiFg656UcerRNBHkQad_oEiHcUCWTizSzTXnb2Iw_LUb_UIJIBvebI4MQ39LOxez8oZi5VezYeLDji7s8sC6NjmTxB9ov377i15U8EuUOS2e4acKHhvAhnXbZeGhjnWiv5tl-gNA4N6bgi_p7rNWj-Bm7VeSguW0HV0W_Dp-ARsk4sM1WH11UsYQTsnUSYTG-U1vV_c8LIxv85lcROxBrL-lALs0Q-5-W21i7f8fGlRvDD8ljibB-9iEwashW192tbG");'></div>
+</div>
+</div>
+</header>
+<div class="flex-1 p-6 lg:p-10 max-w-[1600px] w-full mx-auto flex flex-col gap-8">
+<section class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#1a2634] to-[#111a22] border border-border-dark shadow-2xl">
+<div class="absolute inset-0 z-0 opacity-20 bg-cover bg-center mix-blend-overlay" data-alt="Detailed realistic painting of a grand university hall with classical architecture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCLyFTeBBT1aG0oBt_-emKiG2uqo0kVTS7G-qE5VecKzdLxX7r8hd1s-i2RFnSYiOgtd4yLuGE2D0SC4_QLpcZtCn4h1W-nzawZmvHZ9TnXwn014MXeuhFk6mAnJ6uzabmsqxp6m9qH11Y8dStzCsB5h3Zmt9c_9I6VmoqLr62Q81HrjshHar3nujHfdGzMZQ6DjNMwCSyjiFuZqR2YNiOFmo2fa2_xfzIVxXDUp7Y80HZxAYHKW_R--3zIPPaqfUZCovKJIWFFlsuL");'></div>
+<div class="relative z-10 flex flex-col md:flex-row items-center justify-between p-8 md:p-12 gap-8">
+<div class="flex flex-col gap-4 max-w-xl">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 w-fit backdrop-blur-sm">
+<span class="size-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-xs font-semibold text-primary uppercase tracking-wider">Happening Now</span>
+</div>
+<h1 class="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                                Good Morning, <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-300">Alex!</span>
+</h1>
+<p class="text-slate-300 text-lg leading-relaxed">
+                                You have <span class="text-white font-semibold">Data Structures</span> lecture in Room 304 starting in 15 minutes. Don't forget your assignment submission today!
+                            </p>
+<div class="flex flex-wrap gap-4 mt-2">
+<button class="bg-primary hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined">calendar_month</span>
+                                    View Full Schedule
+                                </button>
+<button class="bg-[#2a3b4d] hover:bg-[#374b61] text-white px-6 py-3 rounded-xl font-bold transition-all active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined">upload_file</span>
+                                    Submit Assignment
+                                </button>
+</div>
+</div>
+<div class="hidden md:block w-[300px] h-[300px] bg-contain bg-no-repeat bg-center drop-shadow-2xl transform translate-y-4" data-alt="High-resolution photograph of an engaged student focused on scholarly work, perhaps reading a book or typing on a laptop in a library" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBCZ6LJD0VkYVSK1UwdkrNs_ebENdZFn4LbLjxw9hpKK0kbqYHKv5vdyJm9IEHAs7yvHPoOsUlzf_oYtcIyRAGR4aWOa-ZsgcItH28U2BBlsJS_PBW-GOu2SiIOXDg6-T4I8FUPVQ6gFZjfUmaNF2S2EBLvVDMlINkNg16FReByWwO6E6bQQRtNQ5ZK9vognPUPFacU4CZBxSXZOM2Egjn51rYKXehjgu-XISH1ou4jR_jbbSv-7_FP2ZnmQLzsbRp0B9dSz0jjK0EF'); background-size: contain;"></div>
+</div>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="glass-card p-6 rounded-2xl flex flex-col gap-4 hover:border-primary/50 transition-colors group cursor-pointer relative overflow-hidden">
+<div class="absolute -right-4 -top-4 bg-primary/10 size-24 rounded-full group-hover:bg-primary/20 transition-colors"></div>
+<div class="flex items-center justify-between z-10">
+<div class="bg-blue-500/20 p-2 rounded-lg text-blue-400 group-hover:text-white group-hover:bg-blue-500 transition-colors">
+<span class="material-symbols-outlined">fact_check</span>
+</div>
+<span class="text-xs font-bold bg-[#111a22] text-green-400 px-2 py-1 rounded">+2% this week</span>
+</div>
+<div class="z-10">
+<h3 class="text-slate-400 text-sm font-medium">Overall Attendance</h3>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-3xl font-bold text-white">85%</span>
+<span class="text-sm text-slate-500">/ 75% req</span>
+</div>
+</div>
+<div class="w-full bg-[#111a22] h-2 rounded-full overflow-hidden mt-auto z-10">
+<div class="bg-primary h-full rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<div class="glass-card p-6 rounded-2xl flex flex-col gap-4 hover:border-purple-500/50 transition-colors group cursor-pointer relative overflow-hidden">
+<div class="absolute -right-4 -top-4 bg-purple-500/10 size-24 rounded-full group-hover:bg-purple-500/20 transition-colors"></div>
+<div class="flex items-center justify-between z-10">
+<div class="bg-purple-500/20 p-2 rounded-lg text-purple-400 group-hover:text-white group-hover:bg-purple-500 transition-colors">
+<span class="material-symbols-outlined">school</span>
+</div>
+<span class="text-xs font-bold bg-[#111a22] text-green-400 px-2 py-1 rounded">+0.1</span>
+</div>
+<div class="z-10">
+<h3 class="text-slate-400 text-sm font-medium">Current CGPA</h3>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-3xl font-bold text-white">8.9</span>
+<span class="text-sm text-slate-500">/ 10.0</span>
+</div>
+</div>
+<div class="mt-auto h-8 flex items-end gap-1 z-10 opacity-50">
+<div class="w-1/5 bg-purple-500/30 h-[40%] rounded-t-sm"></div>
+<div class="w-1/5 bg-purple-500/40 h-[60%] rounded-t-sm"></div>
+<div class="w-1/5 bg-purple-500/50 h-[50%] rounded-t-sm"></div>
+<div class="w-1/5 bg-purple-500/60 h-[80%] rounded-t-sm"></div>
+<div class="w-1/5 bg-purple-500 h-[90%] rounded-t-sm"></div>
+</div>
+</div>
+<div class="glass-card p-6 rounded-2xl flex flex-col gap-4 hover:border-orange-500/50 transition-colors group cursor-pointer relative overflow-hidden">
+<div class="absolute -right-4 -top-4 bg-orange-500/10 size-24 rounded-full group-hover:bg-orange-500/20 transition-colors"></div>
+<div class="flex items-center justify-between z-10">
+<div class="bg-orange-500/20 p-2 rounded-lg text-orange-400 group-hover:text-white group-hover:bg-orange-500 transition-colors">
+<span class="material-symbols-outlined">assignment_late</span>
+</div>
+<span class="text-xs font-bold bg-[#111a22] text-orange-400 px-2 py-1 rounded">Urgent</span>
+</div>
+<div class="z-10">
+<h3 class="text-slate-400 text-sm font-medium">Next Submission</h3>
+<div class="flex flex-col mt-1">
+<span class="text-xl font-bold text-white truncate">OS Lab Report</span>
+<span class="text-sm text-slate-500">Due in 2 Days</span>
+</div>
+</div>
+</div>
+<div class="glass-card p-6 rounded-2xl flex flex-col gap-4 hover:border-emerald-500/50 transition-colors group cursor-pointer relative overflow-hidden">
+<div class="absolute -right-4 -top-4 bg-emerald-500/10 size-24 rounded-full group-hover:bg-emerald-500/20 transition-colors"></div>
+<div class="flex items-center justify-between z-10">
+<div class="bg-emerald-500/20 p-2 rounded-lg text-emerald-400 group-hover:text-white group-hover:bg-emerald-500 transition-colors">
+<span class="material-symbols-outlined">auto_stories</span>
+</div>
+</div>
+<div class="z-10">
+<h3 class="text-slate-400 text-sm font-medium">Library Status</h3>
+<div class="flex flex-col mt-1">
+<span class="text-xl font-bold text-white">2 Books Issued</span>
+<span class="text-sm text-slate-500">Return by Friday</span>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-2 flex flex-col gap-6">
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h2 class="text-xl font-bold text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">schedule</span>
+                                    Today's Schedule
+                                </h2>
+<button class="text-sm text-primary font-medium hover:text-blue-400 transition-colors">View Weekly</button>
+</div>
+<div class="bg-card-dark border border-border-dark rounded-2xl p-1 overflow-hidden">
+<div class="flex items-center p-4 border-b border-border-dark bg-[#111a22]/50 opacity-60">
+<div class="w-20 text-center border-r border-border-dark pr-4 mr-4">
+<p class="text-slate-400 text-sm line-through">09:00 AM</p>
+<p class="text-slate-500 text-xs mt-1">10:00 AM</p>
+</div>
+<div class="flex-1">
+<h4 class="text-white font-medium line-through">Computer Networks</h4>
+<p class="text-slate-500 text-sm">Lecture Hall 2 • Dr. S. Sharma</p>
+</div>
+<div class="hidden sm:block">
+<span class="px-3 py-1 bg-green-900/30 text-green-500 text-xs rounded-full border border-green-900/50">Attended</span>
+</div>
+</div>
+<div class="flex items-center p-4 border-b border-border-dark bg-primary/5 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="w-20 text-center border-r border-border-dark pr-4 mr-4">
+<p class="text-white font-bold text-sm">10:15 AM</p>
+<p class="text-slate-400 text-xs mt-1">11:15 AM</p>
+</div>
+<div class="flex-1">
+<h4 class="text-white font-bold text-lg">Data Structures &amp; Algo</h4>
+<p class="text-primary text-sm font-medium">Room 304 • Prof. A. Gupta</p>
+</div>
+<div class="hidden sm:block">
+<span class="px-3 py-1 bg-primary text-white text-xs rounded-full shadow-lg shadow-primary/30 animate-pulse">Live Now</span>
+</div>
+</div>
+<div class="flex items-center p-4">
+<div class="w-20 text-center border-r border-border-dark pr-4 mr-4">
+<p class="text-slate-400 text-sm">11:30 AM</p>
+<p class="text-slate-500 text-xs mt-1">12:30 PM</p>
+</div>
+<div class="flex-1">
+<h4 class="text-white font-medium">Software Engineering</h4>
+<p class="text-slate-400 text-sm">Lab 5 • Dr. R. Verma</p>
+</div>
+<div class="hidden sm:block">
+<span class="px-3 py-1 bg-[#2a3b4d] text-slate-300 text-xs rounded-full">Upcoming</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<h2 class="text-xl font-bold text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-orange-400">campaign</span>
+                                Notice Board
+                            </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-card-dark p-5 rounded-2xl border border-border-dark hover:border-primary/50 transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded font-bold uppercase">Exam</span>
+<span class="text-slate-500 text-xs">Today, 9:00 AM</span>
+</div>
+<h3 class="text-white font-bold mb-1">Mid-Term Datesheet Released</h3>
+<p class="text-slate-400 text-sm line-clamp-2">The tentative datesheet for Semester 4 mid-term examinations has been uploaded. Please check...</p>
+</div>
+<div class="bg-card-dark p-5 rounded-2xl border border-border-dark hover:border-primary/50 transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded font-bold uppercase">Event</span>
+<span class="text-slate-500 text-xs">Yesterday</span>
+</div>
+<h3 class="text-white font-bold mb-1">Hackathon 2023 Registration</h3>
+<p class="text-slate-400 text-sm line-clamp-2">Join the annual university hackathon. Teams of 4 can register starting tomorrow...</p>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-6">
+<div class="bg-card-dark rounded-2xl border border-border-dark p-6">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-white font-bold text-lg">My Clubs</h3>
+<button class="size-8 flex items-center justify-center rounded-lg bg-[#2a3b4d] hover:bg-primary text-white transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-3 p-3 rounded-xl bg-[#111a22] hover:bg-[#1a2634] transition-colors cursor-pointer border border-transparent hover:border-primary/30">
+<div class="size-10 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+<span class="material-symbols-outlined">code</span>
+</div>
+<div class="flex-1">
+<h4 class="text-white font-medium text-sm">Coding Club</h4>
+<p class="text-slate-500 text-xs">Meeting: Fri, 4 PM</p>
+</div>
+<span class="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
+</div>
+<div class="flex items-center gap-3 p-3 rounded-xl bg-[#111a22] hover:bg-[#1a2634] transition-colors cursor-pointer border border-transparent hover:border-primary/30">
+<div class="size-10 rounded-lg bg-orange-600 flex items-center justify-center text-white">
+<span class="material-symbols-outlined">theater_comedy</span>
+</div>
+<div class="flex-1">
+<h4 class="text-white font-medium text-sm">Drama Society</h4>
+<p class="text-slate-500 text-xs">Auditions Open</p>
+</div>
+<span class="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<h3 class="text-white font-bold text-lg">Upcoming Events</h3>
+<div class="bg-gradient-to-br from-primary to-blue-700 rounded-2xl p-6 text-white relative overflow-hidden shadow-lg shadow-blue-900/20 group">
+<div class="absolute right-0 bottom-0 opacity-20 transform translate-x-4 translate-y-4">
+<span class="material-symbols-outlined text-[100px]">celebration</span>
+</div>
+<div class="relative z-10">
+<div class="bg-white/20 backdrop-blur-md w-fit px-3 py-1 rounded-full text-xs font-bold mb-3 border border-white/20">
+                                        Holiday
+                                    </div>
+<h2 class="text-2xl font-black mb-1">Diwali Break</h2>
+<p class="text-blue-100 text-sm mb-4">Starting from Nov 10th to Nov 15th.</p>
+<button class="bg-white text-primary px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors shadow-lg">
+                                        View Calendar
+                                    </button>
+</div>
+</div>
+<div class="bg-card-dark rounded-2xl border border-border-dark p-4">
+<div class="flex items-center gap-4">
+<div class="bg-[#111a22] rounded-lg p-2 text-center min-w-[50px] border border-border-dark">
+<span class="block text-xs text-slate-500 uppercase font-bold">Oct</span>
+<span class="block text-xl font-bold text-white">24</span>
+</div>
+<div>
+<h4 class="text-white font-medium text-sm">Tech Fest 'Ignite'</h4>
+<p class="text-slate-500 text-xs">Main Auditorium • 10:00 AM</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

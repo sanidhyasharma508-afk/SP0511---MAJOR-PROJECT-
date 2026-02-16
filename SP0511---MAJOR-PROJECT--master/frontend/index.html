@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBM University - Student Portal</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <link rel="stylesheet" href="styles/dashboard-enhanced.css">
+    <link rel="stylesheet" href="styles/clubs.css">
+    <link rel="stylesheet" href="styles/attendance.css">
+    <link rel="stylesheet" href="styles/qr-attendance.css">
+    <link rel="stylesheet" href="styles/schedule.css">
+    <link rel="stylesheet" href="styles/schedule-management.css">
+    <link rel="stylesheet" href="styles/extensions.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+
+    <style>
+    :root {
+      --bg: #f6f7fb;
+      --surface: #ffffff;
+      --muted: #6b7280;
+      --text: #0f1724;
+      --accent: #5B7EFF;
+      --card-border: rgba(15,23,36,0.06);
+      --shadow: 0 8px 30px rgba(2,6,23,0.08);
+      --toggle-track: rgba(15,23,36,0.06);
+      --toggle-thumb-dark: linear-gradient(135deg,#ffd66b,#ff8a4c);
+      --toggle-thumb-light: linear-gradient(135deg,#7cc3ff,#4a86ff);
+      --glass: rgba(255,255,255,0.6);
+      --header-bg: rgba(255,255,255,0.6);
+    }
+
+    :root[data-theme="dark"]{
+      --bg: #0b1220;
+      --surface: #0f1724;
+      --muted: #9aa7bf;
+      --text: #e6eef8;
+      --accent: #7aa2ff;
+      --card-border: rgba(255,255,255,0.04);
+      --shadow: 0 8px 30px rgba(2,6,23,0.6);
+      --toggle-track: rgba(255,255,255,0.04);
+      --toggle-thumb-dark: linear-gradient(135deg,#ffd66b,#ff8a4c);
+      --toggle-thumb-light: linear-gradient(135deg,#7cc3ff,#4a86ff);
+      --glass: rgba(255,255,255,0.02);
+      --header-bg: rgba(6,11,23,0.6);
+    }
+
+    /* Smooth transition */
+    .theme-transition *, .theme-transition *::before, .theme-transition *::after {
+      transition: background-color 280ms ease, color 280ms ease, border-color 280ms ease, box-shadow 280ms ease;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .theme-transition * { transition: none !important; }
+    }
+
+    /* Base theming */
+    body {
+      background: var(--bg);
+      color: var(--text);
+    }
+    .top-header, .sidebar, .main-content, .content-container, .dashboard-card, .chart-card, .student-profile-card, .greeting-card, .stat-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)) , var(--surface);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Header & inputs */
+    .top-header {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)) , var(--header-bg);
+      backdrop-filter: blur(6px);
+    }
+    .search-bar input {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid transparent;
+    }
+
+    /* Buttons */
+    button, .btn, .btn-icon {
+      color: var(--text);
+    }
+    .btn.btn-light { background: rgba(255,255,255,0.06); color: var(--text); }
+
+    /* Theme toggle (modern pill) */
+    .theme-toggle {
+      --w: 62px;
+      --h: 34px;
+      --pad: 4px;
+      position: relative;
+      width: var(--w);
+      height: var(--h);
+      padding: var(--pad);
+      border-radius: 999px;
+      background: var(--toggle-track);
+      border: 1px solid var(--card-border);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(2,6,23,0.05);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .theme-toggle .icon {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 14px;
+      z-index: 2;
+      transition: color 220ms ease;
+    }
+    .theme-toggle .thumb {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: calc(var(--h) - (var(--pad) * 2));
+      height: calc(var(--h) - (var(--pad) * 2));
+      border-radius: 50%;
+      background: var(--toggle-thumb-light);
+      box-shadow: 0 8px 20px rgba(2,6,23,0.14);
+      transform: translateX(0);
+      transition: transform 320ms cubic-bezier(.2,.9,.2,1), background 320ms ease;
+      will-change: transform;
+    }
+    .theme-toggle[aria-pressed="true"] .thumb {
+      transform: translateX(calc(var(--w) - var(--h)));
+      background: var(--toggle-thumb-dark);
+    }
+    .theme-toggle[aria-pressed="true"] .icon-moon { color: var(--text); }
+    .theme-toggle[aria-pressed="false"] .icon-sun { color: var(--text); }
+
+    /* Accessible focus */
+    .theme-toggle:focus {
+      outline: 2px solid rgba(90,120,255,0.18);
+      outline-offset: 3px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      .theme-toggle { --w: 52px; --h: 30px; }
+      .theme-toggle .icon { font-size: 12px; }
+    }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>MBM Portal</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#clubs" class="nav-item" data-section="clubs">
+                    <i class="fas fa-people-group"></i>
+                    <span>Clubs & Events</span>
+                </a>
+                <a href="#attendance" class="nav-item" data-section="attendance">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Attendance</span>
+                </a>
+                <a href="#qr-attendance" class="nav-item" data-section="qr-attendance">
+                    <i class="fas fa-qrcode"></i>
+                    <span>QR Attendance</span>
+                </a>
+                <a href="#schedule" class="nav-item" data-section="schedule">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Schedule</span>
+                </a>
+                <a href="#schedule-feedback" class="nav-item" data-section="schedule-feedback">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Schedule Management</span>
+                </a>
+                <a href="#academics" class="nav-item" data-section="academics">
+                    <i class="fas fa-book"></i>
+                    <span>Academics</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile-mini">
+                    <img src="https://ui-avatars.com/api/?name=Alex+Johnson&background=5B7EFF&color=fff&size=40" alt="User">
+                    <div class="user-info-mini">
+                        <p>Alex Johnson</p>
+                        <span>CS • Sem 4</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 id="page-title">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search clubs, events...">
+                    </div>
+                    <button id="theme-toggle-btn" class="theme-toggle" title="Toggle color theme" aria-pressed="false" aria-label="Toggle color theme">
+                        <span class="icon icon-moon" aria-hidden="true"><i class="fas fa-moon"></i></span>
+                        <span class="icon icon-sun" aria-hidden="true"><i class="fas fa-sun"></i></span>
+                        <span class="thumb" aria-hidden="true"></span>
+                    </button>
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <button class="profile-btn">
+                        <img src="https://ui-avatars.com/api/?name=Alex+Johnson&background=5B7EFF&color=fff&size=40" alt="User">
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content Container -->
+            <div class="content-container">
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="content-section active">
+                    <!-- Student Profile Card -->
+                    <div class="student-profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                <img id="student-avatar" src="https://ui-avatars.com/api/?name=Alex+Johnson&background=5B7EFF&color=fff&size=100" alt="Student">
+                                <div class="profile-status online"></div>
+                            </div>
+                            <div class="profile-info">
+                                <h2 id="student-name">Alex Johnson</h2>
+                                <p class="profile-meta">
+                                    <span id="student-branch">Computer Science Engineering</span> • 
+                                    <span id="student-year">3rd Year</span> • 
+                                    <span id="student-roll">21BCS101</span>
+                                </p>
+                                <div class="profile-tags">
+                                    <span class="tag">Dean's List</span>
+                                    <span class="tag">Coding Club Member</span>
+                                    <span class="tag">Event Coordinator</span>
+                                </div>
+                            </div>
+                            <div class="profile-actions">
+                                <button class="btn-icon" title="Edit Profile">
+                                    <i class="fas fa-user-edit"></i>
+                                </button>
+                                <button class="btn-icon" title="Settings">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-stats">
+                            <div class="profile-stat-item">
+                                <div class="stat-icon-small" style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div>
+                                    <p class="stat-value-large" id="attendance-percentage">85.5%</p>
+                                    <p class="stat-label-small">Current Attendance</p>
+                                </div>
+                            </div>
+                            <div class="profile-stat-item">
+                                <div class="stat-icon-small" style="background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <div>
+                                    <p class="stat-value-large" id="cgpa-value">8.9</p>
+                                    <p class="stat-label-small">Current CGPA</p>
+                                </div>
+                            </div>
+                            <div class="profile-stat-item">
+                                <div class="stat-icon-small" style="background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);">
+                                    <i class="fas fa-trophy"></i>
+                                </div>
+                                <div>
+                                    <p class="stat-value-large" id="events-participated">12</p>
+                                    <p class="stat-label-small">Events Participated</p>
+                                </div>
+                            </div>
+                            <div class="profile-stat-item">
+                                <div class="stat-icon-small" style="background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <p class="stat-value-large" id="study-hours">124</p>
+                                    <p class="stat-label-small">Study Hours</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk & Goal Indicators -->
+                    <div class="alert-indicators">
+                        <div class="alert-card risk-alert" id="attendance-alert" style="display: none;">
+                            <div class="alert-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <h4>Attendance Alert</h4>
+                                <p>Your attendance is below 75%. Attend at least <strong id="classes-needed">5 more classes</strong> to meet requirements.</p>
+                            </div>
+                            <button class="alert-action">View Details</button>
+                        </div>
+
+                        <div class="alert-card goal-alert" id="cgpa-alert" style="display: none;">
+                            <div class="alert-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <h4>Academic Goal</h4>
+                                <p>You're <strong>0.1 points</strong> away from achieving Dean's List for this semester!</p>
+                            </div>
+                            <button class="alert-action">View Progress</button>
+                        </div>
+
+                        <div class="alert-card success-alert" id="event-goal">
+                            <div class="alert-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <h4>Event Participation Goal</h4>
+                                <p>Great job! You've participated in <strong id="event-progress">12/15</strong> events. <strong>3 more</strong> to reach your target!</p>
+                            </div>
+                            <button class="alert-action">Explore Events</button>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Section -->
+                    <div class="analytics-section">
+                        <h3 class="section-title"><i class="fas fa-chart-line"></i> Performance Analytics</h3>
+                        
+                        <div class="analytics-grid">
+                            <!-- Attendance Trend Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h4>Attendance Trend</h4>
+                                    <select id="attendance-period" class="chart-filter">
+                                        <option value="week">Last Week</option>
+                                        <option value="month" selected>Last Month</option>
+                                        <option value="semester">This Semester</option>
+                                    </select>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="attendanceChart"></canvas>
+                                </div>
+                                <div class="chart-footer">
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Present Days</span>
+                                        <span class="chart-stat-value" id="present-days">45</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Absent Days</span>
+                                        <span class="chart-stat-value" id="absent-days">8</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Trend</span>
+                                        <span class="chart-stat-value positive">+2.5%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Event Participation Chart -->
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h4>Event Participation</h4>
+                                    <select id="event-period" class="chart-filter">
+                                        <option value="month" selected>Last 6 Months</option>
+                                        <option value="year">This Year</option>
+                                        <option value="all">All Time</option>
+                                    </select>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="eventChart"></canvas>
+                                </div>
+                                <div class="chart-footer">
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Technical</span>
+                                        <span class="chart-stat-value">5</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Cultural</span>
+                                        <span class="chart-stat-value">4</span>
+                                    </div>
+                                    <div class="chart-stat">
+                                        <span class="chart-stat-label">Sports</span>
+                                        <span class="chart-stat-value">3</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subject-wise Performance -->
+                        <div class="chart-card full-width">
+                            <div class="chart-header">
+                                <h4>Subject-wise Performance</h4>
+                                <div class="chart-legend">
+                                    <span class="legend-item">
+                                        <span class="legend-color" style="background: #667EEA;"></span>
+                                        Attendance
+                                    </span>
+                                    <span class="legend-item">
+                                        <span class="legend-color" style="background: #F093FB;"></span>
+                                        Marks
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="chart-container-horizontal">
+                                <canvas id="subjectChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Greeting Card -->
+                    <div class="greeting-card" style="background: linear-gradient(135deg, #5B7EFF 0%, #3B5FE8 100%); position: relative; overflow: hidden;">
+                        <div class="greeting-background">
+                            <img src="https://images.unsplash.com/photo-1427504494785-cdafacc1cdfa?w=800&h=400&fit=crop" alt="Background" style="opacity: 0.2; position: absolute; width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <div class="greeting-content" style="position: relative; z-index: 2;">
+                            <h2>Good Morning, Alex! 👋</h2>
+                            <p>You have Data Structures lecture in Room 304 starting in 15 minutes. Don't forget your assignment submission today!</p>
+                            <button class="btn btn-light">View Full Schedule →</button>
+                        </div>
+                        <div class="gita-quote" style="position: absolute; bottom: 20px; right: 30px; color: rgba(255,255,255,0.8); font-size: 12px; max-width: 250px; font-style: italic;">
+                            <i class="fas fa-quote-left"></i>
+                            "कर्मण्येवाधिकारस्ते मा फलेषु कदाचन।"<br>
+                            <span style="font-size: 11px;">- आपका अधिकार है, सफलता नहीं</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats Grid -->
+                    <div class="quick-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <div class="stat-content">
+                                <p class="stat-label">Attendance</p>
+                                <p class="stat-value">85%</p>
+                                <span class="stat-badge positive">+2% this week</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="stat-content">
+                                <p class="stat-label">Current CGPA</p>
+                                <p class="stat-value">8.9/10</p>
+                                <span class="stat-badge">Excellent</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="stat-content">
+                                <p class="stat-label">Next Submission</p>
+                                <p class="stat-value">In 2 Days</p>
+                                <span class="stat-badge warning">OS Lab Report</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);">
+                                <i class="fas fa-library"></i>
+                            </div>
+                            <div class="stat-content">
+                                <p class="stat-label">Library Status</p>
+                                <p class="stat-value">2 Books</p>
+                                <span class="stat-badge warning">Return by Friday</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Schedule & Clubs -->
+                    <div class="dashboard-grid">
+                        <!-- Today's Schedule -->
+                        <div class="dashboard-card">
+                            <h3>Today's Schedule</h3>
+                            <div class="schedule-item">
+                                <div class="time">09:00 AM</div>
+                                <div class="schedule-details">
+                                    <p class="course">Computer Networks</p>
+                                    <p class="location">Lecture Hall 2 • Dr. S. Sharma</p>
+                                </div>
+                                <span class="badge attended">✓ Attended</span>
+                            </div>
+                            <div class="schedule-item">
+                                <div class="time">10:15 AM</div>
+                                <div class="schedule-details">
+                                    <p class="course">Data Structures & Algo</p>
+                                    <p class="location">Room 304 • Prof. A. Gupta</p>
+                                </div>
+                                <span class="badge upcoming">Upcoming</span>
+                            </div>
+                            <div class="schedule-item">
+                                <div class="time">02:00 PM</div>
+                                <div class="schedule-details">
+                                    <p class="course">Software Lab</p>
+                                    <p class="location">Lab 2 • Dr. R. Patel</p>
+                                </div>
+                                <span class="badge upcoming">Upcoming</span>
+                            </div>
+                        </div>
+
+                        <!-- My Clubs -->
+                        <div class="dashboard-card">
+                            <h3>My Clubs</h3>
+                            <div class="club-preview">
+                                <div class="club-item">
+                                    <div class="club-badge" style="background: linear-gradient(135deg, #5B7EFF 0%, #3B5FE8 100%);">
+                                        <i class="fas fa-code"></i>
+                                    </div>
+                                    <div>
+                                        <p class="club-name">Coding Club</p>
+                                        <p class="club-event">Meeting: Fri, 4 PM</p>
+                                    </div>
+                                </div>
+                                <div class="club-item">
+                                    <div class="club-badge" style="background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);">
+                                        <i class="fas fa-theater-masks"></i>
+                                    </div>
+                                    <div>
+                                        <p class="club-name">Drama Society</p>
+                                        <p class="club-event">Auditions Open</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline">Explore All Clubs →</button>
+                        </div>
+                    </div>
+
+                    <!-- Gita Motivation -->
+                    <div class="motivation-card">
+                        <div class="motivation-left">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <div class="motivation-content">
+                            <h4>आज की प्रेरणा</h4>
+                            <p>"यदि आप ज्ञान चाहते हैं, तो दृढ़ संकल्प रखें. सफलता उन्हीं को मिलती है जो मेहनत करने से नहीं डरते।"</p>
+                            <p class="source">- भगवद्गीता</p>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Footer -->
+                    <footer class="dashboard-footer">
+                        <div class="footer-content">
+                            <div class="footer-section">
+                                <div class="footer-brand">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    <span>MBM University Portal</span>
+                                </div>
+                                <p class="footer-tagline">Empowering students with seamless campus automation</p>
+                                <div class="footer-social">
+                                    <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook"></i></a>
+                                    <a href="#" class="social-link" title="Twitter"><i class="fab fa-twitter"></i></a>
+                                    <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+                                    <a href="#" class="social-link" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                                </div>
+                            </div>
+                            
+                            <div class="footer-section">
+                                <h4>Quick Links</h4>
+                                <ul class="footer-links">
+                                    <li><a href="#about"><i class="fas fa-info-circle"></i> About Us</a></li>
+                                    <li><a href="#contact"><i class="fas fa-envelope"></i> Contact</a></li>
+                                    <li><a href="#help"><i class="fas fa-question-circle"></i> Help Center</a></li>
+                                    <li><a href="#faq"><i class="fas fa-comment-dots"></i> FAQs</a></li>
+                                </ul>
+                            </div>
+                            
+                            <div class="footer-section">
+                                <h4>Resources</h4>
+                                <ul class="footer-links">
+                                    <li><a href="#privacy"><i class="fas fa-shield-alt"></i> Privacy Policy</a></li>
+                                    <li><a href="#terms"><i class="fas fa-file-contract"></i> Terms of Service</a></li>
+                                    <li><a href="#guidelines"><i class="fas fa-book"></i> Student Guidelines</a></li>
+                                    <li><a href="#support"><i class="fas fa-headset"></i> Technical Support</a></li>
+                                </ul>
+                            </div>
+                            
+                            <div class="footer-section">
+                                <h4>Contact Info</h4>
+                                <div class="footer-contact">
+                                    <p><i class="fas fa-map-marker-alt"></i> MBM University Campus</p>
+                                    <p><i class="fas fa-phone"></i> +91 123 456 7890</p>
+                                    <p><i class="fas fa-envelope"></i> support@mbm.edu</p>
+                                    <p><i class="fas fa-clock"></i> Mon-Fri: 9AM - 5PM</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="footer-bottom">
+                            <div class="footer-copyright">
+                                <p>&copy; 2026 MBM University. All rights reserved.</p>
+                                <p class="footer-subtitle">Designed & Developed with <i class="fas fa-heart" style="color: #e74c3c;"></i> by Campus Automation Team</p>
+                            </div>
+                            <div class="footer-version">
+                                <span class="version-badge">Version 5.0</span>
+                                <span class="status-badge">
+                                    <i class="fas fa-circle" style="color: #2ecc71; font-size: 8px;"></i> All Systems Operational
+                                </span>
+                            </div>
+                        </div>
+                    </footer>
+                </section>
+
+                <!-- Clubs & Events Section -->
+                <section id="clubs" class="content-section">
+                    <!-- Hero Banner -->
+                    <div class="clubs-hero">
+                        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=400&fit=crop" alt="Clubs" class="hero-image">
+                        <div class="hero-overlay"></div>
+                        <div class="hero-content">
+                            <h2>Find Your Tribe</h2>
+                            <p>Explore 50+ Communities at MBM University. Join a club, meet new people, and learn new skills outside the classroom.</p>
+                            <button class="btn btn-light">Meet New People! +</button>
+                        </div>
+                    </div>
+
+                    <!-- Search & Filter -->
+                    <div class="clubs-search">
+                        <div class="search-input-group">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="club-search" placeholder="Search clubs, societies...">
+                        </div>
+                        <div class="category-filter">
+                            <button class="category-btn active" data-category="all">All Clubs</button>
+                            <button class="category-btn" data-category="tech">Tech & Coding</button>
+                            <button class="category-btn" data-category="arts">Arts & Culture</button>
+                            <button class="category-btn" data-category="sports">Sports</button>
+                            <button class="category-btn" data-category="academic">Academic</button>
+                            <button class="category-btn" data-category="social">Social Service</button>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Events -->
+                    <div class="events-section">
+                        <h3>Upcoming Club Events</h3>
+                        <div class="events-timeline">
+                            <div class="event-card">
+                                <div class="event-date">
+                                    <span class="day">Tomorrow</span>
+                                    <span class="date">Oct 23</span>
+                                </div>
+                                <div class="event-content">
+                                    <h4>Annual Hackathon 2024</h4>
+                                    <p>Join us for 24 hours of coding, coffee, and innovation. Prizes worth $5000!</p>
+                                    <div class="event-club">TECH CLUB</div>
+                                    <div class="event-time">
+                                        <i class="fas fa-clock"></i> 10:00 AM
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary">Register Now →</button>
+                            </div>
+
+                            <div class="event-card">
+                                <div class="event-date">
+                                    <span class="day">Oct 24</span>
+                                </div>
+                                <div class="event-content">
+                                    <h4>Bot Wars: Beginner's Workshop</h4>
+                                    <p>Learn how to build your first combat robot. No prior experience needed.</p>
+                                    <div class="event-club">ROBOTICS SOCIETY</div>
+                                    <div class="event-time">
+                                        <i class="fas fa-clock"></i> 6:00 PM
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary">View Details →</button>
+                            </div>
+
+                            <div class="event-card">
+                                <div class="event-date">
+                                    <span class="day">Oct 28</span>
+                                </div>
+                                <div class="event-content">
+                                    <h4>Open Mic Night</h4>
+                                    <p>Showcase your talent or enjoy performances by your peers. All genres welcome.</p>
+                                    <div class="event-club">MUSIC CLUB</div>
+                                    <div class="event-time">
+                                        <i class="fas fa-clock"></i> 2:00 PM
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary">Register Now +</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Club Grid -->
+                    <div class="clubs-grid">
+                        <!-- Club Card -->
+                        <div class="club-card">
+                            <div class="club-card-image" style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <div class="club-card-content">
+                                <h4>Coding Club</h4>
+                                <p>Learn and master programming languages with expert mentors</p>
+                                <div class="club-stats">
+                                    <span><i class="fas fa-users"></i> 234 Members</span>
+                                    <span><i class="fas fa-calendar-alt"></i> Weekly Meets</span>
+                                </div>
+                                <button class="btn btn-small btn-primary">Join Club</button>
+                            </div>
+                        </div>
+
+                        <div class="club-card">
+                            <div class="club-card-image" style="background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="club-card-content">
+                                <h4>Robotics Society</h4>
+                                <p>Build, design, and compete with state-of-the-art robots</p>
+                                <div class="club-stats">
+                                    <span><i class="fas fa-users"></i> 156 Members</span>
+                                    <span><i class="fas fa-calendar-alt"></i> Bi-weekly</span>
+                                </div>
+                                <button class="btn btn-small btn-primary">Join Club</button>
+                            </div>
+                        </div>
+
+                        <div class="club-card">
+                            <div class="club-card-image" style="background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);">
+                                <i class="fas fa-music"></i>
+                            </div>
+                            <div class="club-card-content">
+                                <h4>Music Club</h4>
+                                <p>Express yourself through music and perform on university stages</p>
+                                <div class="club-stats">
+                                    <span><i class="fas fa-users"></i> 189 Members</span>
+                                    <span><i class="fas fa-calendar-alt"></i> Weekly Meets</span>
+                                </div>
+                                <button class="btn btn-small btn-primary">Join Club</button>
+                            </div>
+                        </div>
+
+                        <div class="club-card">
+                            <div class="club-card-image" style="background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);">
+                                <i class="fas fa-palette"></i>
+                            </div>
+                            <div class="club-card-content">
+                                <h4>Arts & Culture</h4>
+                                <p>Celebrate creativity through visual arts, design, and theater</p>
+                                <div class="club-stats">
+                                    <span><i class="fas fa-users"></i> 198 Members</span>
+                                    <span><i class="fas fa-calendar-alt"></i> Monthly Events</span>
+                                </div>
+                                <button class="btn btn-small btn-primary">Join Club</button>
+                            </div>
+                        </div>
+
+                        <div class="club-card">
+                            <div class="club-card-image" style="background: linear-gradient(135deg, #43E97B 0%, #38F9D7 100%);">
+                                <i class="fas fa-football"></i>
+                            </div>
+                            <div class="club-card-content">
+                                <h4>Sports Federation</h4>
+                                <p>Team sports, fitness training, and inter-college competitions</p>
+                                <div class="club-stats">
+                                    <span><i class="fas fa-users"></i> 342 Members</span>
+                                    <span><i class="fas fa-calendar-alt"></i> Daily Training</span>
+                                </div>
+                                <button class="btn btn-small btn-primary">Join Club</button>
+                            </div>
+                        </div>
+
+                        <div class="club-card">
+                            <div class="club-card-image" style="background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <div class="club-card-content">
+                                <h4>Social Service</h4>
+                                <p>Make a difference in society through volunteer activities</p>
+                                <div class="club-stats">
+                                    <span><i class="fas fa-users"></i> 267 Members</span>
+                                    <span><i class="fas fa-calendar-alt"></i> Monthly Drives</span>
+                                </div>
+                                <button class="btn btn-small btn-primary">Join Club</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Attendance Section -->
+                <section id="attendance" class="content-section">
+                    <!-- Attendance Header -->
+                    <div class="attendance-header">
+                        <div class="attendance-overview">
+                            <div class="overview-card">
+                                <p class="label">Total Classes</p>
+                                <p class="value">120</p>
+                            </div>
+                            <div class="overview-card">
+                                <p class="label">Classes Missed</p>
+                                <p class="value negative">4</p>
+                            </div>
+                            <div class="overview-card">
+                                <p class="label">Duty Leaves</p>
+                                <p class="value">2</p>
+                            </div>
+                            <div class="overview-card highlight">
+                                <p class="label">Overall Attendance</p>
+                                <p class="value">85%</p>
+                                <span class="sub-text">Above 75% required</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Course Attendance -->
+                    <div class="courses-attendance">
+                        <h3>Course Performance</h3>
+                        
+                        <div class="course-item">
+                            <div class="course-header">
+                                <h4>Computer Networks (CS-302)</h4>
+                                <span class="attendance-score good">92%</span>
+                            </div>
+                            <div class="attendance-bar">
+                                <div class="bar-fill" style="width: 92%; background: linear-gradient(90deg, #667EEA 0%, #764BA2 100%);"></div>
+                            </div>
+                            <p class="course-detail">24 out of 26 Attended</p>
+                        </div>
+
+                        <div class="course-item">
+                            <div class="course-header">
+                                <h4>Engineering Math (MA-301)</h4>
+                                <span class="attendance-score warning">68%</span>
+                            </div>
+                            <div class="attendance-bar">
+                                <div class="bar-fill" style="width: 68%; background: linear-gradient(90deg, #F093FB 0%, #F5576C 100%);"></div>
+                            </div>
+                            <p class="course-detail">17 out of 25 Attended • <strong>Needs +3 classes</strong></p>
+                        </div>
+
+                        <div class="course-item">
+                            <div class="course-header">
+                                <h4>Software Lab (CS-304L)</h4>
+                                <span class="attendance-score perfect">100%</span>
+                            </div>
+                            <div class="attendance-bar">
+                                <div class="bar-fill" style="width: 100%; background: linear-gradient(90deg, #43E97B 0%, #38F9D7 100%);"></div>
+                            </div>
+                            <p class="course-detail">15 out of 15 Perfect Record ✓</p>
+                        </div>
+
+                        <div class="course-item">
+                            <div class="course-header">
+                                <h4>Artificial Intelligence (CS-305)</h4>
+                                <span class="attendance-score good">82%</span>
+                            </div>
+                            <div class="attendance-bar">
+                                <div class="bar-fill" style="width: 82%; background: linear-gradient(90deg, #4FACFE 0%, #00F2FE 100%);"></div>
+                            </div>
+                            <p class="course-detail">21 out of 25 Attended</p>
+                        </div>
+
+                        <div class="course-item">
+                            <div class="course-header">
+                                <h4>Database Systems (CS-303)</h4>
+                                <span class="attendance-score good">78%</span>
+                            </div>
+                            <div class="attendance-bar">
+                                <div class="bar-fill" style="width: 78%; background: linear-gradient(90deg, #FA709A 0%, #FEE140 100%);"></div>
+                            </div>
+                            <p class="course-detail">18 out of 23 Attended</p>
+                        </div>
+
+                        <div class="course-item">
+                            <div class="course-header">
+                                <h4>Humanities (HU-101)</h4>
+                                <span class="attendance-score danger">45%</span>
+                            </div>
+                            <div class="attendance-bar">
+                                <div class="bar-fill" style="width: 45%; background: linear-gradient(90deg, #FF6B6B 0%, #EE5A6F 100%);"></div>
+                            </div>
+                            <p class="course-detail">9 out of 20 Attended • <strong><i class="fas fa-exclamation-triangle"></i> See Professor</strong></p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Schedule Section -->
+                <section id="schedule" class="content-section">
+                    <div class="schedule-header">
+                        <h3>Schedule & Logistics</h3>
+                        <p>Manage your exams, mess timings, and holidays all in one place.</p>
+                        <button class="btn btn-primary"><i class="fas fa-calendar"></i> Sync to Calendar</button>
+                    </div>
+
+                    <div class="schedule-tabs">
+                        <button class="tab-btn active" data-tab="daily">Day at a Glance</button>
+                        <button class="tab-btn" data-tab="calendar">Calendar</button>
+                        <button class="tab-btn" data-tab="mess">Mess Timings</button>
+                        <button class="tab-btn" data-tab="exams">Exam Schedule</button>
+                    </div>
+
+                    <!-- Daily Schedule -->
+                    <div class="tab-content active" id="daily">
+                        <div class="daily-schedule">
+                            <h4>October 5, 2023 (Thursday)</h4>
+                            
+                            <div class="schedule-timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-marker">
+                                        <i class="fas fa-coffee"></i>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <p class="time">08:00 AM</p>
+                                        <p class="title">Breakfast</p>
+                                        <p class="description">Aloo Paratha & Curd</p>
+                                    </div>
+                                </div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-marker">
+                                        <i class="fas fa-chalkboard-user"></i>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <p class="time">10:00 AM</p>
+                                        <p class="title">Data Structures (CS-302)</p>
+                                        <p class="description">Room 304 • Main Block</p>
+                                    </div>
+                                </div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-marker">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <p class="time">01:00 PM</p>
+                                        <p class="title">Lunch</p>
+                                        <p class="description">Rajma Chawal & Rice</p>
+                                    </div>
+                                </div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-marker">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <p class="time">04:00 PM</p>
+                                        <p class="title">Robotics Club Meet</p>
+                                        <p class="description">Workshop Area</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="schedule-reminder">
+                                <i class="fas fa-lightbulb"></i>
+                                <p>Don't forget your Hall Ticket for the 10 AM exam!</p>
+                            </div>
+
+                            <!-- My Today's Schedule (added) -->
+                            <div class="my-today-schedule">
+                                <h4>My Today's Schedule</h4>
+                                <div id="today-tasks" class="today-tasks">
+                                    <form id="add-task-form" class="task-form">
+                                        <input id="task-title" placeholder="Task title" required />
+                                        <input id="task-duration" placeholder="Duration (mins)" type="number" min="1" />
+                                        <textarea id="task-desc" placeholder="Task description"></textarea>
+                                        <button type="submit" class="btn btn-primary btn-small">Add Task</button>
+                                    </form>
+                                    <div id="tasks-list" class="tasks-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendar View -->
+                    <div class="tab-content" id="calendar">
+                        <div class="calendar-grid">
+                            <div class="calendar-month">
+                                <h4>October 2023</h4>
+                                <div class="month-events">
+                                    <div class="event-item">
+                                        <span class="date-mark">Oct 2</span>
+                                        <span class="event-name">Gandhi Jayanti</span>
+                                    </div>
+                                    <div class="event-item">
+                                        <span class="date-mark">Oct 3</span>
+                                        <span class="event-name">Special Dinner</span>
+                                    </div>
+                                    <div class="event-item exam">
+                                        <span class="date-mark">Oct 5</span>
+                                        <span class="event-name">CS-302 Exam</span>
+                                    </div>
+                                    <div class="event-item exam">
+                                        <span class="date-mark">Oct 10</span>
+                                        <span class="event-name">Math Exam</span>
+                                    </div>
+                                    <div class="event-item">
+                                        <span class="date-mark">Oct 24</span>
+                                        <span class="event-name">Dussehra</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mess Timings -->
+                    <div class="tab-content" id="mess">
+                        <div class="mess-timings">
+                            <div class="mess-item">
+                                <h4>Breakfast</h4>
+                                <p class="timing">6:30 AM - 8:30 AM</p>
+                            </div>
+                            <div class="mess-item">
+                                <h4>Lunch</h4>
+                                <p class="timing">12:00 PM - 2:00 PM</p>
+                            </div>
+                            <div class="mess-item">
+                                <h4>Snacks</h4>
+                                <p class="timing">4:00 PM - 5:00 PM</p>
+                            </div>
+                            <div class="mess-item">
+                                <h4>Dinner</h4>
+                                <p class="timing">7:00 PM - 9:00 PM</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exam Schedule -->
+                    <div class="tab-content" id="exams">
+                        <div class="exams-schedule">
+                            <div class="exam-card">
+                                <div class="exam-date">Oct 5</div>
+                                <h4>CS-302: Data Structures</h4>
+                                <p>Location: Exam Hall A</p>
+                                <p>Time: 10:00 AM - 1:00 PM</p>
+                            </div>
+                            <div class="exam-card">
+                                <div class="exam-date">Oct 10</div>
+                                <h4>MA-301: Engineering Mathematics</h4>
+                                <p>Location: Exam Hall B</p>
+                                <p>Time: 2:00 PM - 5:00 PM</p>
+                            </div>
+                            <div class="exam-card">
+                                <div class="exam-date">Oct 15</div>
+                                <h4>CS-303: Database Systems</h4>
+                                <p>Location: Exam Hall A</p>
+                                <p>Time: 10:00 AM - 1:00 PM</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Schedule Feedback & Management Section -->
+                <section id="schedule-feedback" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-calendar-check"></i> Schedule Management</h2>
+                        <p>Report timing issues, suggest improvements, and stay updated with announcements</p>
+                    </div>
+
+                    <!-- Faculty Announcements -->
+                    <div class="announcements-section">
+                        <h3><i class="fas fa-bullhorn"></i> Important Announcements</h3>
+                        <div id="announcements-container" class="announcements-grid">
+                            <!-- Announcements loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Feedback Statistics -->
+                    <div class="feedback-stats-section">
+                        <h3><i class="fas fa-chart-line"></i> Feedback Overview</h3>
+                        <div id="feedback-stats" class="stats-grid">
+                            <!-- Stats loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Weekly Schedule Calendar -->
+                    <div class="weekly-schedule-section">
+                        <h3><i class="fas fa-calendar-week"></i> Weekly Project Schedule</h3>
+                        <div id="weekly-calendar">
+                            <!-- Weekly schedule loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Schedule Feedback Form -->
+                    <div class="feedback-form-section">
+                        <h3><i class="fas fa-comment-dots"></i> Report Schedule Issue</h3>
+                        <p class="form-description">
+                            Having trouble with class timings? Mess schedule conflicts? Let us know and we'll work on a solution.
+                        </p>
+
+                        <form id="schedule-feedback-form" class="feedback-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="student-name">
+                                        <i class="fas fa-user"></i> Full Name
+                                        <span class="required">*</span>
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="student-name" 
+                                        name="name" 
+                                        placeholder="Enter your full name"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="roll-number">
+                                        <i class="fas fa-id-card"></i> Roll Number
+                                        <span class="required">*</span>
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="roll-number" 
+                                        name="roll_number" 
+                                        placeholder="e.g., 21BCS101"
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="issue-type">
+                                    <i class="fas fa-exclamation-triangle"></i> Issue Type
+                                    <span class="required">*</span>
+                                </label>
+                                <select id="issue-type" name="issue_type" required>
+                                    <option value="">-- Select an issue --</option>
+                                    <option value="Class Timing Clash">Class Timing Clash</option>
+                                    <option value="Mess Timing Issue">Mess Timing Issue</option>
+                                    <option value="Suggesting Better Time Slots">Suggesting Better Time Slots</option>
+                                    <option value="Difficulty Attending Sessions">Difficulty Attending Sessions</option>
+                                    <option value="Other Issue">Other Issue</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="preferred-timing">
+                                    <i class="fas fa-clock"></i> Preferred Timing (Optional)
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="preferred-timing" 
+                                    name="preferred_timing" 
+                                    placeholder="e.g., 2:00 PM - 4:00 PM on Wednesdays"
+                                >
+                                <small class="form-help">Suggest alternative timings that work better for you</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="additional-comments">
+                                    <i class="fas fa-comment"></i> Additional Comments
+                                </label>
+                                <textarea 
+                                    id="additional-comments" 
+                                    name="additional_comments" 
+                                    rows="4"
+                                    placeholder="Provide more details about the issue or suggestions..."
+                                ></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary btn-large">
+                                    <i class="fas fa-paper-plane"></i> Submit Feedback
+                                </button>
+                                <button type="reset" class="btn btn-outline">
+                                    <i class="fas fa-redo"></i> Reset Form
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Best Practices Section -->
+                    <div class="best-practices-section">
+                        <h3><i class="fas fa-lightbulb"></i> Best Practices to Avoid Timing Conflicts</h3>
+                        <div class="practices-grid">
+                            <div class="practice-card">
+                                <i class="fas fa-calendar-check"></i>
+                                <h4>Check Schedule Early</h4>
+                                <p>Review your weekly schedule at the start of each week to plan ahead</p>
+                            </div>
+                            <div class="practice-card">
+                                <i class="fas fa-users"></i>
+                                <h4>Coordinate with Team</h4>
+                                <p>Discuss timing preferences with your project team members</p>
+                            </div>
+                            <div class="practice-card">
+                                <i class="fas fa-comments"></i>
+                                <h4>Communicate Issues</h4>
+                                <p>Report conflicts immediately so adjustments can be made</p>
+                            </div>
+                            <div class="practice-card">
+                                <i class="fas fa-bell"></i>
+                                <h4>Set Reminders</h4>
+                                <p>Use calendar apps to get notified about upcoming sessions</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                
+                <!-- QR Attendance Section -->
+                <section id="qr-attendance" class="content-section">
+                    <!-- Role Selector -->
+                    <div class="qr-role-selector">
+                        <button class="role-tab active" data-role="student">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>Student Panel</span>
+                        </button>
+                        <button class="role-tab" data-role="faculty">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <span>Faculty Panel</span>
+                        </button>
+                    </div>
+
+                    <!-- Student Panel -->
+                    <div id="student-panel" class="qr-panel active">
+                        <!-- Student Dashboard -->
+                        <div class="qr-dashboard-cards">
+                            <div class="qr-stat-card">
+                                <div class="stat-icon" style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h4 id="student-today-attended">0</h4>
+                                    <p>Classes Today</p>
+                                </div>
+                            </div>
+                            
+                            <div class="qr-stat-card">
+                                <div class="stat-icon" style="background: linear-gradient(135deg, #43E97B 0%, #38F9D7 100%);">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h4 id="student-overall-percentage">85%</h4>
+                                    <p>Overall Attendance</p>
+                                </div>
+                            </div>
+                            
+                            <div class="qr-stat-card">
+                                <div class="stat-icon" style="background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h4 id="student-late-count">2</h4>
+                                    <p>Late Entries</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- QR Scanner Card -->
+                        <div class="qr-scanner-card">
+                            <div class="card-header-qr">
+                                <h3><i class="fas fa-qrcode"></i> Scan QR Code to Mark Attendance</h3>
+                                <p>Position the QR code within the scanning area</p>
+                            </div>
+                            
+                            <div class="qr-scanner-container">
+                                <!-- Camera Preview -->
+                                <div id="camera-preview" class="camera-preview" style="display: none;">
+                                    <video id="qr-video" autoplay></video>
+                                    <div class="scanner-overlay">
+                                        <div class="scanner-frame"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Manual Entry -->
+                                <div id="manual-entry" class="manual-entry">
+                                    <div class="manual-entry-icon">
+                                        <i class="fas fa-qrcode"></i>
+                                    </div>
+                                    <h4>Enter Session ID</h4>
+                                    <p>Ask your faculty for the session code</p>
+                                    <input type="text" id="session-id-input" placeholder="Enter session ID or QR code data" class="session-input">
+                                    <button class="btn btn-primary" onclick="markAttendanceManually()">
+                                        <i class="fas fa-check"></i> Mark Attendance
+                                    </button>
+                                </div>
+                                
+                                <button id="start-camera-btn" class="btn btn-primary" onclick="startQRScanner()">
+                                    <i class="fas fa-camera"></i> Start Camera
+                                </button>
+                                <button id="stop-camera-btn" class="btn btn-secondary" onclick="stopQRScanner()" style="display: none;">
+                                    <i class="fas fa-stop"></i> Stop Camera
+                                </button>
+                            </div>
+                            
+                            <!-- Location Status -->
+                            <div id="location-status" class="location-status">
+                                <i class="fas fa-location-crosshairs"></i>
+                                <span id="location-text">Acquiring location...</span>
+                            </div>
+                            
+                            <!-- Scan Result -->
+                            <div id="scan-result" class="scan-result" style="display: none;"></div>
+                        </div>
+
+                        <!-- Recent Attendance -->
+                        <div class="recent-attendance-card">
+                            <h3><i class="fas fa-history"></i> Recent Attendance</h3>
+                            <div id="student-recent-list" class="attendance-list">
+                                <div class="attendance-item">
+                                    <div class="attendance-item-info">
+                                        <h4>Computer Networks</h4>
+                                        <p><i class="fas fa-clock"></i> Today, 10:30 AM • Dr. Sharma</p>
+                                    </div>
+                                    <span class="attendance-badge success">Present</span>
+                                </div>
+                                <div class="attendance-item">
+                                    <div class="attendance-item-info">
+                                        <h4>Data Structures</h4>
+                                        <p><i class="fas fa-clock"></i> Today, 8:00 AM • Prof. Kumar</p>
+                                    </div>
+                                    <span class="attendance-badge warning">Late (5 min)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Faculty Panel -->
+                    <div id="faculty-panel" class="qr-panel">
+                        <!-- QR Generation Form -->
+                        <div class="qr-generation-card">
+                            <h3><i class="fas fa-qrcode"></i> Generate QR Code for Attendance</h3>
+                            
+                            <form id="qr-generation-form" class="qr-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Subject Code</label>
+                                        <input type="text" id="subject-code" placeholder="e.g., CS-302" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Subject Name</label>
+                                        <input type="text" id="subject-name" placeholder="e.g., Computer Networks" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Branch</label>
+                                        <select id="branch" required>
+                                            <option value="">Select Branch</option>
+                                            <option value="CS">Computer Science</option>
+                                            <option value="EC">Electronics</option>
+                                            <option value="ME">Mechanical</option>
+                                            <option value="CE">Civil</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Semester</label>
+                                        <select id="semester" required>
+                                            <option value="">Select Semester</option>
+                                            <option value="1">1st Semester</option>
+                                            <option value="2">2nd Semester</option>
+                                            <option value="3">3rd Semester</option>
+                                            <option value="4">4th Semester</option>
+                                            <option value="5">5th Semester</option>
+                                            <option value="6">6th Semester</option>
+                                            <option value="7">7th Semester</option>
+                                            <option value="8">8th Semester</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Section</label>
+                                        <input type="text" id="section" placeholder="e.g., A" maxlength="1">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Lecture Duration (minutes)</label>
+                                        <input type="number" id="lecture-duration" value="50" min="30" max="180" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>QR Validity (minutes)</label>
+                                        <select id="qr-validity" required>
+                                            <option value="2">2 minutes</option>
+                                            <option value="3" selected>3 minutes</option>
+                                            <option value="5">5 minutes</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Geo-fence Radius (meters)</label>
+                                        <input type="number" id="geofence-radius" value="50" min="20" max="200" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Expected Students</label>
+                                        <input type="number" id="total-students" placeholder="e.g., 60" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Location Name</label>
+                                        <input type="text" id="location-name" placeholder="e.g., Room 301, Block A">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-options">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="allow-screenshot">
+                                        <span>Allow screenshot scanning</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="require-device-check" checked>
+                                        <span>Require device verification</span>
+                                    </label>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary btn-large">
+                                    <i class="fas fa-qrcode"></i> Generate QR Code
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- QR Display Card -->
+                        <div id="qr-display-card" class="qr-display-card" style="display: none;">
+                            <div class="qr-display-header">
+                                <h3><i class="fas fa-qrcode"></i> Active QR Code</h3>
+                                <div class="qr-timer">
+                                    <i class="fas fa-clock"></i>
+                                    <span id="qr-timer-text">Expires in 3:00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="qr-display-content">
+                                <div class="qr-code-image">
+                                    <img id="qr-code-img" src="" alt="QR Code">
+                                </div>
+                                
+                                <div class="qr-session-info">
+                                    <h4 id="qr-subject-display"></h4>
+                                    <p id="qr-class-details"></p>
+                                    <div class="qr-session-id">
+                                        <span>Session ID:</span>
+                                        <code id="session-id-display"></code>
+                                        <button class="btn-copy" onclick="copySessionId()">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="qr-actions">
+                                <button class="btn btn-secondary" onclick="closeQRSession()">
+                                    <i class="fas fa-times"></i> Close Session
+                                </button>
+                                <button class="btn btn-primary" onclick="refreshQRCode()">
+                                    <i class="fas fa-sync"></i> Regenerate QR
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Live Attendance Dashboard -->
+                        <div id="live-dashboard" class="live-dashboard-card" style="display: none;">
+                            <h3><i class="fas fa-chart-line"></i> Live Attendance Dashboard</h3>
+                            
+                            <div class="live-stats-grid">
+                                <div class="live-stat-card">
+                                    <div class="live-stat-icon" style="background: linear-gradient(135deg, #43E97B 0%, #38F9D7 100%);">
+                                        <i class="fas fa-user-check"></i>
+                                    </div>
+                                    <div class="live-stat-content">
+                                        <h2 id="live-present-count">0</h2>
+                                        <p>Present</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="live-stat-card">
+                                    <div class="live-stat-icon" style="background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);">
+                                        <i class="fas fa-user-times"></i>
+                                    </div>
+                                    <div class="live-stat-content">
+                                        <h2 id="live-absent-count">0</h2>
+                                        <p>Absent</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="live-stat-card">
+                                    <div class="live-stat-icon" style="background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div class="live-stat-content">
+                                        <h2 id="live-late-count">0</h2>
+                                        <p>Late</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="live-stat-card">
+                                    <div class="live-stat-icon" style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);">
+                                        <i class="fas fa-percentage"></i>
+                                    </div>
+                                    <div class="live-stat-content">
+                                        <h2 id="live-percentage">0%</h2>
+                                        <p>Attendance %</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Live Attendance List -->
+                            <div class="live-attendance-list">
+                                <div class="live-list-header">
+                                    <h4>Students Marked Present</h4>
+                                    <button class="btn btn-small btn-secondary" onclick="downloadAttendance()">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                </div>
+                                <div id="live-attendance-table" class="attendance-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Roll No</th>
+                                                <th>Student Name</th>
+                                                <th>Time</th>
+                                                <th>Distance</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="live-attendance-tbody">
+                                            <!-- Dynamic content -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Academics Section -->
+                <section id="academics" class="content-section">
+                    <h2>Academics</h2>
+                    <p style="color: #666; margin-bottom: 30px;">Your academic progress and course management</p>
+                    
+                    <div class="academics-grid">
+                        <div class="academic-card">
+                            <div class="card-header" style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);">
+                                <h4>Current Courses</h4>
+                            </div>
+                            <div class="card-body">
+                                <p>6 courses active this semester</p>
+                                <button class="btn btn-small btn-primary">View All Courses</button>
+                            </div>
+                        </div>
+
+                        <div class="academic-card">
+                            <div class="card-header" style="background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);">
+                                <h4>Assignment Submissions</h4>
+                            </div>
+                            <div class="card-body">
+                                <p>1 pending submission</p>
+                                <button class="btn btn-small btn-primary">Submit Assignment</button>
+                            </div>
+                        </div>
+
+                        <div class="academic-card">
+                            <div class="card-header" style="background: linear-gradient(135deg, #43E97B 0%, #38F9D7 100%);">
+                                <h4>Results</h4>
+                            </div>
+                            <div class="card-body">
+                                <p>Semester 3 Results Declared</p>
+                                <button class="btn btn-small btn-primary">View Results</button>
+                            </div>
+                        </div>
+
+                        <div class="academic-card">
+                            <div class="card-header" style="background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);">
+                                <h4>Timetable</h4>
+                            </div>
+                            <div class="card-body">
+                                <p>Check your class schedule</p>
+                                <button class="btn btn-small btn-primary">View Timetable</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/schedule-management.js"></script>
+    <script src="js/dashboard-analytics.js"></script>
+    <script src="js/qr-attendance.js"></script>
+
+    <!-- Profile Edit Modal (added) -->
+    <div id="profile-edit-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <h3>Edit Profile</h3>
+            <form id="profile-edit-form">
+                <div class="form-row">
+                    <label>Profile picture</label>
+                    <input type="file" id="profile-pic-input" accept="image/*" />
+                    <img id="profile-pic-preview" src="" alt="Preview" style="width:80px;height:80px;border-radius:50%;display:none;margin-top:8px;">
+                </div>
+                <div class="form-row">
+                    <input id="edit-name" placeholder="Full name" required />
+                </div>
+                <div class="form-row">
+                    <input id="edit-branch" placeholder="Branch" required />
+                </div>
+                <div class="form-row">
+                    <input id="edit-roll" placeholder="Roll number" required />
+                </div>
+                <div class="form-row">
+                    <label for="edit-section">Section</label>
+                    <select id="edit-section"></select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-outline modal-close">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Club Page Modal (added) -->
+    <div id="club-page-modal" class="modal club-modal" style="display:none;">
+        <div class="modal-content large">
+            <button class="modal-close">&times;</button>
+            <div id="club-page-content"></div>
+        </div>
+    </div>
+
+    <!-- New feature scripts -->
+    <script>
+      (function(){
+        const THEME_KEY = 'site-theme';
+        const root = document.documentElement;
+        const toggle = document.getElementById('theme-toggle-btn');
+        const prefersDarkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function applyTheme(theme, save = false){
+          root.classList.add('theme-transition');
+          clearTimeout(applyTheme._t);
+          applyTheme._t = setTimeout(()=> root.classList.remove('theme-transition'), 350);
+
+          root.setAttribute('data-theme', theme);
+          const isDark = theme === 'dark';
+          if(toggle) toggle.setAttribute('aria-pressed', String(isDark));
+          if(save) localStorage.setItem(THEME_KEY, theme);
+        }
+
+        function getInitialTheme(){
+          const stored = localStorage.getItem(THEME_KEY);
+          if(stored === 'dark' || stored === 'light') return stored;
+          return prefersDarkMQ.matches ? 'dark' : 'light';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', ()=>{
+          const initial = getInitialTheme();
+          applyTheme(initial, false);
+
+          if(toggle){
+            toggle.addEventListener('click', ()=>{
+              const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+              applyTheme(next, true);
+            });
+            toggle.addEventListener('keydown', (e)=>{
+              if(e.key === 'Enter' || e.key === ' '){
+                e.preventDefault();
+                toggle.click();
+              }
+            });
+          }
+        });
+
+        // react to OS-level preference changes when no explicit user choice
+        const mql = prefersDarkMQ;
+        if(mql.addEventListener){
+          mql.addEventListener('change', e => {
+            if(!localStorage.getItem(THEME_KEY)) applyTheme(e.matches ? 'dark' : 'light', false);
+          });
+        } else if(mql.addListener){
+          mql.addListener(e => {
+            if(!localStorage.getItem(THEME_KEY)) applyTheme(e.matches ? 'dark' : 'light', false);
+          });
+        }
+
+        window.__applyTheme = applyTheme;
+      })();
+    </script>
+    <script src="js/profile-edit.js"></script>
+    <script src="js/clubs-pages.js"></script>
+    <script src="js/club-attendance.js"></script>
+    <script src="js/schedule-tasks.js"></script>
+    <script src="js/qr-extensions.js"></script>
+</body>
+</html>
