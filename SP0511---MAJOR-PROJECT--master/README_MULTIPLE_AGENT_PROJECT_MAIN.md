@@ -413,7 +413,7 @@ kubectl apply -f k8s/
 
 ---
 
-## 🆘 Getting Help
+## 🆘 Getting Help  
 
 ### Quick Questions
 👉 Start with [START_HERE.md](./START_HERE.md)
