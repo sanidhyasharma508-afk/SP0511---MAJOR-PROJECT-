@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Quick test script for Schedule Management API endpoints
-"""
+"""  
 import requests
 import json
 from datetime import datetime, timedelta
@@ -183,3 +183,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+## also add
+# To run this test script, ensure your Schedule Management API server is running locally on port 8000.
