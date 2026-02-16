@@ -1,0 +1,352 @@
+/* ==================== CLUBS & EVENTS STYLES ==================== */
+
+.clubs-hero {
+    position: relative;
+    height: 400px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-image {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+.hero-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(91, 126, 255, 0.7) 0%, rgba(59, 95, 232, 0.7) 100%);
+    z-index: 1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    color: white;
+    text-align: center;
+    max-width: 600px;
+    padding: 40px;
+}
+
+.hero-content h2 {
+    font-size: 44px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    line-height: 1.2;
+}
+
+.hero-content p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    opacity: 0.95;
+}
+
+/* Clubs Search */
+.clubs-search {
+    background: white;
+    padding: 28px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 40px;
+    box-shadow: var(--shadow-sm);
+}
+
+.search-input-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: var(--light-blue);
+    padding: 12px 16px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+}
+
+.search-input-group i {
+    color: var(--primary);
+    font-size: 18px;
+}
+
+.search-input-group input {
+    flex: 1;
+    border: none;
+    background: none;
+    outline: none;
+    font-size: 15px;
+    color: var(--text-dark);
+    font-family: 'Poppins', sans-serif;
+}
+
+.search-input-group input::placeholder {
+    color: var(--text-light);
+}
+
+.category-filter {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.category-btn {
+    padding: 10px 18px;
+    border-radius: var(--radius-lg);
+    background-color: var(--light-blue);
+    color: var(--text-light);
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.category-btn:hover,
+.category-btn.active {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Events Section */
+.events-section {
+    margin-bottom: 40px;
+}
+
+.events-section h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: var(--text-dark);
+}
+
+.events-timeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.event-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.event-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-md);
+}
+
+.event-date {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.event-date .day {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.event-date .date {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.event-content h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.event-content p {
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.event-club {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: var(--light-blue);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 20px;
+    margin-bottom: 8px;
+}
+
+.event-time {
+    font-size: 13px;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.event-card .btn {
+    margin-top: auto;
+}
+
+/* Clubs Grid */
+.clubs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.club-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.club-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+}
+
+.club-card-image {
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    color: white;
+}
+
+.club-card-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.club-card-content h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.club-card-content p {
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.5;
+    flex: 1;
+}
+
+.club-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+}
+
+.club-stats span {
+    font-size: 12px;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.club-stats i {
+    color: var(--primary);
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .clubs-hero {
+        height: 300px;
+    }
+
+    .hero-content h2 {
+        font-size: 32px;
+    }
+
+    .hero-content p {
+        font-size: 14px;
+    }
+
+    .hero-content {
+        padding: 24px;
+    }
+
+    .clubs-search {
+        padding: 20px;
+    }
+
+    .category-filter {
+        gap: 8px;
+    }
+
+    .category-btn {
+        font-size: 12px;
+        padding: 8px 14px;
+    }
+
+    .events-timeline {
+        grid-template-columns: 1fr;
+    }
+
+    .clubs-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .clubs-hero {
+        height: 250px;
+        margin-bottom: 24px;
+    }
+
+    .hero-content h2 {
+        font-size: 24px;
+    }
+
+    .hero-content p {
+        font-size: 13px;
+    }
+
+    .hero-content {
+        padding: 16px;
+    }
+
+    .clubs-search {
+        padding: 16px;
+        margin-bottom: 24px;
+    }
+
+    .event-card {
+        padding: 16px;
+    }
+
+    .clubs-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .club-card-image {
+        height: 120px;
+    }
+}

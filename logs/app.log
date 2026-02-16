@@ -1,0 +1,770 @@
+{"timestamp": "2026-01-20T05:37:38.241209", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 126}
+{"timestamp": "2026-01-20T05:37:38.310709", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-20T05:37:38.310929", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-20T05:37:38.311100", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-20T05:37:38.311520", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-20T05:37:38.311680", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 55}
+{"timestamp": "2026-01-20T05:37:38.311785", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-20T05:37:38.311965", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-20T05:37:38.312141", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-20T05:37:38.312409", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-20T05:38:01.118551", "level": "INFO", "logger": "request_logging", "message": "GET /docs - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-20T05:38:02.431463", "level": "INFO", "logger": "request_logging", "message": "GET /openapi.json - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-20T05:40:02.491801", "level": "INFO", "logger": "request_logging", "message": "PUT /students/3213 - 422", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-20T05:40:21.660651", "level": "INFO", "logger": "request_logging", "message": "GET /docs - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-20T05:40:21.910244", "level": "INFO", "logger": "request_logging", "message": "GET /openapi.json - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:37:21.253205", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 126}
+{"timestamp": "2026-01-21T13:37:21.601597", "level": "INFO", "logger": "__main__", "message": "server_starting", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:37:21.670906", "level": "INFO", "logger": "__main__", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:37:21.671327", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-21T13:37:21.671835", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-21T13:37:21.672184", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-21T13:37:21.672803", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 55}
+{"timestamp": "2026-01-21T13:37:21.673096", "level": "INFO", "logger": "__main__", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:37:21.673425", "level": "INFO", "logger": "__main__", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:37:21.673744", "level": "INFO", "logger": "__main__", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:37:21.674376", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:37:41.672599", "level": "INFO", "logger": "request_logging", "message": "GET / - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:37:41.752398", "level": "INFO", "logger": "request_logging", "message": "GET /favicon.ico - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:37:47.718168", "level": "INFO", "logger": "request_logging", "message": "GET / - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:38:02.192249", "level": "INFO", "logger": "request_logging", "message": "GET / - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:38:02.245445", "level": "INFO", "logger": "request_logging", "message": "GET /favicon.ico - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:38:14.423721", "level": "INFO", "logger": "request_logging", "message": "GET /docs - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T13:38:15.854571", "level": "INFO", "logger": "request_logging", "message": "GET /openapi.json - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:05:15.645321", "level": "INFO", "logger": "request_logging", "message": "GET / - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:05:15.768616", "level": "INFO", "logger": "request_logging", "message": "GET /favicon.ico - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:19:01.723491", "level": "INFO", "logger": "request_logging", "message": "GET /docs - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:19:03.006030", "level": "INFO", "logger": "request_logging", "message": "GET /openapi.json - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:27:46.301161", "level": "INFO", "logger": "request_logging", "message": "POST /auth/login - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:28:06.245284", "level": "INFO", "logger": "request_logging", "message": "POST /auth/login - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:28:26.557201", "level": "INFO", "logger": "request_logging", "message": "POST /auth/login - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:28:32.113832", "level": "INFO", "logger": "request_logging", "message": "POST /auth/login - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:30:35.306008", "level": "INFO", "logger": "request_logging", "message": "POST /auth/login - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:30:43.515573", "level": "INFO", "logger": "request_logging", "message": "POST /auth/login - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:30:56.903428", "level": "INFO", "logger": "request_logging", "message": "POST /auth/login - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:32:01.991692", "level": "INFO", "logger": "request_logging", "message": "POST /auth/login - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:33:23.270834", "level": "INFO", "logger": "request_logging", "message": "POST /auth/login - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-21T14:35:50.242375", "level": "INFO", "logger": "request_logging", "message": "POST /auth/login - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:51:59.984793", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 126}
+{"timestamp": "2026-01-22T07:52:00.055372", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:00.055759", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:52:00.056054", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:52:00.056346", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:52:00.056761", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 55}
+{"timestamp": "2026-01-22T07:52:00.057124", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:00.057453", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:00.057727", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:00.058234", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:22.240167", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:22.240364", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:22.240588", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:22.240763", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:30.702714", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 126}
+{"timestamp": "2026-01-22T07:52:30.767586", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:30.767751", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:52:30.767928", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:52:30.768030", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:52:30.768130", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 55}
+{"timestamp": "2026-01-22T07:52:30.768220", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:30.768320", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:30.768622", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:30.768813", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:30.770416", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:30.770841", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:30.771205", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:30.771383", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:51.877778", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 126}
+{"timestamp": "2026-01-22T07:52:51.935196", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:51.935716", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:52:51.935879", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:52:51.935977", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:52:51.936338", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 55}
+{"timestamp": "2026-01-22T07:52:51.936961", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:51.937152", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:51.937584", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:51.938391", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:51.940175", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:51.940534", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:51.940900", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:52:51.941182", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:53:14.019688", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 126}
+{"timestamp": "2026-01-22T07:53:14.083804", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:53:14.083981", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:53:14.084087", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:53:14.084173", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:53:14.084267", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 55}
+{"timestamp": "2026-01-22T07:53:14.084362", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:53:14.084468", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:53:14.084723", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:53:14.084984", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:53:30.817737", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:53:30.818300", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:53:30.818814", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:53:30.819378", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:54:47.695329", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 126}
+{"timestamp": "2026-01-22T07:54:47.776628", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:54:47.777134", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:54:47.777614", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:54:47.778005", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 47}
+{"timestamp": "2026-01-22T07:54:47.778570", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 55}
+{"timestamp": "2026-01-22T07:54:47.778938", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:54:47.779202", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:54:47.779514", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:54:47.779940", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T07:56:04.746126", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:08:47.040974", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-01-22T08:08:47.094109", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:08:47.094346", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-01-22T08:08:47.094506", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-01-22T08:08:47.094688", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-01-22T08:08:47.094932", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-01-22T08:08:47.095035", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:08:47.095212", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:08:47.095374", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:08:47.095583", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:09:39.684530", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:10:06.234577", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:10:09.376783", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:10:35.918317", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:10:39.683287", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:11:06.232081", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:11:09.376132", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:11:35.927718", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:11:39.674887", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:12:06.238212", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:12:09.362466", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:12:35.915663", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:12:39.686301", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:13:06.236741", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:13:09.374476", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:13:35.916948", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:13:39.685520", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:14:06.229714", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:14:09.372126", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:14:35.920215", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:14:39.683709", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:15:09.368495", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:15:39.687798", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:16:09.377656", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:16:39.677555", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:17:09.361223", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:17:39.679381", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:18:09.361591", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:18:39.684177", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:19:09.363920", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:19:39.680523", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:20:09.376235", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:20:39.687002", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:21:09.358438", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:21:39.673577", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:22:09.370665", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:22:39.684784", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:23:09.374657", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:23:39.672480", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:24:09.362565", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:24:39.667483", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:25:09.362093", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:25:39.679305", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:26:09.372289", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:26:39.671169", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:27:09.367990", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:27:39.689588", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:28:09.366748", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:28:38.610889", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:28:43.006019", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:29:08.292203", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:29:09.772775", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:29:25.125594", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:29:38.599005", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:29:39.459864", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:30:08.291650", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:30:38.605444", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:30:51.014251", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:31:21.342274", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:31:51.018644", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:32:21.333710", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:32:51.023107", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:33:21.341358", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:33:51.014678", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:34:21.339200", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:34:51.024535", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:34:59.715044", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:34:59.860463", "level": "INFO", "logger": "request_logging", "message": "GET /favicon.ico - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:35:21.325521", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:35:51.017125", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:36:21.328976", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:36:51.020174", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:37:21.328742", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:37:51.020437", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:38:21.330977", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:38:51.023095", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:39:21.328911", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:39:51.026008", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:40:21.340354", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:40:51.019886", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:41:21.339881", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:41:51.013202", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:42:21.337257", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:42:51.013759", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:43:21.333578", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:43:51.018156", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:44:21.332237", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:44:51.017549", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:45:21.328041", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:45:51.023744", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:46:21.324198", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:46:51.024593", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:47:21.326307", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:47:51.017382", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:48:21.335797", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:48:51.029300", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:49:21.331326", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:49:51.019986", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:50:21.340159", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:50:51.018413", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:51:21.336310", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:51:51.012955", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:52:21.336647", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:52:51.015308", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:53:21.334744", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:53:51.025555", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:54:21.338362", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:54:51.016949", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:55:21.341032", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:55:51.016620", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:56:21.328822", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:56:51.024682", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:57:21.331104", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:57:51.022319", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:58:21.334080", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:58:51.012116", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:59:21.334908", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T08:59:51.025286", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:00:21.332875", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:00:51.020966", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:01:21.329325", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:01:51.018297", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:02:21.329375", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:02:51.023688", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:03:21.337966", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:03:51.023716", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:04:21.328328", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:04:51.018504", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:05:21.328826", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:05:51.013776", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:06:21.322190", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:06:51.016077", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:07:21.340937", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:07:51.025173", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:08:21.326364", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:08:51.011950", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:09:21.326884", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:09:51.025152", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:10:21.335391", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:10:51.015511", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:11:21.332162", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:11:51.025625", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:12:21.337339", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:12:51.018681", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:13:21.335909", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:13:51.026902", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:14:21.320732", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:14:51.029518", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:15:21.335545", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:15:51.017333", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:16:21.330954", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-01-22T09:16:51.019466", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T14:57:25.467265", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T14:57:25.511132", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T14:57:25.511246", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T14:57:25.511316", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T14:57:25.511365", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T14:57:25.511416", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T14:57:25.511472", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T14:57:25.511532", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T14:57:25.511599", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T14:57:25.511727", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:47.288520", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:47.288663", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:47.288749", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:47.288823", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:48.284067", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:30:48.342801", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:48.342964", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:48.343046", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:48.343121", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:48.343196", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:30:48.343265", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:48.343349", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:48.343434", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:48.343584", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:49.313981", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:30:49.366722", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:49.366823", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:49.366895", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:49.366955", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:49.367028", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:30:49.367103", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:49.367194", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:49.367266", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:49.367414", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:50.129578", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:30:50.173727", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:50.173817", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:50.173870", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:50.173918", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:50.173966", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:30:50.174014", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:50.174084", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:50.174132", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:50.174244", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:50.892780", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:30:50.949837", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:50.949977", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:50.950064", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:50.950147", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:50.950237", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:30:50.950311", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:50.950390", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:50.950453", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:50.950595", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:57.066950", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:57.067087", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:57.067166", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:57.067255", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:57.805990", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:30:57.893659", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:57.893973", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:57.894198", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:57.894422", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:30:57.894779", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:30:57.895490", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:57.895866", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:57.896204", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:30:57.896602", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:00.304207", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:00.304319", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:00.304399", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:00.304476", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:01.105191", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:31:01.159142", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:01.159294", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:31:01.159395", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:31:01.159479", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:31:01.159556", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:31:01.159633", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:01.159736", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:01.159809", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:01.159983", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:22.017993", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:22.018094", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:22.018161", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:22.018223", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:22.756796", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:31:22.809584", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:22.809677", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:31:22.809733", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:31:22.809781", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:31:22.809839", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:31:22.809888", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:22.809948", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:22.809994", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:22.810089", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:23.521475", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:31:23.570574", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:23.570676", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:31:23.570754", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:31:23.570809", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:31:23.570864", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:31:23.570918", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:23.570984", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:23.571033", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:31:23.571134", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:43.398558", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:43.398788", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:43.398949", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:43.399093", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:44.235858", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:34:44.325076", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:44.325439", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:34:44.325630", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:34:44.325718", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:34:44.325799", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:34:44.325878", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:44.325966", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:44.326031", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:44.326227", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:44.528115", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:44.528299", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:44.528447", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:44.528625", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:45.287436", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:34:45.334606", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:45.334732", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:34:45.334824", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:34:45.334896", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:34:45.334971", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:34:45.335045", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:45.335130", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:45.335208", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:34:45.335334", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:29.274371", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:29.274616", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:29.274748", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:29.274865", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:29.993639", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:35:30.042740", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:30.042855", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:35:30.042927", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:35:30.042991", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:35:30.043055", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:35:30.043120", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:30.043195", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:30.043257", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:30.043368", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:30.044101", "level": "INFO", "logger": "request_logging", "message": "POST /api/schedule-management/feedback - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:30.045769", "level": "INFO", "logger": "request_logging", "message": "GET /api/schedule-management/feedback/stats/summary - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:30.047507", "level": "INFO", "logger": "request_logging", "message": "POST /api/schedule-management/announcements - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:30.050511", "level": "INFO", "logger": "request_logging", "message": "GET /api/schedule-management/announcements - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:30.053349", "level": "INFO", "logger": "request_logging", "message": "GET /api/schedule-management/feedback - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:37.869490", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:37.869755", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:37.869949", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:37.870128", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:38.638999", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:35:38.693957", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:38.694100", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:35:38.694176", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:35:38.694228", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:35:38.694278", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:35:38.694328", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:38.694438", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:38.694546", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:38.695036", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:35:58.927995", "level": "INFO", "logger": "request_logging", "message": "GET /docs - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:05.804138", "level": "INFO", "logger": "request_logging", "message": "GET / - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:13.480990", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/announcements - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:19.155840", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/announcements - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:26.348220", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:26.348596", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:26.348847", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:26.349044", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:27.059766", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:36:27.109176", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:27.109279", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:36:27.109341", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:36:27.109395", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:36:27.109449", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:36:27.109510", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:27.109578", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:27.109629", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:27.109732", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:30.675171", "level": "INFO", "logger": "request_logging", "message": "POST /schedule-management/feedback - 201", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:30.682757", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/feedback/stats/summary - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:30.689884", "level": "INFO", "logger": "request_logging", "message": "POST /schedule-management/announcements - 201", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:30.695353", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/announcements - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:36:30.700181", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/feedback - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:37:09.737663", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:37:09.737925", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:37:09.738135", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:37:09.738342", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:37:10.457158", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:37:10.511561", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:37:10.511672", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:37:10.511753", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:37:10.511828", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:37:10.511884", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:37:10.511936", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:37:10.512001", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:37:10.512047", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:37:10.512150", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:42:48.148708", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/announcements - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:42:48.151909", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/feedback/stats/summary - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:43:01.995786", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/feedback/stats/summary - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:43:01.996831", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/announcements - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:11.914080", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:11.914320", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:11.914511", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:11.914645", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:12.736162", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:47:12.820854", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:12.821049", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:47:12.821151", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:47:12.821248", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:47:12.821407", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:47:12.821550", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:12.821711", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:12.821853", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:12.822089", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:13.325525", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:13.325877", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:13.326105", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:13.326318", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:14.142356", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:47:14.194670", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:14.194808", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:47:14.194891", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:47:14.194968", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:47:14.195054", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:47:14.195133", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:14.195223", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:14.195292", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:14.195431", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:33.354875", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:33.354982", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:33.355051", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:33.355113", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:34.082845", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:47:34.132078", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:34.132169", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:47:34.132243", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:47:34.132301", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:47:34.132375", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:47:34.132491", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:34.132580", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:34.132646", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:47:34.132773", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:05.825888", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:05.826149", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:05.826213", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:05.826272", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:06.662015", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:48:06.746479", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:06.746676", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:48:06.746787", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:48:06.746876", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:48:06.746966", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:48:06.747053", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:06.747176", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:06.747265", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:06.747524", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:07.252525", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:07.252811", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:07.253033", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:07.253236", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:08.006749", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:48:08.057161", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:08.057279", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:48:08.057369", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:48:08.057451", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:48:08.057546", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:48:08.057630", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:08.057726", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:08.057796", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:08.057950", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:17.095336", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/announcements - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:17.097711", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/feedback/stats/summary - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:44.464228", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:44.464343", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:44.464417", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:44.464494", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:45.291685", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:48:45.351566", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:45.351863", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:48:45.351980", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:48:45.352069", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:48:45.352158", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:48:45.352238", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:45.352387", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:45.352453", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:48:45.352900", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:02.202413", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:02.202643", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:02.202821", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:02.202958", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:03.087400", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:49:03.167262", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:03.167441", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:03.167558", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:03.167658", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:03.167753", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:49:03.167845", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:03.167955", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:03.168038", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:03.168267", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:03.671866", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:03.672020", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:03.672110", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:03.672184", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:04.679569", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:49:04.735671", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:04.735762", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:04.735818", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:04.735866", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:04.735915", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:49:04.735963", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:04.736037", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:04.736089", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:04.736199", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:05.538717", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:05.538834", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:05.538904", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:05.538971", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:06.301782", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:49:06.357664", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:06.357808", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:06.357881", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:06.357940", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:06.358017", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:49:06.358089", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:06.358172", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:06.358237", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:06.358358", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:25.409500", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:25.409594", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:25.409657", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:25.409719", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:26.218611", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:49:26.318488", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:26.318586", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:26.318643", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:26.318690", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:26.318738", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:49:26.318785", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:26.318846", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:26.318892", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:26.319019", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:27.122228", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:27.122355", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:27.122464", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:27.122530", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:27.970768", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:49:28.041151", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:28.041253", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:28.041330", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:28.041382", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:49:28.041443", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:49:28.041510", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:28.041583", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:28.041629", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:49:28.041748", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:52.338761", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:52.338979", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:52.339145", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:52.339343", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:53.265852", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:57:53.373214", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:53.373374", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:57:53.373472", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:57:53.373547", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:57:53.373624", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:57:53.373699", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:53.373786", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:53.373856", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:53.374020", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:54.176843", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:54.177003", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:54.177100", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:54.177223", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:55.025625", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:57:55.092742", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:55.092840", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:57:55.092923", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:57:55.092992", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:57:55.093065", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:57:55.093129", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:55.093222", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:55.093290", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:57:55.093453", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:22.280546", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:22.280805", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:22.281030", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:22.281245", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:23.239060", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:58:23.353255", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:23.353417", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:58:23.353527", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:58:23.353602", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:58:23.353681", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:58:23.353774", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:23.353869", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:23.353935", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:23.354120", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:23.756495", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:23.756629", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:23.756718", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:23.756790", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:24.596917", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:58:24.663124", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:24.663219", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:58:24.663281", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:58:24.663331", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:58:24.663384", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:58:24.663437", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:24.663507", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:24.663561", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:58:24.663688", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:25.749586", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:25.749833", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:25.750010", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:25.750179", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:26.716942", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:59:26.836102", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:26.836264", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:59:26.836363", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:59:26.836445", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:59:26.836540", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:59:26.836631", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:26.836748", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:26.836828", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:26.837020", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:27.639899", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:27.640014", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:27.640082", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:27.640141", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:28.601979", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T15:59:28.675647", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:28.675751", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:59:28.675819", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:59:28.675875", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T15:59:28.675931", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T15:59:28.675995", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:28.676059", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:28.676110", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T15:59:28.676254", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:01:04.038461", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:01:04.038692", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:01:04.038845", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:01:04.038968", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:21.298439", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T16:06:21.455701", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:21.455796", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T16:06:21.455865", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T16:06:21.455925", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T16:06:21.455986", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T16:06:21.456044", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:21.456114", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:21.456169", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:21.456282", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:44.153570", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T16:06:44.276717", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:44.276810", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T16:06:44.276877", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T16:06:44.276924", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T16:06:44.276973", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T16:06:44.277021", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:44.277083", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:44.277129", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:44.277230", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:06:56.669226", "level": "INFO", "logger": "request_logging", "message": "GET /health - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:07:09.738111", "level": "INFO", "logger": "request_logging", "message": "GET /docs - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:07:16.042276", "level": "INFO", "logger": "request_logging", "message": "GET /openapi.json - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:09:11.309426", "level": "INFO", "logger": "request_logging", "message": "GET /openapi.json - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:09:37.024389", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/announcements - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:09:37.027170", "level": "INFO", "logger": "request_logging", "message": "GET /schedule-management/feedback/stats/summary - 200", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:09:37.029202", "level": "INFO", "logger": "request_logging", "message": "GET /qr-attendance/student/dashboard/student_123 - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:11:34.761143", "level": "INFO", "logger": "request_logging", "message": "GET /qr-attendance/student/dashboard/student_123 - 404", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:13:25.838939", "level": "INFO", "logger": "backend.main", "message": "shutdown_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:13:25.839160", "level": "INFO", "logger": "background_tasks", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:13:25.839303", "level": "INFO", "logger": "backend.main", "message": "scheduler_stopped", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:13:25.839441", "level": "INFO", "logger": "backend.main", "message": "shutdown_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:13:26.686082", "level": "INFO", "logger": "root", "message": "Logging configured. Level: INFO, File: logs/app.log", "module": "logging", "function": "setup_logging", "line": 124}
+{"timestamp": "2026-02-07T16:13:26.797875", "level": "INFO", "logger": "backend.main", "message": "startup_event", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:13:26.797972", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T16:13:26.798028", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler complaint_handler subscribed to EventType.COMPLAINT_FILED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T16:13:26.798077", "level": "INFO", "logger": "backend.core.event_bus", "message": "Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED", "module": "event_bus", "function": "subscribe", "line": 51}
+{"timestamp": "2026-02-07T16:13:26.798125", "level": "INFO", "logger": "backend.core.event_handlers", "message": "\u2713 All agents registered with event bus", "module": "event_handlers", "function": "register_agents", "line": 59}
+{"timestamp": "2026-02-07T16:13:26.798172", "level": "INFO", "logger": "backend.main", "message": "agents_registered", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:13:26.798232", "level": "INFO", "logger": "backend.main", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:13:26.798277", "level": "INFO", "logger": "backend.main", "message": "startup_complete", "module": "logging", "function": "log_event", "line": 52}
+{"timestamp": "2026-02-07T16:13:26.798373", "level": "INFO", "logger": "background_tasks", "message": "scheduler_started", "module": "logging", "function": "log_event", "line": 52}
