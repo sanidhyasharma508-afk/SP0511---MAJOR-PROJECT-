@@ -187,3 +187,4 @@ if __name__ == "__main__":
 ## also add
 # To run this test script, ensure your Schedule Management API server is running locally on port 8000.
 # Then execute this script using Python 3: 
+# python3 test_schedule_management.py
