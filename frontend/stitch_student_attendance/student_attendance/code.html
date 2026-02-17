@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Student Attendance - MBM University</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-dark": "#192633", // Slightly lighter for cards
+                        "border-dark": "#324d67",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "serif": ["Merriweather", "serif"], // Added for classical touch
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111a22; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #324d67; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b6b8b; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-white antialiased overflow-hidden">
+<div class="flex h-screen w-full overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="hidden w-72 flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111a22] lg:flex flex-shrink-0 z-20">
+<div class="flex flex-col gap-4 p-4 h-full">
+<!-- University Branding -->
+<div class="flex gap-3 items-center px-2 py-2">
+<div class="bg-center bg-no-repeat bg-cover rounded-full h-12 w-12 border-2 border-primary/30" data-alt="University Logo showing a shield or crest" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAjYSZvM8AA2EIesc-GDPfPmcwhZqjAdbwKWcnWuJtpmlkUsLdwNLOQWlO9WvBZLdToXdf88IZ2R0mhProf4YxyGM6xuMqkbfEPAtRaByT_z-oV9PnjhWiqR7XShWRTvKsCdI0zX2miZxA6KUmdX0R17wwiwOJkQ_gdObojHONVWEFF3UCXeMGdoqhW3BYnj7kT7dTJxcWtKQNKsNB68qSgJm6tRclsleLAIN6Xt9I7jvygR-sHcPH5ZynCVNr7Doih8OV63rsaZY8I");'></div>
+<div class="flex flex-col">
+<h1 class="text-gray-900 dark:text-white text-lg font-bold leading-tight font-serif tracking-tight">MBM University</h1>
+<p class="text-gray-500 dark:text-[#92adc9] text-xs font-medium uppercase tracking-wider">Student Portal</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex flex-col gap-2 mt-4 overflow-y-auto flex-1">
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg bg-primary text-white shadow-md shadow-primary/20 transition-all hover:bg-primary/90" href="#">
+<span class="material-symbols-outlined text-[24px]">check_circle</span>
+<p class="text-sm font-medium leading-normal">Attendance</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-600 dark:text-[#92adc9] hover:bg-gray-100 dark:hover:bg-[#233648] hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">calendar_month</span>
+<p class="text-sm font-medium leading-normal">Events</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-600 dark:text-[#92adc9] hover:bg-gray-100 dark:hover:bg-[#233648] hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">schedule</span>
+<p class="text-sm font-medium leading-normal">Timetable</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-600 dark:text-[#92adc9] hover:bg-gray-100 dark:hover:bg-[#233648] hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">wb_sunny</span>
+<p class="text-sm font-medium leading-normal">Holidays</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-600 dark:text-[#92adc9] hover:bg-gray-100 dark:hover:bg-[#233648] hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">groups</span>
+<p class="text-sm font-medium leading-normal">Clubs</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-600 dark:text-[#92adc9] hover:bg-gray-100 dark:hover:bg-[#233648] hover:text-gray-900 dark:hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">bar_chart</span>
+<p class="text-sm font-medium leading-normal">Performance</p>
+</a>
+</div>
+<!-- Bottom User Mini Profile -->
+<div class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-800">
+<button class="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#233648] transition-colors">
+<span class="material-symbols-outlined text-gray-500 dark:text-[#92adc9]">logout</span>
+<span class="text-sm font-medium text-gray-600 dark:text-[#92adc9]">Log Out</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark relative">
+<div class="layout-container flex flex-col h-full max-w-[1400px] mx-auto">
+<!-- Header / Top Bar -->
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center px-6 py-8 gap-6">
+<div>
+<h2 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Attendance Overview</h2>
+<p class="text-gray-500 dark:text-[#92adc9] mt-1">Manage your semester progress and stay on track.</p>
+</div>
+<!-- Profile Snippet -->
+<div class="flex items-center gap-4 bg-white dark:bg-[#192633] p-2 pr-6 rounded-full shadow-sm border border-gray-200 dark:border-[#324d67]">
+<div class="h-10 w-10 rounded-full bg-cover bg-center ring-2 ring-primary ring-offset-2 ring-offset-[#192633]" data-alt="Student profile picture, young man smiling" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC4wBlJgyCtrrYksrvTW3zAp5-3IZtfJexwmoUogvJct1xuaOSN_Qg4ipL-_TfNoa2hXLMjlHIXHuk9ysH9q9DJyyE5bu1ujbjLxMJu6n4NmA1mf-LYLwjfFjanN2n85Az82soRPE6z1B4bK8B-bPqQW9wpSdAfDRSP0nYYYo09Sd4K8hO6kA5JVT-EH06PUpUu84PSuBSeKHlBVFwC6Mv9BdOCuXeEpIp5wkdeMKc8KVVorSV5GDguUNNYGHDJAkxqG2O9Icqx1n8S");'></div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-gray-900 dark:text-white leading-none">Alex Johnson</span>
+<span class="text-xs text-gray-500 dark:text-[#92adc9] mt-1">CSE • Sem 6</span>
+</div>
+</div>
+</header>
+<div class="px-6 pb-12 flex flex-col gap-6">
+<!-- Top Row: Mascot Card & Stats -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Mascot / Insight Card -->
+<div class="lg:col-span-2 bg-white dark:bg-[#192633] rounded-xl border border-gray-200 dark:border-[#324d67] shadow-sm overflow-hidden flex flex-col sm:flex-row relative">
+<!-- Mascot Illustration Area -->
+<div class="sm:w-1/3 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center p-6 relative">
+<!-- Abstract decorative circles -->
+<div class="absolute w-32 h-32 bg-primary/20 rounded-full blur-2xl top-0 left-0"></div>
+<div class="relative z-10 w-32 h-32" data-alt="3D illustration of a scholarly owl wearing glasses and a graduation cap" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDxERqn9RqIiv9knl4k56aSPDNJIin3cLG_PxFbNcFPnsowu-fF8I5ahEqJUwvO5zC6sFeo78LQ0Y-Y9Ru5LnP36EI5xHkoD8jYkz6I6vpamT1iIDTEk6CpEp_pyFTshHDdbfgUcvdeaQ6GME4oFklFFQNYwHNrSbaWJHMZV9_7vx7iv-2qbMukTLkHNGiuFW6wPM_SQ5l6-AtzQHPEXFKNelgxjDiGzY8TORPIdfYiUeegpRXT3KM9kP5SLPV8r-_6HvlgqHkAyhio'); background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
+</div>
+<!-- Content -->
+<div class="sm:w-2/3 p-6 flex flex-col justify-center gap-4">
+<div>
+<h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Great job, Alex! 🎓</h3>
+<p class="text-gray-600 dark:text-[#92adc9] text-sm leading-relaxed">
+                                        You are consistently attending classes. Your attendance is currently <span class="text-primary font-bold">85%</span>, which is well above the mandatory 75% threshold. Keep up the momentum!
+                                    </p>
+</div>
+<div class="flex gap-3 mt-2">
+<button class="bg-primary hover:bg-primary/90 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-primary/25">
+<span>View Detailed Insights</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Stats Grid -->
+<div class="grid grid-rows-3 gap-4 h-full">
+<!-- Stat 1 -->
+<div class="bg-white dark:bg-[#192633] rounded-xl p-4 flex items-center justify-between border border-gray-200 dark:border-[#324d67] shadow-sm">
+<div>
+<p class="text-gray-500 dark:text-[#92adc9] text-xs font-medium uppercase tracking-wider">Total Classes</p>
+<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">120</p>
+</div>
+<div class="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500">
+<span class="material-symbols-outlined">school</span>
+</div>
+</div>
+<!-- Stat 2 -->
+<div class="bg-white dark:bg-[#192633] rounded-xl p-4 flex items-center justify-between border border-gray-200 dark:border-[#324d67] shadow-sm">
+<div>
+<p class="text-gray-500 dark:text-[#92adc9] text-xs font-medium uppercase tracking-wider">Classes Missed</p>
+<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">4</p>
+</div>
+<div class="h-10 w-10 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500">
+<span class="material-symbols-outlined">event_busy</span>
+</div>
+</div>
+<!-- Stat 3 -->
+<div class="bg-white dark:bg-[#192633] rounded-xl p-4 flex items-center justify-between border border-gray-200 dark:border-[#324d67] shadow-sm">
+<div>
+<p class="text-gray-500 dark:text-[#92adc9] text-xs font-medium uppercase tracking-wider">Duty Leaves</p>
+<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">2</p>
+</div>
+<div class="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+<span class="material-symbols-outlined">assignment_ind</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Toolbar & Filters -->
+<div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-2">
+<!-- Segmented Control -->
+<div class="bg-white dark:bg-[#192633] p-1 rounded-lg border border-gray-200 dark:border-[#324d67] flex">
+<label class="cursor-pointer">
+<input class="peer sr-only" name="view_mode" type="radio"/>
+<span class="block px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 dark:text-[#92adc9] peer-checked:bg-primary peer-checked:text-white transition-all">Daily</span>
+</label>
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" name="view_mode" type="radio"/>
+<span class="block px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 dark:text-[#92adc9] peer-checked:bg-primary peer-checked:text-white transition-all">Weekly</span>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="view_mode" type="radio"/>
+<span class="block px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 dark:text-[#92adc9] peer-checked:bg-primary peer-checked:text-white transition-all">Monthly</span>
+</label>
+</div>
+<!-- Actions -->
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#192633] border border-gray-200 dark:border-[#324d67] rounded-lg text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-[#233648] transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+                                Export Report
+                             </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#192633] border border-gray-200 dark:border-[#324d67] rounded-lg text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-[#233648] transition-colors">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+                                Filter
+                             </button>
+</div>
+</div>
+<!-- Main Grid: Detailed Subject Breakdown -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<!-- Card 1: Safe -->
+<div class="group bg-white dark:bg-[#192633] rounded-xl border border-gray-200 dark:border-[#324d67] p-5 shadow-sm hover:shadow-md transition-all hover:border-primary/50 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-primary">lan</span>
+</div>
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-bold text-gray-900 dark:text-white text-lg truncate pr-2">Computer Networks</h4>
+<p class="text-xs text-gray-500 dark:text-[#92adc9] font-mono mt-1">CS-302</p>
+</div>
+<span class="bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold px-2 py-1 rounded">Safe</span>
+</div>
+<div class="flex items-end gap-1 mb-2">
+<span class="text-3xl font-bold text-gray-900 dark:text-white">92%</span>
+<span class="text-sm text-gray-500 dark:text-[#92adc9] mb-1">attendance</span>
+</div>
+<div class="w-full bg-gray-200 dark:bg-[#111a22] rounded-full h-2 mb-4 overflow-hidden">
+<div class="bg-primary h-2 rounded-full transition-all duration-1000 ease-out" style="width: 92%"></div>
+</div>
+<div class="flex justify-between text-xs text-gray-500 dark:text-[#92adc9] border-t border-gray-100 dark:border-[#233648] pt-3">
+<span>24/26 Attended</span>
+<span>Last: Present</span>
+</div>
+</div>
+<!-- Card 2: Warning -->
+<div class="group bg-white dark:bg-[#192633] rounded-xl border border-gray-200 dark:border-[#324d67] p-5 shadow-sm hover:shadow-md transition-all hover:border-yellow-500/50 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-yellow-500">functions</span>
+</div>
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-bold text-gray-900 dark:text-white text-lg truncate pr-2">Engineering Math</h4>
+<p class="text-xs text-gray-500 dark:text-[#92adc9] font-mono mt-1">MA-301</p>
+</div>
+<span class="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 text-xs font-bold px-2 py-1 rounded">Warning</span>
+</div>
+<div class="flex items-end gap-1 mb-2">
+<span class="text-3xl font-bold text-gray-900 dark:text-white">68%</span>
+<span class="text-sm text-gray-500 dark:text-[#92adc9] mb-1">attendance</span>
+</div>
+<div class="w-full bg-gray-200 dark:bg-[#111a22] rounded-full h-2 mb-4 overflow-hidden">
+<div class="bg-yellow-500 h-2 rounded-full transition-all duration-1000 ease-out" style="width: 68%"></div>
+</div>
+<div class="flex justify-between text-xs text-gray-500 dark:text-[#92adc9] border-t border-gray-100 dark:border-[#233648] pt-3">
+<span>17/25 Attended</span>
+<span class="text-red-400">Needs +3 classes</span>
+</div>
+</div>
+<!-- Card 3: Excellent -->
+<div class="group bg-white dark:bg-[#192633] rounded-xl border border-gray-200 dark:border-[#324d67] p-5 shadow-sm hover:shadow-md transition-all hover:border-green-500/50 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-green-500">terminal</span>
+</div>
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-bold text-gray-900 dark:text-white text-lg truncate pr-2">Software Lab</h4>
+<p class="text-xs text-gray-500 dark:text-[#92adc9] font-mono mt-1">CS-304L</p>
+</div>
+<span class="bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold px-2 py-1 rounded">Excellent</span>
+</div>
+<div class="flex items-end gap-1 mb-2">
+<span class="text-3xl font-bold text-gray-900 dark:text-white">100%</span>
+<span class="text-sm text-gray-500 dark:text-[#92adc9] mb-1">attendance</span>
+</div>
+<div class="w-full bg-gray-200 dark:bg-[#111a22] rounded-full h-2 mb-4 overflow-hidden">
+<div class="bg-green-500 h-2 rounded-full transition-all duration-1000 ease-out" style="width: 100%"></div>
+</div>
+<div class="flex justify-between text-xs text-gray-500 dark:text-[#92adc9] border-t border-gray-100 dark:border-[#233648] pt-3">
+<span>15/15 Attended</span>
+<span>Perfect Record</span>
+</div>
+</div>
+<!-- Card 4: Safe -->
+<div class="group bg-white dark:bg-[#192633] rounded-xl border border-gray-200 dark:border-[#324d67] p-5 shadow-sm hover:shadow-md transition-all hover:border-primary/50 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-primary">psychology</span>
+</div>
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-bold text-gray-900 dark:text-white text-lg truncate pr-2">Artificial Intelligence</h4>
+<p class="text-xs text-gray-500 dark:text-[#92adc9] font-mono mt-1">CS-305</p>
+</div>
+<span class="bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold px-2 py-1 rounded">Safe</span>
+</div>
+<div class="flex items-end gap-1 mb-2">
+<span class="text-3xl font-bold text-gray-900 dark:text-white">82%</span>
+<span class="text-sm text-gray-500 dark:text-[#92adc9] mb-1">attendance</span>
+</div>
+<div class="w-full bg-gray-200 dark:bg-[#111a22] rounded-full h-2 mb-4 overflow-hidden">
+<div class="bg-primary h-2 rounded-full transition-all duration-1000 ease-out" style="width: 82%"></div>
+</div>
+<div class="flex justify-between text-xs text-gray-500 dark:text-[#92adc9] border-t border-gray-100 dark:border-[#233648] pt-3">
+<span>21/25 Attended</span>
+<span>Last: Present</span>
+</div>
+</div>
+<!-- Card 5: Safe -->
+<div class="group bg-white dark:bg-[#192633] rounded-xl border border-gray-200 dark:border-[#324d67] p-5 shadow-sm hover:shadow-md transition-all hover:border-primary/50 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-primary">dataset</span>
+</div>
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-bold text-gray-900 dark:text-white text-lg truncate pr-2">Database Systems</h4>
+<p class="text-xs text-gray-500 dark:text-[#92adc9] font-mono mt-1">CS-303</p>
+</div>
+<span class="bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold px-2 py-1 rounded">Safe</span>
+</div>
+<div class="flex items-end gap-1 mb-2">
+<span class="text-3xl font-bold text-gray-900 dark:text-white">78%</span>
+<span class="text-sm text-gray-500 dark:text-[#92adc9] mb-1">attendance</span>
+</div>
+<div class="w-full bg-gray-200 dark:bg-[#111a22] rounded-full h-2 mb-4 overflow-hidden">
+<div class="bg-primary h-2 rounded-full transition-all duration-1000 ease-out" style="width: 78%"></div>
+</div>
+<div class="flex justify-between text-xs text-gray-500 dark:text-[#92adc9] border-t border-gray-100 dark:border-[#233648] pt-3">
+<span>18/23 Attended</span>
+<span>Last: Absent</span>
+</div>
+</div>
+<!-- Card 6: Danger (Low) -->
+<div class="group bg-white dark:bg-[#192633] rounded-xl border border-gray-200 dark:border-[#324d67] p-5 shadow-sm hover:shadow-md transition-all hover:border-red-500/50 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-red-500">public</span>
+</div>
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-bold text-gray-900 dark:text-white text-lg truncate pr-2">Humanities</h4>
+<p class="text-xs text-gray-500 dark:text-[#92adc9] font-mono mt-1">HU-101</p>
+</div>
+<span class="bg-red-500/10 text-red-600 dark:text-red-400 text-xs font-bold px-2 py-1 rounded">Critical</span>
+</div>
+<div class="flex items-end gap-1 mb-2">
+<span class="text-3xl font-bold text-gray-900 dark:text-white">45%</span>
+<span class="text-sm text-gray-500 dark:text-[#92adc9] mb-1">attendance</span>
+</div>
+<div class="w-full bg-gray-200 dark:bg-[#111a22] rounded-full h-2 mb-4 overflow-hidden">
+<div class="bg-red-500 h-2 rounded-full transition-all duration-1000 ease-out" style="width: 45%"></div>
+</div>
+<div class="flex justify-between text-xs text-gray-500 dark:text-[#92adc9] border-t border-gray-100 dark:border-[#233648] pt-3">
+<span>9/20 Attended</span>
+<span class="text-red-500 font-bold">See Professor</span>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Heatmap & Recent Activity -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Heatmap -->
+<div class="lg:col-span-2 bg-white dark:bg-[#192633] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">Attendance Activity</h3>
+<div class="flex items-center gap-2 text-xs text-gray-500 dark:text-[#92adc9]">
+<span>Less</span>
+<div class="w-3 h-3 rounded-sm bg-[#233648]"></div>
+<div class="w-3 h-3 rounded-sm bg-primary/40"></div>
+<div class="w-3 h-3 rounded-sm bg-primary/70"></div>
+<div class="w-3 h-3 rounded-sm bg-primary"></div>
+<span>More</span>
+</div>
+</div>
+<!-- Fake Heatmap Grid -->
+<div class="flex flex-col gap-1 w-full overflow-x-auto pb-2">
+<div class="flex gap-1 min-w-max">
+<span class="text-xs w-8 text-gray-500 dark:text-[#92adc9]">Mon</span>
+<!-- Generating some blocks -->
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/40"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-[#233648]"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/70"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-[#233648]"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/40"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+</div>
+<div class="flex gap-1 min-w-max">
+<span class="text-xs w-8 text-gray-500 dark:text-[#92adc9]">Tue</span>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/70"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-[#233648]"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/40"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/70"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+</div>
+<div class="flex gap-1 min-w-max">
+<span class="text-xs w-8 text-gray-500 dark:text-[#92adc9]">Wed</span>
+<div class="w-3 h-3 rounded-[2px] bg-primary/40"></div>
+<div class="w-3 h-3 rounded-[2px] bg-[#233648]"></div>
+<div class="w-3 h-3 rounded-[2px] bg-[#233648]"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/70"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-[#233648]"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/70"></div>
+</div>
+<div class="flex gap-1 min-w-max">
+<span class="text-xs w-8 text-gray-500 dark:text-[#92adc9]">Thu</span>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/70"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/40"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+</div>
+<div class="flex gap-1 min-w-max">
+<span class="text-xs w-8 text-gray-500 dark:text-[#92adc9]">Fri</span>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/70"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-[#233648]"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary/40"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+<div class="w-3 h-3 rounded-[2px] bg-primary"></div>
+</div>
+</div>
+</div>
+<!-- Recent Activity / Timeline -->
+<div class="bg-white dark:bg-[#192633] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm flex flex-col">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Timeline</h3>
+<div class="flex flex-col gap-4 relative">
+<!-- Line connector -->
+<div class="absolute left-[11px] top-2 bottom-2 w-[1px] bg-gray-200 dark:bg-[#324d67]"></div>
+<!-- Item 1 -->
+<div class="flex gap-3 relative z-10">
+<div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center border-2 border-white dark:border-[#192633] flex-shrink-0">
+<span class="material-symbols-outlined text-white text-[12px] font-bold">check</span>
+</div>
+<div>
+<p class="text-sm font-medium text-gray-900 dark:text-white">Attended Comp. Networks</p>
+<p class="text-xs text-gray-500 dark:text-[#92adc9]">Today, 10:00 AM</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex gap-3 relative z-10">
+<div class="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center border-2 border-white dark:border-[#192633] flex-shrink-0">
+<span class="material-symbols-outlined text-white text-[12px] font-bold">close</span>
+</div>
+<div>
+<p class="text-sm font-medium text-gray-900 dark:text-white">Missed Engineering Math</p>
+<p class="text-xs text-gray-500 dark:text-[#92adc9]">Yesterday, 02:00 PM</p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex gap-3 relative z-10">
+<div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center border-2 border-white dark:border-[#192633] flex-shrink-0">
+<span class="material-symbols-outlined text-white text-[12px] font-bold">event</span>
+</div>
+<div>
+<p class="text-sm font-medium text-gray-900 dark:text-white">Duty Leave (Sports)</p>
+<p class="text-xs text-gray-500 dark:text-[#92adc9]">Oct 24, All Day</p>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="flex gap-3 relative z-10">
+<div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center border-2 border-white dark:border-[#192633] flex-shrink-0">
+<span class="material-symbols-outlined text-white text-[12px] font-bold">check</span>
+</div>
+<div>
+<p class="text-sm font-medium text-gray-900 dark:text-white">Attended Software Lab</p>
+<p class="text-xs text-gray-500 dark:text-[#92adc9]">Oct 23, 09:00 AM</p>
+</div>
+</div>
+</div>
+<button class="mt-auto w-full py-2 text-primary text-sm font-medium hover:bg-primary/5 rounded-lg transition-colors">
+                                View Full History
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MBM University - Club Information</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-dark": "#1e293b", // Lighter dark for cards
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111a22; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #233648; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #137fec; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white overflow-hidden">
+<div class="flex h-screen w-full">
+<!-- Side Navigation -->
+<aside class="flex w-72 flex-col border-r border-[#233648] bg-[#111a22] hidden md:flex shrink-0">
+<div class="flex h-full flex-col justify-between p-4">
+<div class="flex flex-col gap-4">
+<div class="flex gap-3 items-center mb-6">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12 shadow-lg border-2 border-primary/20" data-alt="University Logo Abstract" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBCZSwCj6tv0IN5StX2pLHdgCtRdp8nl63B7m-oXQz7DG0db7yFYAVLqDLPi2_arIr3fCdbb0zJauAieIdH24QclJIYYFRlmnLrG2vIHOe9km7CyH8AwLEClcMMqUj3v2CZ258Vh4vafHCk3nhyCmQzWWyqjcPwAesw7DKtuQOKdZcAJfdrE6T1J-lIOsSqaamqWgSnGXD8SVFfOUibCVJWoBTWm2PvY7rQy5JEDOeAaowQWE6C_siHKDef6WOrdQURNevyJsF6DKcL");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-lg font-bold leading-normal">MBM University</h1>
+<p class="text-[#92adc9] text-xs font-normal leading-normal">Student Portal</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-[#233648] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[#92adc9] group-hover:text-white">dashboard</span>
+<p class="text-[#92adc9] group-hover:text-white text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-[#233648] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[#92adc9] group-hover:text-white">calendar_month</span>
+<p class="text-[#92adc9] group-hover:text-white text-sm font-medium leading-normal">Attendance</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-[#233648] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[#92adc9] group-hover:text-white">event</span>
+<p class="text-[#92adc9] group-hover:text-white text-sm font-medium leading-normal">Events</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg bg-primary/20 border-l-4 border-primary" href="#">
+<span class="material-symbols-outlined text-primary fill-1">groups</span>
+<p class="text-white text-sm font-bold leading-normal">Clubs</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-[#233648] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[#92adc9] group-hover:text-white">school</span>
+<p class="text-[#92adc9] group-hover:text-white text-sm font-medium leading-normal">Academics</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-[#233648] transition-colors group" href="#">
+<span class="material-symbols-outlined text-[#92adc9] group-hover:text-white">account_circle</span>
+<p class="text-[#92adc9] group-hover:text-white text-sm font-medium leading-normal">Profile</p>
+</a>
+</nav>
+</div>
+<div class="flex items-center gap-3 px-3 py-4 border-t border-[#233648] mt-auto">
+<div class="size-10 rounded-full bg-slate-700 bg-cover bg-center" data-alt="User profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuChdz8C9_d1RsC3o3loigcHM7yYDutx5AZkvuLBRgB1gg7WH1nrEdsi-ZBNJSpa7RwyjCCFA48x4OxCrRe3TjcPsjbb4J3QAvcKhGDriSVS6NxNoB4J4lyk7n5ijNt6wJXsiwK6idLXCt0n8GIQoAnFK88RGXvrIAq7wCCYbI3Z2UE6QbrDc6n-tTVonW18vRbxZeuc4ps1tEvV0cE46zJSIlV5nkti8-Kr8xFa1-NIXt-bqNaS0jYElQoAWd1Lj4RZCoEZegPW-GN-");'></div>
+<div class="flex flex-col">
+<p class="text-white text-sm font-medium">Alex Johnson</p>
+<p class="text-[#92adc9] text-xs">Computer Science • Year 3</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col h-full overflow-y-auto bg-background-light dark:bg-background-dark relative">
+<!-- Hero Section -->
+<div class="w-full bg-[#111a22] border-b border-[#233648]">
+<div class="max-w-7xl mx-auto px-6 py-10 lg:py-16">
+<div class="flex flex-col-reverse lg:flex-row gap-8 items-center">
+<div class="flex flex-col gap-6 flex-1 text-center lg:text-left">
+<div class="space-y-2">
+<h1 class="text-white text-4xl lg:text-6xl font-black leading-tight tracking-tight">
+                                    Find Your Tribe
+                                </h1>
+<p class="text-[#92adc9] text-lg max-w-xl mx-auto lg:mx-0">
+                                    Explore 50+ Communities at MBM University. Join a club, meet new people, and learn new skills outside the classroom.
+                                </p>
+</div>
+<div class="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto lg:mx-0 w-full mt-4">
+<div class="relative flex-1 group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-[#92adc9]">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-3 border border-[#233648] rounded-lg leading-5 bg-[#1e293b] text-white placeholder-[#92adc9] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-all" placeholder="Search clubs, societies..." type="text"/>
+</div>
+<button class="bg-primary hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-[0_0_15px_rgba(19,127,236,0.3)]">
+                                    Search
+                                </button>
+</div>
+</div>
+<div class="w-full max-w-[400px] lg:w-1/3 flex justify-center">
+<!-- Character Mascot Placeholder -->
+<div class="relative w-full aspect-square max-w-sm">
+<div class="absolute inset-0 bg-primary/20 blur-[60px] rounded-full"></div>
+<div class="relative w-full h-full bg-contain bg-center bg-no-repeat transform hover:scale-105 transition-transform duration-500" data-alt="3D illustration of a friendly university mascot student pointing at content" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDW6KeaNyz_41GZ7PzHgOMEfYkfqvOkJU4jA-aiAYcD8FSBte5mwL-hTvkENebw5lZmBu1GcL8QkO1syYnKd_nzF43vU-MvkfbutRP4jjMi8iMgiB_siAJNzTrFui2U6TG4yJzylBYRfVJTKSpNEdFiszAuxVGqGiEa1_LZYDoOd5kasPdtjcZOTsu1TeIJPLfWbXpNptmXjsT-4L4o8I9nzn0mavRxO39SCO72J1G-58lASBVNvFlCff_AJzQ4jsX3oUZV4R71292q'); border-radius: 20px;">
+<!-- Note: Using a generic student group image as placeholder for mascot/character as per prompt constraints -->
+<div class="absolute bottom-4 right-4 bg-surface-dark/90 backdrop-blur-md px-4 py-2 rounded-lg border border-primary/30 shadow-lg">
+<p class="text-white text-xs font-bold">✨ Meet New People!</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto px-6 py-8 w-full flex-1">
+<!-- Filters & Categories -->
+<div class="flex flex-col gap-6 mb-10">
+<div class="flex justify-between items-end">
+<h2 class="text-white text-2xl font-bold leading-tight tracking-tight">Browse by Category</h2>
+<a class="text-primary text-sm font-medium hover:underline" href="#">View All Categories</a>
+</div>
+<div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-primary text-white px-5 shadow-[0_0_10px_rgba(19,127,236,0.4)] transition-all hover:-translate-y-0.5">
+<span class="text-sm font-bold">All Clubs</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#233648] text-white px-5 hover:bg-[#2d465e] transition-all hover:-translate-y-0.5 border border-transparent hover:border-[#3b556f]">
+<span class="material-symbols-outlined text-sm">terminal</span>
+<span class="text-sm font-medium">Tech &amp; Coding</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#233648] text-white px-5 hover:bg-[#2d465e] transition-all hover:-translate-y-0.5 border border-transparent hover:border-[#3b556f]">
+<span class="material-symbols-outlined text-sm">palette</span>
+<span class="text-sm font-medium">Arts &amp; Culture</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#233648] text-white px-5 hover:bg-[#2d465e] transition-all hover:-translate-y-0.5 border border-transparent hover:border-[#3b556f]">
+<span class="material-symbols-outlined text-sm">sports_soccer</span>
+<span class="text-sm font-medium">Sports</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#233648] text-white px-5 hover:bg-[#2d465e] transition-all hover:-translate-y-0.5 border border-transparent hover:border-[#3b556f]">
+<span class="material-symbols-outlined text-sm">school</span>
+<span class="text-sm font-medium">Academic</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#233648] text-white px-5 hover:bg-[#2d465e] transition-all hover:-translate-y-0.5 border border-transparent hover:border-[#3b556f]">
+<span class="material-symbols-outlined text-sm">handshake</span>
+<span class="text-sm font-medium">Social Service</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#233648] text-white px-5 hover:bg-[#2d465e] transition-all hover:-translate-y-0.5 border border-transparent hover:border-[#3b556f]">
+<span class="material-symbols-outlined text-sm">music_note</span>
+<span class="text-sm font-medium">Music &amp; Dance</span>
+</button>
+</div>
+</div>
+<!-- Upcoming Events Row -->
+<div class="mb-12">
+<h2 class="text-white text-2xl font-bold leading-tight tracking-tight mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">campaign</span>
+                        Upcoming Club Events
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Event Card 1 -->
+<div class="group relative flex flex-col bg-surface-dark rounded-xl overflow-hidden border border-[#233648] hover:border-primary/50 transition-all duration-300">
+<div class="h-32 bg-cover bg-center" data-alt="Hackathon coding event background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuArVCvIfjLDu1wTY64r_B4Lf0zc5I_zU13JiI7isrSnQtrCJAJ1-Fo0WobUFpnQvTLYzx2sj7EvBfalundbtYs2rf6RCTYIpQSJoZ9pUyt6F9TWf_cL88EvEESfIFbQIHcb8LFXRgNmSkl3Ggwg4vMBULMnLlsvxrPraH8_sQSI4PT70eCGaZYkJpYQBHsTNHDHwTfyjEuE4UV1VIfXPUl_x8vbtE1GwPyQd_jcqLPcZiDUUJ8nFMFnZfOF6uvSF4gJneoaG5lzZXMe');">
+<div class="absolute top-3 right-3 bg-[#111a22]/80 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full border border-white/10">
+                                    Tomorrow
+                                </div>
+</div>
+<div class="p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-sm">code</span>
+                                    Tech Club
+                                </div>
+<h3 class="text-white font-bold text-lg group-hover:text-primary transition-colors">Annual Hackathon 2024</h3>
+<p class="text-[#92adc9] text-sm line-clamp-2">Join us for 24 hours of coding, coffee, and innovation. Prizes worth $5000!</p>
+<div class="mt-2 pt-3 border-t border-[#233648] flex justify-between items-center">
+<span class="text-xs text-[#92adc9] flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> 10:00 AM</span>
+<button class="text-white text-xs font-medium hover:text-primary transition-colors">Register Now →</button>
+</div>
+</div>
+</div>
+<!-- Event Card 2 -->
+<div class="group relative flex flex-col bg-surface-dark rounded-xl overflow-hidden border border-[#233648] hover:border-primary/50 transition-all duration-300">
+<div class="h-32 bg-cover bg-center" data-alt="Robotics workshop event background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDFQPJvOXmgTI1QS00jR5s9SC_vI6UUefv6QqtzTmGvp8LE5NlFrjgtj4_L9RG-PgqAo_haXVXqd1Pl1u3P0DBMjYoILRNPuHyEb8s1Vg91GQFHMTXpTJ5imV1PBX1qgbf8Q0rRltSkvr0R84wofclRoukHwxBSCmQaRM8_Tf_z8TLX2jz8L2_-Swp6Xed4ZBTaL3nI1EUxyhrX5bUueY9QWzvaHsvtC2B20pB4Dwk9pSaXWei2-PZrKGdWhe81tut84iX0kzl_kbv3');">
+<div class="absolute top-3 right-3 bg-[#111a22]/80 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full border border-white/10">
+                                    Oct 24
+                                </div>
+</div>
+<div class="p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-purple-400 text-xs font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-sm">precision_manufacturing</span>
+                                    Robotics Society
+                                </div>
+<h3 class="text-white font-bold text-lg group-hover:text-purple-400 transition-colors">Bot Wars: Beginner's Workshop</h3>
+<p class="text-[#92adc9] text-sm line-clamp-2">Learn how to build your first combat robot. No prior experience needed.</p>
+<div class="mt-2 pt-3 border-t border-[#233648] flex justify-between items-center">
+<span class="text-xs text-[#92adc9] flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> 2:00 PM</span>
+<button class="text-white text-xs font-medium hover:text-purple-400 transition-colors">Register Now →</button>
+</div>
+</div>
+</div>
+<!-- Event Card 3 -->
+<div class="group relative flex flex-col bg-surface-dark rounded-xl overflow-hidden border border-[#233648] hover:border-primary/50 transition-all duration-300">
+<div class="h-32 bg-cover bg-center" data-alt="Music concert event background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCjzRntX1shUNJpvWbPU8BHhX0xJy7DUvTy0alZkjqz8MK_W1TICmXcBFIJpL4bC06nJuXXhuSdve3T1YSkBu6qi_Zd9trUHO_ZcieyGxLKPB0jMo36xURN2XzsbZGloY7DBDtOKDSd66QAKN_3tv93HB-0-3rIBO3g9ktGESvnYnxD49w8yF8L5kKd5QukpQGpvcZ_iCAvS558dtuRllCoS9MRgXmLtBV1kBRctZv18UGRXOllG5pdosMFC9iHndZviDzXJ9E5_LjU');">
+<div class="absolute top-3 right-3 bg-[#111a22]/80 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full border border-white/10">
+                                    Oct 28
+                                </div>
+</div>
+<div class="p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-pink-400 text-xs font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-sm">music_note</span>
+                                    Music Club
+                                </div>
+<h3 class="text-white font-bold text-lg group-hover:text-pink-400 transition-colors">Open Mic Night</h3>
+<p class="text-[#92adc9] text-sm line-clamp-2">Showcase your talent or enjoy performances by your peers. All genres welcome.</p>
+<div class="mt-2 pt-3 border-t border-[#233648] flex justify-between items-center">
+<span class="text-xs text-[#92adc9] flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> 6:00 PM</span>
+<button class="text-white text-xs font-medium hover:text-pink-400 transition-colors">View Details →</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Club Grid -->
+<div class="mb-6">
+<h2 class="text-white text-2xl font-bold leading-tight tracking-tight mb-6">Active Clubs</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<!-- Club Card 1 -->
+<div class="group relative bg-surface-dark rounded-lg overflow-hidden border border-[#233648] hover:border-primary/50 hover:shadow-[0_0_20px_rgba(19,127,236,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+<div class="h-24 w-full bg-cover bg-center relative" data-alt="Abstract tech background pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDjgj8In6KFWizsomPGti0EjHQO8XNvRTcTDwbx941T93HLas_tWs7faEuuAm_Zv_Nczff0NrFbFzXyK5paNF5mVsIEYOfGfO5LH5TFE3-1bt01-IYNdtewo9MFIfGgRo6iekX-lAMApRaPhVyElKc0LPeEWsjSkg2GcUClURvre4qwJ0_v10wcHRla6DJTbalWQlczcGKuLyuFUX9L_6SIT2X7DcVa0K-Qp3zVP8riFfAPLH53m6m0z5xYgaz4nPt0qqo92F8DmDRK');">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dark to-transparent"></div>
+</div>
+<div class="px-5 pb-5 flex-1 flex flex-col relative">
+<div class="absolute -top-10 left-5 size-16 rounded-xl bg-slate-800 border-4 border-surface-dark shadow-lg bg-cover bg-center" data-alt="Robotics Club Logo" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAgcjHW5y1invRISl2p4AN1fHXVeZP5QzfnlKmfFt_RtL9f6Ov9bFt03Y0PoclHZxElwmochJ12EJVXDS6SUbA-hKEaW8ILCmJ8O1bCTH0YHjdP8KUZeQNX7OveWjXg6YLFn-ArhDgff3gnsRnJ3uPplWhs4IgxuXgyBXYoEYvQTBq-OgSDfeGziT6OYk-ry2FteZRJulOjZxRB5vImU-FKyFx92tdye-AUNLffhWJNHNsS3jnC9iiA1Xw6BYzFshMLHLRbsRH6p_7d');"></div>
+<div class="mt-8 mb-3">
+<h3 class="text-white text-lg font-bold group-hover:text-primary transition-colors">Robotics Society</h3>
+<p class="text-primary text-xs font-medium uppercase tracking-wide">Tech • Innovation</p>
+</div>
+<p class="text-[#92adc9] text-sm mb-4 line-clamp-2 flex-1">
+                                    Building the future, one bot at a time. We participate in national competitions and host workshops.
+                                </p>
+<div class="flex items-center gap-4 text-xs text-[#6e859b] mb-4">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">group</span> 150 Members</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">history</span> Since 2012</span>
+</div>
+<div class="flex gap-2 mt-auto">
+<button class="flex-1 bg-primary hover:bg-blue-600 text-white text-sm font-bold py-2 rounded-md transition-colors">Join Club</button>
+<button class="size-9 flex items-center justify-center rounded-md bg-[#233648] hover:bg-[#2d465e] text-white transition-colors" title="Visit Page">
+<span class="material-symbols-outlined text-lg">arrow_outward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Club Card 2 -->
+<div class="group relative bg-surface-dark rounded-lg overflow-hidden border border-[#233648] hover:border-primary/50 hover:shadow-[0_0_20px_rgba(19,127,236,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+<div class="h-24 w-full bg-cover bg-center relative" data-alt="Abstract code background pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB6mEqQGHFTDy8nrRqgdtileW5b-gToAwjYDqDmxF5ylPB2NPUBa_mEJrAO6c3_RBNooPn_nTJpHza4EHhvpAfbf2B6Z-JQFoKbGBSNTuvYSoIVm0BzXp6FynRZmjrWGcEeqg-ghQybRF8J5yy6vQMbXKtd5ujjAYSk_HcrPsev9PP8AWYvhGHe4wnPYPlWAHbLQr-jZfjDd9_wJr6HU_NH8d1DpKaEvlXseTjafxUbLbM2sr_m6xRQvB0m8D0G3vts5LqlLxFjQR_r');">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dark to-transparent"></div>
+</div>
+<div class="px-5 pb-5 flex-1 flex flex-col relative">
+<div class="absolute -top-10 left-5 size-16 rounded-xl bg-slate-800 border-4 border-surface-dark shadow-lg bg-cover bg-center" data-alt="Coding Club Logo" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA12q4aHiyFCq02-inrthhzblUBExa-mk_Z_xPkV5gm3ep-zmZh0L9JSSK2qQpGFDyZwhlEXfe3mEGku6HXPkMLnrMvlgM9uGp1FfLRqE7oZopW6SpdJF32KJ6S3j6gkJOqSrvQFxwXF0ZJazbfiQOjTPT4DG3qNddatf2ongf04hWRB_YjGZvsg6eASduoVlFEYLnfQab3nnHlokqVC3-nhn_4TZnYeAv35G8JXak8l_B4XST9i4BuA93ox9kcqrr16TTo1QoV8f9N');"></div>
+<div class="mt-8 mb-3">
+<h3 class="text-white text-lg font-bold group-hover:text-primary transition-colors">Code Crafters</h3>
+<p class="text-green-400 text-xs font-medium uppercase tracking-wide">Development • Open Source</p>
+</div>
+<p class="text-[#92adc9] text-sm mb-4 line-clamp-2 flex-1">
+                                    A community for developers to collaborate on projects, contribute to open source, and master algorithms.
+                                </p>
+<div class="flex items-center gap-4 text-xs text-[#6e859b] mb-4">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">group</span> 320 Members</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">history</span> Since 2015</span>
+</div>
+<div class="flex gap-2 mt-auto">
+<button class="flex-1 bg-primary hover:bg-blue-600 text-white text-sm font-bold py-2 rounded-md transition-colors">Join Club</button>
+<button class="size-9 flex items-center justify-center rounded-md bg-[#233648] hover:bg-[#2d465e] text-white transition-colors" title="Visit Page">
+<span class="material-symbols-outlined text-lg">arrow_outward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Club Card 3 -->
+<div class="group relative bg-surface-dark rounded-lg overflow-hidden border border-[#233648] hover:border-primary/50 hover:shadow-[0_0_20px_rgba(19,127,236,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+<div class="h-24 w-full bg-cover bg-center relative" data-alt="Abstract arts background pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBQWO1FOViU3jRIhKmn1PXqFJSrJk8nlQHlNfCfNmKlJmP73lqU-kL1Kv8Eg8fHHzUHfigFvOWjba8GjN0v2uKD9rvrOP9WNAgFEmX8m2jiioKaiTGM0uKDkGOP3jxu2gRmoEJr-jf1f1-3jFtoJLJGMI2Yr6kxa1yvXPOADupCfkTiOq4rUry95RZn2xEVTYB4qZ8l2EAdNJrOmB6LFD-0D2ik7_jmGuELWO5CU8GfqBVQF2K6mg5J1Jf_GqRAFdxGnVcYOhubKw_U');">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dark to-transparent"></div>
+</div>
+<div class="px-5 pb-5 flex-1 flex flex-col relative">
+<div class="absolute -top-10 left-5 size-16 rounded-xl bg-slate-800 border-4 border-surface-dark shadow-lg bg-cover bg-center" data-alt="Art Club Logo" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBfbxeb7Bz0o95KWK9NJoG-NL-AUc5tnwW-0bRCO_m0K1dbA-DFFWL9m_YzPKqkL0SZdnsACLHhH0isbwjsrUE4xJRc4k4LlLhUEwdL8vx07XDd7POEkZHCfIjFpnva8P1sLXY39_HvqB1GZDdQ76LrrDyyauN6xoYaaLKwQ6pzEzT89qvMiAAOKiLJwcW1wvHQ7yWI2Dkuw_ZtltVnF7A6HtyaX23dKUhjYccm8rIkMUmY6-ttYMGlUCX6rHdrbSi9rIDbDCcyJgnr');"></div>
+<div class="mt-8 mb-3">
+<h3 class="text-white text-lg font-bold group-hover:text-primary transition-colors">Canvas &amp; Clay</h3>
+<p class="text-pink-400 text-xs font-medium uppercase tracking-wide">Arts • Creative</p>
+</div>
+<p class="text-[#92adc9] text-sm mb-4 line-clamp-2 flex-1">
+                                    Express yourself through painting, sketching, digital art, and sculpting. Weekly jam sessions included.
+                                </p>
+<div class="flex items-center gap-4 text-xs text-[#6e859b] mb-4">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">group</span> 85 Members</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">history</span> Since 2018</span>
+</div>
+<div class="flex gap-2 mt-auto">
+<button class="flex-1 bg-primary hover:bg-blue-600 text-white text-sm font-bold py-2 rounded-md transition-colors">Join Club</button>
+<button class="size-9 flex items-center justify-center rounded-md bg-[#233648] hover:bg-[#2d465e] text-white transition-colors" title="Visit Page">
+<span class="material-symbols-outlined text-lg">arrow_outward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Club Card 4 -->
+<div class="group relative bg-surface-dark rounded-lg overflow-hidden border border-[#233648] hover:border-primary/50 hover:shadow-[0_0_20px_rgba(19,127,236,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+<div class="h-24 w-full bg-cover bg-center relative" data-alt="Abstract debate background pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAsLjulrpFMeWy2MAZ1XWgOS_ZbUTLSvL4qYQV_fpUAX74FkMSJ2FuA3SL-i8y_wYYNpXdnUmlGThUh2ZFCaXL-i7Cj_lIb405fk-0-AiOcKqCtY2V-OP_juslhdzNOvOEW_toAhQ6cLGA8FA5yGq5_ysjmV4ubcsIq97EgRAdn_SZoxe30EH3w4FtEG5fFIzZu38_HSk0qKXk9wSpQjsLLgtwx2EMKulRHa5tVpQn1YivV88dJ5I5tC_kX8CbQImu7qGfmR-OOTRK6');">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dark to-transparent"></div>
+</div>
+<div class="px-5 pb-5 flex-1 flex flex-col relative">
+<div class="absolute -top-10 left-5 size-16 rounded-xl bg-slate-800 border-4 border-surface-dark shadow-lg bg-cover bg-center" data-alt="Debate Club Logo" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDF7_cdA12d2q8Oa-iWpYoHZSwhNbKOJEmJB58ck3Y61S9NZ1wO6VRhPhA6zMsUmhGdnWEOUGxkcQe7vAWWzrbyVR6sbi5J82wMV_rxfJBE5kFZhPNBttuELu8JstnSHnNUaP3cy1yL156w0dv4mgGsrK9wbZ3W41uDfq68ZDJPd5gGXpb0m9wzdbood1nH-qSXcO_CfGuS2FKPerd78EDacXVl_s-UNnDmnDFkeC5DxKhlXmSPKQx8WghqsRZ02wYv6iSMZJzD2fdr');"></div>
+<div class="mt-8 mb-3">
+<h3 class="text-white text-lg font-bold group-hover:text-primary transition-colors">Debate Society</h3>
+<p class="text-yellow-500 text-xs font-medium uppercase tracking-wide">Public Speaking • Policy</p>
+</div>
+<p class="text-[#92adc9] text-sm mb-4 line-clamp-2 flex-1">
+                                    Sharpen your rhetoric and critical thinking. We discuss global politics, ethics, and philosophy.
+                                </p>
+<div class="flex items-center gap-4 text-xs text-[#6e859b] mb-4">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">group</span> 110 Members</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">history</span> Since 2010</span>
+</div>
+<div class="flex gap-2 mt-auto">
+<button class="flex-1 bg-primary hover:bg-blue-600 text-white text-sm font-bold py-2 rounded-md transition-colors">Join Club</button>
+<button class="size-9 flex items-center justify-center rounded-md bg-[#233648] hover:bg-[#2d465e] text-white transition-colors" title="Visit Page">
+<span class="material-symbols-outlined text-lg">arrow_outward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Club Card 5 -->
+<div class="group relative bg-surface-dark rounded-lg overflow-hidden border border-[#233648] hover:border-primary/50 hover:shadow-[0_0_20px_rgba(19,127,236,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+<div class="h-24 w-full bg-cover bg-center relative" data-alt="Abstract sports background pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAu2pN3EmXYasO_uJEqWx8IlGDHQrFoGRh5yjuOusZikd43-dbAYD2GNtxOD8o2SEoOhQx4wZ1LEM_y_e7Imz5YX8Ry8fRg02mAq4gTD3Bbid29uhQ2Edo-NJSrc39gHnvXmrn3dGyNGj55ksHQ2SukJfD2gwx8V4zSZIikxu-74OTQP-Q0kHeOe4vpfXLzgd37Qbjk77w1ryo6tq4uwfhVD2aJhzI3Wbva0lhXuvlI9RHtFYqMSxHQlPq6D-nR8UdTysNyWTYaAQml');">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dark to-transparent"></div>
+</div>
+<div class="px-5 pb-5 flex-1 flex flex-col relative">
+<div class="absolute -top-10 left-5 size-16 rounded-xl bg-slate-800 border-4 border-surface-dark shadow-lg bg-cover bg-center" data-alt="Athletics Club Logo" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDESozM6eluW9gdeAhshTHFBgaZOuNc0erLLpwN0n2a6I2bKdrcTS6y9Wmvy_LcAJRWPmY2fXwe4wPiLYFTJKf8uDwq4IVtpClLcdoI3bfElaLOrTKOOCQhWfq8j9j9JHp2hVImbAUFcXDVTYPgg0JPhRmrlGSILZR06ruLmOI-zYjO7zwf5wlZ2JYgZ1I_-K6GYie4qb3bIXif8wlqgZZiRiqD_rSUirjRtPtQMLMRW4YeRvkIAm_L5UUgydTZcFRG57Bv0I-Q3aLs');"></div>
+<div class="mt-8 mb-3">
+<h3 class="text-white text-lg font-bold group-hover:text-primary transition-colors">Athletics Club</h3>
+<p class="text-red-500 text-xs font-medium uppercase tracking-wide">Sports • Fitness</p>
+</div>
+<p class="text-[#92adc9] text-sm mb-4 line-clamp-2 flex-1">
+                                    Track, field, and fitness enthusiasts. We organize the annual university marathon.
+                                </p>
+<div class="flex items-center gap-4 text-xs text-[#6e859b] mb-4">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">group</span> 200 Members</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">history</span> Since 2008</span>
+</div>
+<div class="flex gap-2 mt-auto">
+<button class="flex-1 bg-primary hover:bg-blue-600 text-white text-sm font-bold py-2 rounded-md transition-colors">Join Club</button>
+<button class="size-9 flex items-center justify-center rounded-md bg-[#233648] hover:bg-[#2d465e] text-white transition-colors" title="Visit Page">
+<span class="material-symbols-outlined text-lg">arrow_outward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Club Card 6 -->
+<div class="group relative bg-surface-dark rounded-lg overflow-hidden border border-[#233648] hover:border-primary/50 hover:shadow-[0_0_20px_rgba(19,127,236,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+<div class="h-24 w-full bg-cover bg-center relative" data-alt="Abstract photography background pattern" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA5gIv9aJApkuhR-Dmj4-lBQaMcf6Lwnk6Oq04-y84R8iAACvjXRKyjhkz0JxQgTSb00wU4VkoH-uBLPRBHE8e447aDV30MbaeptOIGkJ6Sv0Xg_7WznMAf3XyqCRZRWy56APc_SsW56VLj7iBWS2GOlooV_9FBFhQWR0QGyQwl-0OK1VGQuty4kR2ec7TMn4KgpshjtyBZWQuD6Ldnix9cyelBszwYKlmccA2i45-lb5a7NfxNbq84559pV3UEzFQ1kUhdS3esxOIS');">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dark to-transparent"></div>
+</div>
+<div class="px-5 pb-5 flex-1 flex flex-col relative">
+<div class="absolute -top-10 left-5 size-16 rounded-xl bg-slate-800 border-4 border-surface-dark shadow-lg bg-cover bg-center" data-alt="Photography Club Logo" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDqtOIhYToN6b87EfPt8j1akDljVX7bGcYtuJR8j2XlSr_6b13SlZbGUMBd9udpXpykZ6r08HSBIeFVRI1RGgv3HPj5o0mVtUs00Cpw8yo1rcH4jg6DHG1WHQmd1p8lwrfaofvL7N641BGRV0heaXQMYmAZxwciJ8dZsOGgi_qJyDjz-ihkpg0vmIozqAn5Xdl_45Y74oHkfpgJvyZo51LNHzE8iG18sQOrlNLXdtJ4Uds6y1toHl38b13HU8SzG2DB_fwMaiSVWsi7');"></div>
+<div class="mt-8 mb-3">
+<h3 class="text-white text-lg font-bold group-hover:text-primary transition-colors">Shutterbugs</h3>
+<p class="text-indigo-400 text-xs font-medium uppercase tracking-wide">Media • Photography</p>
+</div>
+<p class="text-[#92adc9] text-sm mb-4 line-clamp-2 flex-1">
+                                    Capturing moments that matter. We cover all major university events and host photo walks.
+                                </p>
+<div class="flex items-center gap-4 text-xs text-[#6e859b] mb-4">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">group</span> 60 Members</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">history</span> Since 2019</span>
+</div>
+<div class="flex gap-2 mt-auto">
+<button class="flex-1 bg-primary hover:bg-blue-600 text-white text-sm font-bold py-2 rounded-md transition-colors">Join Club</button>
+<button class="size-9 flex items-center justify-center rounded-md bg-[#233648] hover:bg-[#2d465e] text-white transition-colors" title="Visit Page">
+<span class="material-symbols-outlined text-lg">arrow_outward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex justify-center my-10">
+<button class="flex items-center gap-2 px-6 py-3 rounded-full bg-[#233648] text-white font-medium hover:bg-primary transition-colors group">
+                        Load More Clubs
+                        <span class="material-symbols-outlined group-hover:translate-y-1 transition-transform">expand_more</span>
+</button>
+</div>
+<!-- Footer -->
+<footer class="border-t border-[#233648] pt-8 pb-4 text-center text-[#92adc9]">
+<p class="text-sm">© 2024 MBM University. All rights reserved.</p>
+</footer>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,16 @@
+INFO:     Will watch for changes in these directories: ['/home/mukandjirawla/Downloads/sanidhyasharma-main']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [41801] using WatchFiles
+2026-02-07 21:36:21,298 - root - INFO - Logging configured. Level: INFO, File: logs/app.log
+INFO:     Started server process [41803]
+INFO:     Waiting for application startup.
+2026-02-07 21:36:21,455 - backend.main - INFO - startup_event
+2026-02-07 21:36:21,455 - backend.core.event_bus - INFO - Handler attendance_handler subscribed to EventType.ATTENDANCE_MARKED
+2026-02-07 21:36:21,455 - backend.core.event_bus - INFO - Handler complaint_handler subscribed to EventType.COMPLAINT_FILED
+2026-02-07 21:36:21,455 - backend.core.event_bus - INFO - Handler schedule_handler subscribed to EventType.SCHEDULE_UPDATED
+2026-02-07 21:36:21,455 - backend.core.event_handlers - INFO - ✓ All agents registered with event bus
+2026-02-07 21:36:21,456 - backend.main - INFO - agents_registered
+2026-02-07 21:36:21,456 - backend.main - INFO - scheduler_started
+2026-02-07 21:36:21,456 - backend.main - INFO - startup_complete
+2026-02-07 21:36:21,456 - background_tasks - INFO - scheduler_started
+INFO:     Application startup complete.
