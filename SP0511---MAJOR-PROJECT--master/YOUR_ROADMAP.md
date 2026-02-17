@@ -32,7 +32,7 @@ Let's help you get started in the right order.
 → Open browser: http://localhost:3000
 
 → Done! Portal is running ✅
-```
+```   
 
 ### ✅ STEP 3: Explore the Portal (10 min)
 ```
