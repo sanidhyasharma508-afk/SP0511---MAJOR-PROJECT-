@@ -38,7 +38,7 @@ Let's help you get started in the right order.
 ```
 → Click through all 5 sections:
    • Dashboard
-   • Clubs & Events
+   • Clubs & Events    
    • Attendance
    • Schedule
    • Academics
