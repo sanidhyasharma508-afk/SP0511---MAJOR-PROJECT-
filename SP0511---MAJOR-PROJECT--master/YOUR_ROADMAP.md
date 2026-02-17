@@ -60,7 +60,7 @@ Let's help you get started in the right order.
 ```
 
 ### ✅ STEP 5: Understand the Design (10 min)
-```
+```  
 → Read: MODERN_PORTAL_VISUAL_SHOWCASE.md  
   (Visual design and layout details)
 
