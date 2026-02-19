@@ -1,0 +1,29 @@
+body {
+    font-family: Arial;
+    background: #f0f0f0;
+}
+
+.chat-container {
+    width: 400px;
+    margin: 50px auto;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+#chat-box {
+    height: 300px;
+    border: 1px solid #ccc;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.user {
+    text-align: right;
+    color: blue;
+}
+
+.bot {
+    text-align: left;
+    color: green;
+}

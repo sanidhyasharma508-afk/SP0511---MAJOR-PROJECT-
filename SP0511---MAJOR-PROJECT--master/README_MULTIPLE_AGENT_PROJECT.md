@@ -4,7 +4,7 @@
 **Status**: ✅ Production Ready  
 **Date**: februrary 15, 2026   
 
-## 🎯 Project Overview
+## 🎯 Project Overvie
 
 The **Multiple Agent Project** is an integrated campus automation system built on a multi-agent architecture. It combines:
 

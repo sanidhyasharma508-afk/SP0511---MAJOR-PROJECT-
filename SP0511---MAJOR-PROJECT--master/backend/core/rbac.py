@@ -266,4 +266,4 @@ class AuthContext:
 
     def is_student(self) -> bool:
         """Check if user is student"""
-        return self.role in [Role.ADMIN, Role.STAFF, Role.STUDENT]
+        return self.role in [Role.ADMIN, Role.STAFF, Role.STUDENT] 
