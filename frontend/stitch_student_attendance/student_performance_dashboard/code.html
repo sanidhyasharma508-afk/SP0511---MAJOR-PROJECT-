@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Student Performance Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "card-dark": "#1e293b",
+                        "card-border": "#324d67",
+                        "text-secondary": "#92adc9",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111a22; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #324d67; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #137fec; 
+        }
+        
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white min-h-screen overflow-hidden flex">
+<!-- SideNavBar Component -->
+<nav class="w-64 border-r border-card-border bg-card-dark hidden lg:flex flex-col h-screen shrink-0 sticky top-0">
+<div class="flex flex-col h-full p-4 justify-between">
+<div class="flex flex-col gap-6">
+<!-- Branding/User -->
+<div class="flex items-center gap-3 px-2">
+<div class="bg-center bg-no-repeat bg-cover rounded-full h-10 w-10 shrink-0 border-2 border-primary" data-alt="University Logo abstract geometric shape" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAK5SvEPtysVZ97izCwNyE6dZ11rJUd0TcNcJ--FTYJBc6HHEOSCxPwFPSTEWSQOtl5GqEAJIzS8-LYu7qIbJ8CMQeBwcDSS-S9dbObj8EFFi6jqw_NTNIB-83WY-bttNRI1kNHQEEvkzMysmvx9Y5JaiQ5rOqeE_TTaGAgYZwGZU9vm8QY1mq3Od7dAn5qHYusrAWhWUX-8k9NdmJq1GVqxQ-8Rupu_Ymj2qqp0NJAb_k8h-g3uyZfLfOFkvvHTbySMk_A4vTO8iXz");'>
+</div>
+<div class="flex flex-col overflow-hidden">
+<h1 class="text-white text-base font-bold leading-normal truncate">MBM Portal</h1>
+<p class="text-text-secondary text-xs font-normal leading-normal truncate">Student Panel</p>
+</div>
+</div>
+<!-- Nav Items -->
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<p class="text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-white/5 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">calendar_month</span>
+<p class="text-sm font-medium leading-normal">Attendance</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-white/5 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">event</span>
+<p class="text-sm font-medium leading-normal">Events</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-white/5 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+<p class="text-sm font-medium leading-normal">Timetable</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-white/5 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">beach_access</span>
+<p class="text-sm font-medium leading-normal">Holidays</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-white/5 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+<p class="text-sm font-medium leading-normal">Clubs</p>
+</a>
+</div>
+</div>
+<!-- Bottom Action -->
+<div class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-white/5 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<p class="text-sm font-medium leading-normal">Settings</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-white/5 hover:text-red-400 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<p class="text-sm font-medium leading-normal">Logout</p>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col h-screen overflow-y-auto relative">
+<!-- Top Bar / Header -->
+<header class="flex items-center justify-between px-6 py-5 sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-card-border/30">
+<div>
+<p class="text-slate-500 dark:text-text-secondary text-sm font-medium">Semester 5 • Computer Science</p>
+<h1 class="text-slate-900 dark:text-white text-2xl font-bold tracking-tight">Performance Dashboard</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="relative p-2 text-text-secondary hover:text-white transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border border-background-dark"></span>
+</button>
+<div class="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                    AJ
+                </div>
+</div>
+</header>
+<div class="p-6 flex flex-col gap-6 max-w-[1600px] w-full mx-auto">
+<!-- Hero Stats + Character Widget Section -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Main Stats Cards -->
+<div class="lg:col-span-8 flex flex-col gap-6">
+<!-- Greeting -->
+<div class="glass-card rounded-xl p-6 bg-gradient-to-r from-primary/20 to-transparent border border-primary/20 relative overflow-hidden">
+<div class="relative z-10 flex flex-col gap-2">
+<h2 class="text-2xl font-bold text-white">Welcome back, Alex! 👋</h2>
+<p class="text-text-secondary max-w-lg">You've maintained a 92% attendance streak this month. Keep up the great work in Data Structures!</p>
+<div class="mt-4 flex gap-3">
+<button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-primary/25">View Detailed Report</button>
+<button class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors backdrop-blur-md">Download Grades</button>
+</div>
+</div>
+<!-- Abstract BG Decoration -->
+<div class="absolute -right-10 -bottom-20 w-64 h-64 bg-primary/30 rounded-full blur-3xl"></div>
+</div>
+<!-- Stats Row -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<div class="bg-card-dark rounded-xl p-5 border border-card-border flex flex-col gap-1 hover:border-primary/50 transition-colors group">
+<div class="flex items-center justify-between mb-2">
+<span class="text-text-secondary text-sm font-medium">Current CGPA</span>
+<span class="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded-lg text-[20px]">school</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="text-3xl font-bold text-white">8.9</span>
+<span class="text-emerald-400 text-sm font-medium mb-1 flex items-center">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span> 0.2
+                                </span>
+</div>
+<p class="text-xs text-text-secondary mt-1">Top 5% of class</p>
+</div>
+<div class="bg-card-dark rounded-xl p-5 border border-card-border flex flex-col gap-1 hover:border-primary/50 transition-colors group">
+<div class="flex items-center justify-between mb-2">
+<span class="text-text-secondary text-sm font-medium">Attendance</span>
+<span class="material-symbols-outlined text-purple-400 bg-purple-400/10 p-1.5 rounded-lg text-[20px]">check_circle</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="text-3xl font-bold text-white">92%</span>
+<span class="text-emerald-400 text-sm font-medium mb-1 flex items-center">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span> 1.5%
+                                </span>
+</div>
+<p class="text-xs text-text-secondary mt-1">Above requirement (75%)</p>
+</div>
+<div class="bg-card-dark rounded-xl p-5 border border-card-border flex flex-col gap-1 hover:border-primary/50 transition-colors group">
+<div class="flex items-center justify-between mb-2">
+<span class="text-text-secondary text-sm font-medium">Class Rank</span>
+<span class="material-symbols-outlined text-amber-400 bg-amber-400/10 p-1.5 rounded-lg text-[20px]">leaderboard</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="text-3xl font-bold text-white">14th</span>
+<span class="text-emerald-400 text-sm font-medium mb-1 flex items-center">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span> 2
+                                </span>
+</div>
+<p class="text-xs text-text-secondary mt-1">Out of 120 students</p>
+</div>
+</div>
+</div>
+<!-- Character Widget / Sidebar Right -->
+<div class="lg:col-span-4 flex flex-col gap-4">
+<div class="bg-card-dark rounded-xl border border-card-border p-5 h-full relative overflow-hidden flex flex-col items-center justify-center text-center">
+<div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+<!-- Character Avatar Placeholder -->
+<div class="relative w-40 h-40 mb-4 animate-bounce-slow">
+<div class="absolute inset-0 bg-primary/20 rounded-full blur-2xl transform scale-75"></div>
+<img class="relative z-10 w-full h-full object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-300" data-alt="3D cartoon illustration of a happy student character holding a degree" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDj9AEJtKCmpBihvzFE20qt_Osa5H25YmGHuCWI9yRMujXMvZ4_LDRv0ibH01oUHMveThfdJ7n9bbF_CQWvU0xKquIB79oCrYnogMOJcJsEUMYliHE_7U5aKAz3X7_M3shtQQ79P5fOh-nq4r2f-dSo5OUkeKaGcHw56VWCQzEIO1ag9RtHYw1n1uoIzLoMWZ4uJAS8z8rkS2mABAsooGBmCMUbEr1E_Di-NyYIhFAm-62wTZOxujFXdRMAcmnGPJuf9s-89Z6oCN82"/>
+</div>
+<h3 class="text-white font-bold text-lg">Looking sharp, Alex!</h3>
+<p class="text-text-secondary text-sm mt-1 px-4">Your physics assignment is due tomorrow. Finish it to boost your streak!</p>
+<div class="mt-6 w-full bg-background-dark rounded-lg p-3 border border-card-border/50">
+<div class="flex justify-between text-xs text-text-secondary mb-2">
+<span>Study Streak</span>
+<span class="text-primary font-bold">4 Days 🔥</span>
+</div>
+<div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full w-2/3"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Main Line Chart -->
+<div class="lg:col-span-2 bg-card-dark border border-card-border rounded-xl p-6">
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+<div>
+<h3 class="text-white font-bold text-lg">Academic Trajectory</h3>
+<p class="text-text-secondary text-sm">CGPA performance over semesters</p>
+</div>
+<div class="flex bg-background-dark rounded-lg p-1 border border-card-border">
+<button class="px-3 py-1 rounded text-xs font-medium text-white bg-primary shadow-sm">Year</button>
+<button class="px-3 py-1 rounded text-xs font-medium text-text-secondary hover:text-white">Sem</button>
+</div>
+</div>
+<div class="relative h-[250px] w-full">
+<!-- Simplified SVG Chart Representation -->
+<svg class="w-full h-full overflow-visible" viewbox="0 0 800 250">
+<!-- Grid Lines -->
+<line opacity="0.5" stroke="#324d67" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="800" y1="200" y2="200"></line>
+<line opacity="0.5" stroke="#324d67" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="800" y1="150" y2="150"></line>
+<line opacity="0.5" stroke="#324d67" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="800" y1="100" y2="100"></line>
+<line opacity="0.5" stroke="#324d67" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="800" y1="50" y2="50"></line>
+<!-- Gradient Definition -->
+<defs>
+<lineargradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#137fec" stop-opacity="0.5"></stop>
+<stop offset="100%" stop-color="#137fec" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<!-- Area Path -->
+<path d="M0 160 C100 160, 150 120, 200 110 S 350 140, 400 100 S 550 60, 600 50 S 750 20, 800 30 V 250 H 0 Z" fill="url(#chartGradient)"></path>
+<!-- Line Path -->
+<path d="M0 160 C100 160, 150 120, 200 110 S 350 140, 400 100 S 550 60, 600 50 S 750 20, 800 30" fill="none" stroke="#137fec" stroke-linecap="round" stroke-width="3"></path>
+<!-- Data Points -->
+<circle cx="200" cy="110" fill="#101922" r="4" stroke="#137fec" stroke-width="2"></circle>
+<circle cx="400" cy="100" fill="#101922" r="4" stroke="#137fec" stroke-width="2"></circle>
+<circle cx="600" cy="50" fill="#101922" r="4" stroke="#137fec" stroke-width="2"></circle>
+<circle cx="800" cy="30" fill="#101922" r="4" stroke="#137fec" stroke-width="2"></circle>
+</svg>
+<!-- X-Axis Labels -->
+<div class="flex justify-between mt-2 text-xs text-text-secondary px-2">
+<span>Sem 1</span>
+<span>Sem 2</span>
+<span>Sem 3</span>
+<span>Sem 4</span>
+<span>Sem 5</span>
+</div>
+</div>
+</div>
+<!-- Upcoming Events / Side List -->
+<div class="bg-card-dark border border-card-border rounded-xl p-6 flex flex-col">
+<h3 class="text-white font-bold text-lg mb-4">Upcoming Events</h3>
+<div class="flex flex-col gap-4 overflow-y-auto pr-1 custom-scroll max-h-[300px]">
+<div class="flex gap-3 items-start group">
+<div class="bg-red-500/10 text-red-500 rounded-lg p-2 shrink-0 group-hover:bg-red-500 group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">warning</span>
+</div>
+<div>
+<h4 class="text-white text-sm font-semibold">Physics Mid-Term</h4>
+<p class="text-text-secondary text-xs">Oct 24 • Room 302</p>
+</div>
+<span class="ml-auto text-xs font-medium text-white bg-card-border px-2 py-1 rounded">2d</span>
+</div>
+<div class="flex gap-3 items-start group">
+<div class="bg-blue-500/10 text-blue-500 rounded-lg p-2 shrink-0 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">code</span>
+</div>
+<div>
+<h4 class="text-white text-sm font-semibold">Hackathon Registration</h4>
+<p class="text-text-secondary text-xs">Nov 01 • Auditorium</p>
+</div>
+<span class="ml-auto text-xs font-medium text-white bg-card-border px-2 py-1 rounded">1w</span>
+</div>
+<div class="flex gap-3 items-start group">
+<div class="bg-emerald-500/10 text-emerald-500 rounded-lg p-2 shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">celebration</span>
+</div>
+<div>
+<h4 class="text-white text-sm font-semibold">Cultural Fest</h4>
+<p class="text-text-secondary text-xs">Nov 15 • Campus Ground</p>
+</div>
+<span class="ml-auto text-xs font-medium text-white bg-card-border px-2 py-1 rounded">3w</span>
+</div>
+<div class="flex gap-3 items-start group">
+<div class="bg-purple-500/10 text-purple-500 rounded-lg p-2 shrink-0 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">book</span>
+</div>
+<div>
+<h4 class="text-white text-sm font-semibold">Library Return Due</h4>
+<p class="text-text-secondary text-xs">Nov 18 • Library</p>
+</div>
+<span class="ml-auto text-xs font-medium text-white bg-card-border px-2 py-1 rounded">3w</span>
+</div>
+</div>
+<button class="mt-auto w-full py-2 text-sm text-primary font-medium hover:bg-primary/5 rounded-lg transition-colors border border-dashed border-primary/30 hover:border-primary mt-4">
+                        View Full Calendar
+                    </button>
+</div>
+</div>
+<!-- Detailed Breakdown -->
+<div>
+<div class="flex items-center justify-between px-1 mb-4">
+<h3 class="text-white text-lg font-bold">Subject Performance</h3>
+<div class="flex gap-2">
+<button class="bg-card-dark hover:bg-card-border text-text-secondary hover:text-white p-2 rounded-lg transition-colors border border-card-border">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+<button class="bg-card-dark hover:bg-card-border text-text-secondary hover:text-white p-2 rounded-lg transition-colors border border-card-border">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Subject Card 1 -->
+<div class="bg-card-dark border border-card-border rounded-xl p-5 hover:translate-y-[-2px] transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-blue-900/30 p-2 rounded-lg">
+<span class="material-symbols-outlined text-blue-400">functions</span>
+</div>
+<span class="bg-green-500/10 text-green-500 text-xs font-bold px-2 py-1 rounded">Excellent</span>
+</div>
+<h4 class="text-white font-bold text-lg">Engineering Mathematics</h4>
+<p class="text-text-secondary text-xs mb-4">Code: MAT301</p>
+<div class="flex items-end justify-between">
+<div>
+<p class="text-text-secondary text-xs mb-1">Score</p>
+<p class="text-white text-2xl font-bold">94<span class="text-sm text-text-secondary font-medium">/100</span></p>
+</div>
+<div class="h-10 w-20">
+<!-- Mini Sparkline SVG -->
+<svg class="w-full h-full overflow-visible" viewbox="0 0 80 40">
+<path d="M0 35 L 20 25 L 40 30 L 60 10 L 80 5" fill="none" stroke="#137fec" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Subject Card 2 -->
+<div class="bg-card-dark border border-card-border rounded-xl p-5 hover:translate-y-[-2px] transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-purple-900/30 p-2 rounded-lg">
+<span class="material-symbols-outlined text-purple-400">dns</span>
+</div>
+<span class="bg-green-500/10 text-green-500 text-xs font-bold px-2 py-1 rounded">Good</span>
+</div>
+<h4 class="text-white font-bold text-lg">Data Structures</h4>
+<p class="text-text-secondary text-xs mb-4">Code: CS302</p>
+<div class="flex items-end justify-between">
+<div>
+<p class="text-text-secondary text-xs mb-1">Score</p>
+<p class="text-white text-2xl font-bold">88<span class="text-sm text-text-secondary font-medium">/100</span></p>
+</div>
+<div class="h-10 w-20">
+<svg class="w-full h-full overflow-visible" viewbox="0 0 80 40">
+<path d="M0 30 L 20 20 L 40 25 L 60 15 L 80 10" fill="none" stroke="#a855f7" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Subject Card 3 -->
+<div class="bg-card-dark border border-card-border rounded-xl p-5 hover:translate-y-[-2px] transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-orange-900/30 p-2 rounded-lg">
+<span class="material-symbols-outlined text-orange-400">memory</span>
+</div>
+<span class="bg-yellow-500/10 text-yellow-500 text-xs font-bold px-2 py-1 rounded">Average</span>
+</div>
+<h4 class="text-white font-bold text-lg">Digital Electronics</h4>
+<p class="text-text-secondary text-xs mb-4">Code: EC305</p>
+<div class="flex items-end justify-between">
+<div>
+<p class="text-text-secondary text-xs mb-1">Score</p>
+<p class="text-white text-2xl font-bold">76<span class="text-sm text-text-secondary font-medium">/100</span></p>
+</div>
+<div class="h-10 w-20">
+<svg class="w-full h-full overflow-visible" viewbox="0 0 80 40">
+<path d="M0 25 L 20 30 L 40 20 L 60 25 L 80 20" fill="none" stroke="#f97316" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Subject Card 4 -->
+<div class="bg-card-dark border border-card-border rounded-xl p-5 hover:translate-y-[-2px] transition-transform duration-300">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-pink-900/30 p-2 rounded-lg">
+<span class="material-symbols-outlined text-pink-400">terminal</span>
+</div>
+<span class="bg-green-500/10 text-green-500 text-xs font-bold px-2 py-1 rounded">Excellent</span>
+</div>
+<h4 class="text-white font-bold text-lg">Operating Systems</h4>
+<p class="text-text-secondary text-xs mb-4">Code: CS306</p>
+<div class="flex items-end justify-between">
+<div>
+<p class="text-text-secondary text-xs mb-1">Score</p>
+<p class="text-white text-2xl font-bold">91<span class="text-sm text-text-secondary font-medium">/100</span></p>
+</div>
+<div class="h-10 w-20">
+<svg class="w-full h-full overflow-visible" viewbox="0 0 80 40">
+<path d="M0 35 L 20 28 L 40 15 L 60 10 L 80 8" fill="none" stroke="#ec4899" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="mt-8 text-center text-xs text-text-secondary pb-4">
+                © 2023 MBM University Portal. All rights reserved.
+            </footer>
+</div>
+</main>
+<script>
+        // Simple animation config for character floating
+        document.head.insertAdjacentHTML("beforeend", `<style>
+            @keyframes bounce-slow {
+                0%, 100% { transform: translateY(-5%); }
+                50% { transform: translateY(5%); }
+            }
+            .animate-bounce-slow {
+                animation: bounce-slow 3s infinite ease-in-out;
+            }
+        </style>`)
+    </script>
+</body></html>

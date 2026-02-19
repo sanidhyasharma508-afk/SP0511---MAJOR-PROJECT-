@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Events Hub - MBM Portal</title>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111a22",
+                        "card-dark": "#1c2a38",
+                        "accent-green": "#00ff9d",
+                        "accent-purple": "#bd00ff",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings:
+            'FILL' 1,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111a22; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #233648; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #344c63; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white overflow-hidden">
+<div class="flex h-screen w-full bg-background-light dark:bg-background-dark">
+<!-- Side Navigation -->
+<aside class="hidden w-72 flex-col border-r border-[#233648] bg-[#111a22] lg:flex">
+<div class="flex h-full flex-col justify-between p-4">
+<div class="flex flex-col gap-6">
+<div class="flex flex-col px-3 pt-2">
+<h1 class="text-white text-xl font-bold leading-normal tracking-tight">MBM Portal</h1>
+<p class="text-[#92adc9] text-sm font-normal leading-normal">Student Access</p>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 rounded-lg px-3 py-3 text-[#92adc9] hover:bg-[#233648] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">dashboard</span>
+<p class="text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-3 text-[#92adc9] hover:bg-[#233648] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">calendar_month</span>
+<p class="text-sm font-medium leading-normal">Attendance</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-3 text-[#92adc9] hover:bg-[#233648] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">schedule</span>
+<p class="text-sm font-medium leading-normal">Timetables</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg bg-gradient-to-r from-[#233648] to-[#1c2a38] border-l-4 border-primary px-3 py-3 text-white shadow-lg" href="#">
+<span class="material-symbols-outlined fill text-2xl text-primary">emoji_events</span>
+<p class="text-sm font-bold leading-normal">Events Hub</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-3 text-[#92adc9] hover:bg-[#233648] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">receipt_long</span>
+<p class="text-sm font-medium leading-normal">Results</p>
+</a>
+<div class="mt-4 pt-4 border-t border-[#233648]">
+<p class="px-3 text-xs font-semibold text-[#58728d] uppercase tracking-wider mb-2">Clubs &amp; Activities</p>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-[#92adc9] hover:bg-[#233648] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">groups</span>
+<p class="text-sm font-medium leading-normal">My Clubs</p>
+</a>
+<a class="flex items-center gap-3 rounded-lg px-3 py-2 text-[#92adc9] hover:bg-[#233648] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">campaign</span>
+<p class="text-sm font-medium leading-normal">Announcements</p>
+</a>
+</div>
+</nav>
+</div>
+<div class="flex items-center gap-3 px-3 py-4 rounded-xl bg-[#1c2a38] border border-[#233648] mt-4">
+<div class="bg-center bg-no-repeat bg-cover rounded-full h-10 w-10 border-2 border-primary" data-alt="Student profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCaD39rpd1KWotiiceSMOJWdQ8i6kp1L9N3g--ukscN054LuUKy9Gg_z49a4VEgz3jg4Y_H2AyAoQvk-sMuNIoXUi9_IXYlOWpgd5Q-0sJdi6P--e8BV2FU1P9Dzkb3ccXbTL1uyhayqQAYwTKPJlLNDHy0toZkM5pMkjPnp7FVZYkZv3DxbdWirODpgiwdnVlNXwWQNf_FHhUlqSz9E4KI2ntKTVPkF9Z5p36idCFPsOqievaFg2MnwWIyKk2McO4Erc8MnZ7QqLZE");'></div>
+<div class="flex flex-col">
+<p class="text-white text-sm font-bold">Alex Johnson</p>
+<p class="text-[#92adc9] text-xs">CS Engineering • 3rd Year</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex h-full flex-1 flex-col overflow-hidden relative">
+<!-- Top Nav Bar -->
+<header class="flex h-16 shrink-0 items-center justify-between border-b border-[#233648] bg-[#111a22]/95 backdrop-blur-md px-6 z-20 sticky top-0">
+<div class="flex items-center gap-4 text-white lg:hidden">
+<button class="text-white">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="text-lg font-bold">Events</h2>
+</div>
+<div class="hidden lg:flex items-center gap-4 text-white">
+<span class="material-symbols-outlined text-primary">sports_esports</span>
+<h2 class="text-xl font-bold leading-tight tracking-tight">Events Hub</h2>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<label class="hidden md:flex flex-col min-w-64 h-10">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full bg-[#1c2a38] border border-[#233648] focus-within:border-primary transition-colors">
+<div class="text-[#92adc9] flex items-center justify-center pl-3">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="w-full bg-transparent border-none text-white text-sm focus:ring-0 placeholder:text-[#5c728a]" placeholder="Search events, games, or fests..."/>
+</div>
+</label>
+<button class="relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#1c2a38] hover:bg-[#233648] text-white transition-colors border border-[#233648]">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#1c2a38]"></span>
+</button>
+</div>
+</header>
+<!-- Scrollable Content Area -->
+<div class="flex-1 overflow-y-auto p-6 md:p-8 lg:px-12 scroll-smooth">
+<div class="mx-auto max-w-7xl flex flex-col gap-8 pb-12">
+<!-- Hero Section -->
+<div class="relative overflow-hidden rounded-2xl bg-[#1c2a38] shadow-2xl border border-[#233648] group">
+<div class="absolute inset-0 bg-gradient-to-r from-background-dark/90 via-background-dark/60 to-transparent z-10"></div>
+<div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-1.2.1&amp;auto=format&amp;fit=crop&amp;w=1600&amp;q=80')] bg-cover bg-center opacity-60 group-hover:scale-105 transition-transform duration-700" data-alt="Cyberpunk gaming setup with neon lights"></div>
+<div class="relative z-20 flex flex-col gap-6 px-6 py-12 md:flex-row md:items-center md:justify-between md:px-10 md:py-16">
+<div class="flex flex-col gap-4 max-w-xl">
+<div class="inline-flex items-center gap-2 rounded-full bg-primary/20 px-3 py-1 text-xs font-bold text-primary w-fit border border-primary/30">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+                                TRENDING NOW
+                            </div>
+<h1 class="text-4xl font-black leading-tight text-white md:text-5xl lg:text-6xl tracking-tighter">
+                                Unleash Your <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#4facfe]">Potential</span>
+</h1>
+<p class="text-lg text-gray-300 max-w-md leading-relaxed">
+                                Join the ultimate E-sports arena and Tech innovation labs. Compete, code, and conquer the leaderboard this semester.
+                            </p>
+<div class="flex flex-wrap gap-4 pt-2">
+<button class="flex items-center justify-center rounded-lg bg-primary h-12 px-6 text-sm font-bold text-white shadow-lg shadow-primary/30 hover:bg-blue-600 hover:shadow-primary/50 hover:-translate-y-1 transition-all duration-300">
+                                    Register for Main Event
+                                </button>
+<button class="flex items-center justify-center rounded-lg bg-[#233648] h-12 px-6 text-sm font-bold text-white hover:bg-[#344c63] transition-all border border-[#344c63]">
+                                    View Leaderboard
+                                </button>
+</div>
+</div>
+<!-- Decorative 3D Character Placeholder (Abstract representation) -->
+<div class="hidden md:block absolute right-0 bottom-0 h-full w-1/3 bg-gradient-to-l from-primary/10 to-transparent pointer-events-none"></div>
+</div>
+</div>
+<!-- Filters -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex gap-2 bg-[#1c2a38] p-1.5 rounded-xl border border-[#233648] w-fit">
+<button class="px-5 py-2 rounded-lg bg-primary text-white text-sm font-bold shadow-md transition-all">All Events</button>
+<button class="px-5 py-2 rounded-lg text-[#92adc9] hover:text-white hover:bg-[#233648] text-sm font-medium transition-all">E-Sports Arena</button>
+<button class="px-5 py-2 rounded-lg text-[#92adc9] hover:text-white hover:bg-[#233648] text-sm font-medium transition-all">Tech Fests</button>
+</div>
+<div class="hidden md:flex items-center gap-2 text-sm text-[#92adc9]">
+<span class="material-symbols-outlined text-lg">sort</span>
+<span>Sort by: Date</span>
+</div>
+</div>
+</div>
+<!-- E-Sports Section -->
+<section>
+<div class="flex items-center gap-3 mb-6">
+<div class="p-2 rounded-lg bg-accent-purple/10 text-accent-purple border border-accent-purple/20">
+<span class="material-symbols-outlined text-2xl">sports_esports</span>
+</div>
+<h2 class="text-2xl font-bold text-white">The Arena: E-Sports</h2>
+<div class="h-[1px] flex-1 bg-gradient-to-r from-[#233648] to-transparent ml-4"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<!-- Card 1: Valorant -->
+<div class="group relative flex flex-col rounded-2xl bg-[#1c2a38] border border-[#233648] overflow-hidden hover:border-primary/50 hover:shadow-[0_0_30px_rgba(19,127,236,0.15)] transition-all duration-300 hover:-translate-y-1">
+<div class="relative h-48 w-full overflow-hidden">
+<div class="absolute top-3 left-3 z-10">
+<span class="px-3 py-1 rounded-full bg-green-500/90 text-white text-xs font-bold backdrop-blur-sm shadow-sm">REGISTRATION OPEN</span>
+</div>
+<div class="bg-cover bg-center h-full w-full group-hover:scale-110 transition-transform duration-500" data-alt="Valorant game character concept art" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCDHcntgP44dfLOAxFlm_WqtAhIyuA77KewlxkOFmNBKrMX_8EhQxIq_SSlRsH4nx5Hzl--E8zbKAQ5oGfnZWuC0j3HJKLSKflkqD0i-ZHD9hA0afyI9qvFTQxlJTRuBYZBxoIzZn7hfZOJKatDx7aEdPf4yNAd7vnIvclODgFNWsavWDvy88R1MPPp4QqOA2CIju9xVNBIhWRL9JlNlr-vrohTuy9fa-bWmBCQ9u9804CeU2z3yb1aXnPcO8CM7KgePsHLrw7pxF-V')"></div>
+<div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#1c2a38] to-transparent"></div>
+</div>
+<div class="flex flex-col p-5 gap-3 flex-1">
+<div class="flex justify-between items-start">
+<h3 class="text-xl font-bold text-white leading-tight uppercase tracking-tight">Valorant Showdown</h3>
+</div>
+<div class="flex flex-col gap-2 text-sm text-[#92adc9]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">calendar_today</span>
+<span>Oct 24, 2023 • 6:00 PM</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">groups</span>
+<span>5v5 Team Battle</span>
+</div>
+</div>
+<div class="mt-auto pt-4 border-t border-[#233648]">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-semibold text-[#5c728a] uppercase">Registration Ends In</span>
+<span class="font-mono text-primary font-bold">02:14:35</span>
+</div>
+<button class="w-full py-2.5 rounded-lg bg-white/5 hover:bg-primary hover:text-white text-white font-semibold text-sm border border-white/10 hover:border-transparent transition-all">
+                                        Register Now
+                                    </button>
+</div>
+</div>
+</div>
+<!-- Card 2: BGMI -->
+<div class="group relative flex flex-col rounded-2xl bg-[#1c2a38] border border-[#233648] overflow-hidden hover:border-yellow-500/50 hover:shadow-[0_0_30px_rgba(234,179,8,0.15)] transition-all duration-300 hover:-translate-y-1">
+<div class="relative h-48 w-full overflow-hidden">
+<div class="absolute top-3 left-3 z-10">
+<span class="px-3 py-1 rounded-full bg-yellow-500/90 text-black text-xs font-bold backdrop-blur-sm shadow-sm">LIVE NOW</span>
+</div>
+<div class="bg-cover bg-center h-full w-full group-hover:scale-110 transition-transform duration-500" data-alt="Battle royale map landscape" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDYOPdd-gya6POzc6PAWkBrEwinkeDLqhAReLthI0yC96dHyg8vhb2zBLPovcfKUeqctDUhdy8v441OGLTxEy-OmLSfX15Rj5UiEbA4KTnKKMh18r5c9XlSoQj-JgnEQWXWnsLA18F1-Cg0i28sGv2ssog9wOQyI85TV5UFkPGn3ywvpKb8m3k1xiDeYsc0LR4CYIT7x0yOQLl8K3peKXetNzfcAYH7tNWFLRifxOKfNUjTXwtitBSXexm7S2E3r5RPO-2aKH1XglkM')"></div>
+<div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#1c2a38] to-transparent"></div>
+</div>
+<div class="flex flex-col p-5 gap-3 flex-1">
+<h3 class="text-xl font-bold text-white leading-tight uppercase tracking-tight">BGMI Battle Royale</h3>
+<div class="flex flex-col gap-2 text-sm text-[#92adc9]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-yellow-500 text-lg">map</span>
+<span>Map: Erangel</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-yellow-500 text-lg">person</span>
+<span>Squad (4 Players)</span>
+</div>
+</div>
+<div class="mt-auto pt-4 border-t border-[#233648]">
+<button class="w-full py-2.5 rounded-lg bg-yellow-500 text-black font-bold text-sm hover:bg-yellow-400 transition-all shadow-lg shadow-yellow-500/20">
+                                        Join Spectator Stream
+                                    </button>
+</div>
+</div>
+</div>
+<!-- Card 3: Free Fire -->
+<div class="group relative flex flex-col rounded-2xl bg-[#1c2a38] border border-[#233648] overflow-hidden hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(239,68,68,0.15)] transition-all duration-300 hover:-translate-y-1">
+<div class="relative h-48 w-full overflow-hidden">
+<div class="absolute top-3 left-3 z-10">
+<span class="px-3 py-1 rounded-full bg-[#233648]/90 text-gray-300 text-xs font-bold backdrop-blur-sm border border-gray-600">COMING SOON</span>
+</div>
+<div class="bg-cover bg-center h-full w-full group-hover:scale-110 transition-transform duration-500" data-alt="Abstract fire and smoke gaming background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBd03XNiyajx2FSThhwKsdD8zVmi8KotPKGZGBSFGC5TcFBWMjPvusXGUUPN-W4ijEgpO7MDJaZhrpvpIQOkr3QQKjFmNUtrqyVj6fyBKxWAQSvPGndvXuV7PbElfUWvMADTynvA7b-07kOEq_VjVSdM8cjKmmhzqwc8Z71rO_jLRe6aKiwzdVU1iLFFoiOhwD0febkgD4IGldbC8r5itTlMYAJI-SrWhb2Y2q0XN4y2huMAwi4AJcN1lcklfx7CACeOJOUA-WzqH_k')"></div>
+<div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#1c2a38] to-transparent"></div>
+</div>
+<div class="flex flex-col p-5 gap-3 flex-1">
+<h3 class="text-xl font-bold text-white leading-tight uppercase tracking-tight">Free Fire Cup</h3>
+<div class="flex flex-col gap-2 text-sm text-[#92adc9]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-red-500 text-lg">calendar_today</span>
+<span>Nov 05, 2023</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-red-500 text-lg">emoji_events</span>
+<span>Prize: ₹10,000</span>
+</div>
+</div>
+<div class="mt-auto pt-4 border-t border-[#233648]">
+<button class="w-full py-2.5 rounded-lg bg-[#233648] text-gray-400 font-semibold text-sm cursor-not-allowed">
+                                        Opens in 2 Days
+                                    </button>
+</div>
+</div>
+</div>
+<!-- Card 4: Minecraft -->
+<div class="group relative flex flex-col rounded-2xl bg-[#1c2a38] border border-[#233648] overflow-hidden hover:border-green-500/50 hover:shadow-[0_0_30px_rgba(34,197,94,0.15)] transition-all duration-300 hover:-translate-y-1">
+<div class="relative h-48 w-full overflow-hidden">
+<div class="absolute top-3 left-3 z-10">
+<span class="px-3 py-1 rounded-full bg-green-500/90 text-white text-xs font-bold backdrop-blur-sm shadow-sm">REGISTRATION OPEN</span>
+</div>
+<div class="bg-cover bg-center h-full w-full group-hover:scale-110 transition-transform duration-500" data-alt="Minecraft blocky landscape" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDpRMWWdSf6baUA7jf3lHRDcuxtXFFqgE48JRoMB3aigTlotfqL0mymfOACB9zzvHt8YQaMNXUaCNWz5yquqrEvVhxH2AY7g9qGIGwwVurSMK71mQky2sjRpjKNerPpE6cQvms82phGUDj0UCjMD7RQbZ6DPpaoKVjM2WKYnU_PgtRLuxhzn6GggGr48nPlPhaIOQ8ny3sb3BD0vr5wbV-iLixoSJ3tuZ9jmeiRwKU95Sn_ewemOfXABPGg-GJdY-GIZBDwHaA0uQw4')"></div>
+<div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#1c2a38] to-transparent"></div>
+</div>
+<div class="flex flex-col p-5 gap-3 flex-1">
+<h3 class="text-xl font-bold text-white leading-tight uppercase tracking-tight">Minecraft Build Battle</h3>
+<div class="flex flex-col gap-2 text-sm text-[#92adc9]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-500 text-lg">palette</span>
+<span>Theme: Campus 2050</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-500 text-lg">person</span>
+<span>Solo / Duo</span>
+</div>
+</div>
+<div class="mt-auto pt-4 border-t border-[#233648]">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-semibold text-[#5c728a] uppercase">Registration Ends In</span>
+<span class="font-mono text-green-500 font-bold">12:00:00</span>
+</div>
+<button class="w-full py-2.5 rounded-lg bg-white/5 hover:bg-green-600 hover:text-white text-white font-semibold text-sm border border-white/10 hover:border-transparent transition-all">
+                                        Register Now
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Tech Fests Section -->
+<section>
+<div class="flex items-center gap-3 mb-6">
+<div class="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+<span class="material-symbols-outlined text-2xl">memory</span>
+</div>
+<h2 class="text-2xl font-bold text-white">Tech Innovation Labs</h2>
+<div class="h-[1px] flex-1 bg-gradient-to-r from-[#233648] to-transparent ml-4"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Card 1: Hackathon -->
+<div class="group flex flex-row rounded-2xl bg-[#1c2a38] border border-[#233648] overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+<div class="w-1/3 relative overflow-hidden">
+<div class="bg-cover bg-center h-full w-full group-hover:scale-110 transition-transform duration-500" data-alt="Computer screen with code" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBlS2AZ4ri7CPVTc4a6hyfx5VZ3PqgWh3CSK8iHS8jzH74JYH2tGAVEW1EW4-mMmPxzvkNr_4d2OAwiaQ75O0JzgqA-g79UDbpwy3PS7h96X6Cwjm3YgEQR3BH-7m8Mq26DcTAmbVUb5VPE7g9nRqtKMsLq1cp0ljTOge4XGDjfqeNzGTqoF0YipdOAMTFQy_8Hc5RkEtG7WTG5YLzJKlQO1KiTe0y8U9To1-b8niMMuD0UW2ofROy42fONh-rGl7hD51IRsD0PM7tV')"></div>
+<div class="absolute inset-0 bg-primary/20 mix-blend-overlay"></div>
+</div>
+<div class="flex-1 p-5 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-white">CodeWar Hackathon</h3>
+<span class="material-symbols-outlined text-primary">code</span>
+</div>
+<p class="text-sm text-[#92adc9] line-clamp-2 mb-3">24-hour intense coding sprint to solve real-world problems.</p>
+<div class="flex gap-2 mb-3">
+<span class="px-2 py-1 rounded bg-[#233648] text-xs font-medium text-white">24 Hours</span>
+<span class="px-2 py-1 rounded bg-[#233648] text-xs font-medium text-white">Team of 4</span>
+</div>
+</div>
+<button class="w-full py-2 rounded bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">Register Team</button>
+</div>
+</div>
+<!-- Card 2: Algo Tourney -->
+<div class="group flex flex-row rounded-2xl bg-[#1c2a38] border border-[#233648] overflow-hidden hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+<div class="w-1/3 relative overflow-hidden">
+<div class="bg-cover bg-center h-full w-full group-hover:scale-110 transition-transform duration-500" data-alt="Abstract network nodes server room" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDRYE3xIO4U-lmMMNYqCFgNx8cjSOLXHiZvOrG_vxpwH7a5PSv9W0wo8W-X9dwcrgOj6t2U1Y5ai1VhAE_KyAHoYbWpUoifiRzs-0pKv_J8b1CupWgjvr5x6PKcbDA-Ad7XDzLeB54eYiC647kEiqA5Z7t_4LF6FR4gbxSbPHJCN6tALtnxRuSD9f1Zm4JJR96azuRY0mJJGORx6-WfDXrrIoqJY2v2lcUiQrn4d1slZogVwAPvoO7JCxMlBzMdEtBOrN7y48PCwakc')"></div>
+<div class="absolute inset-0 bg-purple-500/20 mix-blend-overlay"></div>
+</div>
+<div class="flex-1 p-5 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-white">Algo Optimization</h3>
+<span class="material-symbols-outlined text-purple-500">functions</span>
+</div>
+<p class="text-sm text-[#92adc9] line-clamp-2 mb-3">Test your efficiency. Optimize algorithms for the lowest complexity.</p>
+<div class="flex gap-2 mb-3">
+<span class="px-2 py-1 rounded bg-[#233648] text-xs font-medium text-white">Solo</span>
+<span class="px-2 py-1 rounded bg-[#233648] text-xs font-medium text-white">Advanced</span>
+</div>
+</div>
+<button class="w-full py-2 rounded bg-[#233648] hover:bg-purple-600 border border-purple-500/30 text-white text-sm font-bold transition-all">View Details</button>
+</div>
+</div>
+<!-- Card 3: AI Challenge -->
+<div class="group flex flex-row rounded-2xl bg-[#1c2a38] border border-[#233648] overflow-hidden hover:border-cyan-500/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+<div class="w-1/3 relative overflow-hidden">
+<div class="bg-cover bg-center h-full w-full group-hover:scale-110 transition-transform duration-500" data-alt="Artificial intelligence brain concept" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBd74mJGRHvUZeVrTDT3y14998nkmGN9I829k_x9R1ttacSFQpKhlwFY_5gg9guxNoaYYGlNxDbJ6bx2CtJdjT3LJ1zB7o5n_KxnJxIHOeSYOa2ir3tTEgBo0cd3rNCzRze6PmU0WxO3kmwW3_uCWRSFeegMt78bAfpdthlgfo5X1ONE1g5Goa-IaLlEBaGtCSAhgvspdzp8BDnJCnGVpu89IvYbD1T14Km8dW6erVn4-hiFg42Zexi-n3x-OOqF8O8YYskHo5RU-Oc')"></div>
+<div class="absolute inset-0 bg-cyan-500/20 mix-blend-overlay"></div>
+</div>
+<div class="flex-1 p-5 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-white">AI Model Challenge</h3>
+<span class="material-symbols-outlined text-cyan-500">psychology</span>
+</div>
+<p class="text-sm text-[#92adc9] line-clamp-2 mb-3">Build the most accurate predictive model for campus data.</p>
+<div class="flex gap-2 mb-3">
+<span class="px-2 py-1 rounded bg-[#233648] text-xs font-medium text-white">ML/AI</span>
+<span class="px-2 py-1 rounded bg-[#233648] text-xs font-medium text-white">Duo</span>
+</div>
+</div>
+<button class="w-full py-2 rounded bg-[#233648] hover:bg-cyan-600 border border-cyan-500/30 text-white text-sm font-bold transition-all">Register</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Simple Footer -->
+<footer class="mt-auto border-t border-[#233648] py-8 text-center text-sm text-[#5c728a]">
+<p>© 2023 MBM University Portal. Designed by Student Council Tech Team.</p>
+<div class="mt-4 flex justify-center gap-6">
+<a class="hover:text-white transition-colors" href="#">Guidelines</a>
+<a class="hover:text-white transition-colors" href="#">Support</a>
+<a class="hover:text-white transition-colors" href="#">Privacy</a>
+</div>
+</footer>
+</div>
+</main>
+</div>
+</body></html>

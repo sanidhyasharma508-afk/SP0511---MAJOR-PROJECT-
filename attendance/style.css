@@ -1,0 +1,18 @@
+/* Simple clean CSS for attendance pages */
+body { font-family: Arial,Helvetica,sans-serif; background:#f6f8fb; color:#111; margin:0; padding:20px; }
+.container { max-width:760px; margin:20px auto; }
+h1 { margin:0 0 16px 0; }
+.card { background:#fff; border:1px solid #e3e6ea; padding:16px; border-radius:6px; margin-bottom:12px; }
+.qr-card { text-align:center; }
+.qr-card img { border:1px solid #ddd; padding:8px; background:#fff; margin-top:8px; }
+.btn { background:#2b7cff; color:#fff; border:none; padding:10px 14px; border-radius:4px; cursor:pointer; font-weight:600; }
+.btn:hover { background:#1a5fe0 }
+input[type="text"], input[type="email"], textarea { width:100%; padding:8px; margin-top:6px; margin-bottom:10px; border:1px solid #ccd3de; border-radius:4px; }
+label { display:block; margin-bottom:6px; font-weight:600; }
+.info { color:#1b5e20; background:#eaf6ec; padding:8px; border-radius:4px; }
+.error { color:#8b0000; background:#fdecea; padding:8px; border-radius:4px; }
+.muted { color:#6c757d; font-size:0.95em; }
+.table { width:100%; border-collapse:collapse; }
+.table th, .table td { padding:8px 6px; border-bottom:1px solid #eef2f6; text-align:left; }
+.foot { font-size:0.85em; color:#666; }
+code { background:#f2f4f7; padding:2px 6px; border-radius:3px; }
