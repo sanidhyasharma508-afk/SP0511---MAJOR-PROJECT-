@@ -5,7 +5,7 @@ Ensures proxy-free attendance with location validation
 
 from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from backend.database import Base
 import uuid
 import hashlib
@@ -33,16 +33,16 @@ class QRAttendanceSession(Base):
     section = Column(String(50), nullable=True)
     
     # Lecture details
-    lecture_date = Column(DateTime, nullable=False)
-    lecture_start_time = Column(DateTime, nullable=False)
-    lecture_end_time = Column(DateTime, nullable=True)
+    lecture_date = Column(DateTime(timezone=True), nullable=False)
+    lecture_start_time = Column(DateTime(timezone=True), nullable=False)
+    lecture_end_time = Column(DateTime(timezone=True), nullable=True)
     lecture_duration_minutes = Column(Integer, default=60)
     
     # QR Code configuration
     qr_code_data = Column(Text, nullable=False)  # Encrypted QR data
     qr_code_hash = Column(String(256), nullable=False)  # SHA-256 hash for validation
-    qr_generated_at = Column(DateTime, default=datetime.utcnow)
-    qr_expires_at = Column(DateTime, nullable=False)  # Auto-expire in 2-5 minutes
+    qr_generated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    qr_expires_at = Column(DateTime(timezone=True), nullable=False)  # Auto-expire in 2-5 minutes
     qr_validity_minutes = Column(Integer, default=3)  # Default 3 minutes
     
     # Geo-fencing data
@@ -68,8 +68,8 @@ class QRAttendanceSession(Base):
     require_device_verification = Column(Boolean, default=True)
     
     # Metadata
-    created_at = Column(DateTime, default=datetime.utcnow)
-    closed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    closed_at = Column(DateTime(timezone=True), nullable=True)
     notes = Column(Text, nullable=True)
     
     # Relationships
@@ -82,7 +82,14 @@ class QRAttendanceSession(Base):
         """Check if QR code is still valid"""
         if not self.is_active or self.is_expired or self.is_cancelled:
             return False
-        if datetime.utcnow() > self.qr_expires_at:
+            
+        now = datetime.now(timezone.utc)
+        # Ensure self.qr_expires_at is treated as UTC if naive
+        expires_at = self.qr_expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+            
+        if now > expires_at:
             return False
         return True
 
@@ -143,7 +150,7 @@ class QRAttendanceRecord(Base):
     section = Column(String(50), nullable=True)
     
     # Attendance details
-    marked_at = Column(DateTime, default=datetime.utcnow)
+    marked_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     attendance_status = Column(String(20), default="present")  # present, late, absent
     is_late_entry = Column(Boolean, default=False)
     late_by_minutes = Column(Integer, default=0)

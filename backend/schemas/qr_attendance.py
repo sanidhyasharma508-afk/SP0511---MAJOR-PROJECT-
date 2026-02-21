@@ -18,7 +18,7 @@ class QRSessionCreate(BaseModel):
     subject_code: str = Field(..., min_length=2)
     subject_name: str = Field(..., min_length=3)
     branch: str = Field(..., min_length=2)
-    semester: str = Field(..., min_length=1)
+    semester: int = Field(..., ge=1, le=8)
     section: Optional[str] = None
     
     lecture_date: datetime
@@ -45,7 +45,7 @@ class QRSessionResponse(BaseModel):
     subject_code: str
     subject_name: str
     branch: str
-    semester: str
+    semester: int
     section: Optional[str]
     
     qr_code_data: str
@@ -76,7 +76,7 @@ class QRSessionSummary(BaseModel):
     session_id: str
     subject_name: str
     branch: str
-    semester: str
+    semester: int
     lecture_date: datetime
     qr_generated_at: datetime
     qr_expires_at: datetime
@@ -125,8 +125,9 @@ class QRScanRequest(BaseModel):
     student_name: str = Field(..., min_length=2)
     student_email: Optional[EmailStr] = None
     branch: str = Field(..., min_length=2)
-    semester: str = Field(..., min_length=1)
+    semester: int = Field(..., ge=1, le=8)
     section: Optional[str] = None
+    qr_code_hash: Optional[str] = Field(None, min_length=64)
     
     location: StudentLocationData
     device: DeviceData
@@ -171,7 +172,7 @@ class AttendanceRecordResponse(BaseModel):
     roll_number: str
     student_name: str
     branch: str
-    semester: str
+    semester: int
     
     marked_at: datetime
     attendance_status: str
@@ -214,7 +215,7 @@ class LiveAttendanceStats(BaseModel):
     session_id: int
     subject_name: str
     branch: str
-    semester: str
+    semester: int
     
     total_expected: int
     total_present: int
@@ -306,7 +307,7 @@ class AbsentStudentInfo(BaseModel):
     roll_number: str
     student_name: str
     branch: str
-    semester: str
+    semester: int
     section: Optional[str]
     contact_email: Optional[str]
 
