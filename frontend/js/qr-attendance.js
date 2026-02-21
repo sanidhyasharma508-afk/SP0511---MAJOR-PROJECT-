@@ -21,20 +21,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initializeRoleTabs() {
     const roleTabs = document.querySelectorAll('.role-tab');
-    
+
     roleTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             // Remove active class from all tabs and panels
             document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.qr-panel').forEach(p => p.classList.remove('active'));
-            
+
             // Add active class to clicked tab
             tab.classList.add('active');
-            
+
             // Show corresponding panel
             const role = tab.dataset.role;
             document.getElementById(`${role}-panel`).classList.add('active');
-            
+
             // Load appropriate data
             if (role === 'student') {
                 loadStudentDashboard();
@@ -52,9 +52,9 @@ function requestLocationPermission() {
         showLocationStatus('Geolocation not supported', 'error');
         return;
     }
-    
+
     showLocationStatus('Requesting location access...', 'loading');
-    
+
     navigator.geolocation.getCurrentPosition(
         (position) => {
             currentLocation = {
@@ -79,9 +79,9 @@ function requestLocationPermission() {
 function showLocationStatus(message, type) {
     const locationStatus = document.getElementById('location-status');
     const locationText = document.getElementById('location-text');
-    
+
     locationText.textContent = message;
-    
+
     locationStatus.className = 'location-status';
     if (type === 'success') {
         locationStatus.style.background = 'linear-gradient(135deg, rgba(67, 233, 123, 0.1) 0%, rgba(56, 249, 215, 0.1) 100%)';
@@ -95,11 +95,11 @@ function showLocationStatus(message, type) {
 function getDeviceInfo() {
     const userAgent = navigator.userAgent;
     const platform = navigator.platform;
-    
+
     // Simple device detection
     let deviceModel = 'Unknown';
     let deviceOS = 'Unknown';
-    
+
     if (/Android/i.test(userAgent)) {
         deviceOS = 'Android';
         deviceModel = userAgent.match(/Android.*; (.*?) Build/)?.[1] || 'Android Device';
@@ -113,10 +113,10 @@ function getDeviceInfo() {
     } else if (/Linux/i.test(userAgent)) {
         deviceOS = 'Linux';
     }
-    
+
     // Generate device fingerprint
     const deviceId = generateDeviceFingerprint();
-    
+
     return {
         device_id: deviceId,
         device_model: deviceModel,
@@ -134,9 +134,9 @@ function generateDeviceFingerprint() {
     ctx.textBaseline = 'top';
     ctx.font = '14px Arial';
     ctx.fillText('fingerprint', 2, 2);
-    
+
     const fingerprint = `${navigator.userAgent}${window.screen.width}${window.screen.height}${canvas.toDataURL()}`;
-    
+
     // Simple hash function
     let hash = 0;
     for (let i = 0; i < fingerprint.length; i++) {
@@ -144,19 +144,19 @@ function generateDeviceFingerprint() {
         hash = ((hash << 5) - hash) + char;
         hash = hash & hash;
     }
-    
+
     return 'device_' + Math.abs(hash).toString(16);
 }
 
 function getBrowserInfo() {
     const userAgent = navigator.userAgent;
-    
+
     if (userAgent.includes('Chrome')) return 'Chrome';
     if (userAgent.includes('Firefox')) return 'Firefox';
     if (userAgent.includes('Safari')) return 'Safari';
     if (userAgent.includes('Edge')) return 'Edge';
     if (userAgent.includes('Opera')) return 'Opera';
-    
+
     return 'Unknown';
 }
 
@@ -166,9 +166,9 @@ async function loadStudentDashboard() {
     try {
         // Mock student ID - in production, get from session
         const studentId = 'student_123';
-        
+
         const response = await fetch(`${API_BASE_URL}/qr-attendance/student/dashboard/${studentId}`);
-        
+
         if (response.ok) {
             const data = await response.json();
             updateStudentDashboard(data);
@@ -182,13 +182,13 @@ async function loadStudentDashboard() {
 
 function updateStudentDashboard(data) {
     document.getElementById('student-today-attended').textContent = data.today_attended || 0;
-    document.getElementById('student-overall-percentage').textContent = 
+    document.getElementById('student-overall-percentage').textContent =
         `${Math.round(data.overall_attendance_percentage || 0)}%`;
-    
-    // Count late entries from recent attendance
-    const lateCount = data.recent_attendance?.filter(r => r.is_late_entry).length || 0;
+
+    // Count late entries from recent attendance (respecting grace period)
+    const lateCount = data.recent_attendance?.filter(r => r.attendance_status === 'late').length || 0;
     document.getElementById('student-late-count').textContent = lateCount;
-    
+
     // Update recent attendance list if data available
     if (data.recent_attendance && data.recent_attendance.length > 0) {
         updateRecentAttendanceList(data.recent_attendance);
@@ -197,7 +197,7 @@ function updateStudentDashboard(data) {
 
 function updateRecentAttendanceList(attendanceList) {
     const listContainer = document.getElementById('student-recent-list');
-    
+
     listContainer.innerHTML = attendanceList.map(record => `
         <div class="attendance-item">
             <div class="attendance-item-info">
@@ -207,25 +207,29 @@ function updateRecentAttendanceList(attendanceList) {
                     ${formatDateTime(record.marked_at)} • Faculty Name
                 </p>
             </div>
-            <span class="attendance-badge ${record.is_late_entry ? 'warning' : 'success'}">
-                ${record.is_late_entry ? `Late (${record.late_by_minutes} min)` : 'Present'}
+            <span class="attendance-badge ${record.attendance_status === 'late' ? 'warning' : 'success'}">
+                ${record.attendance_status === 'late' ? `Late (${record.late_by_minutes} min)` : 'Present'}
             </span>
         </div>
     `).join('');
 }
 
 function formatDateTime(dateString) {
-    const date = new Date(dateString);
+    let dateStr = dateString;
+    if (typeof dateString === 'string' && !dateString.includes('Z') && !dateString.includes('+')) {
+        dateStr += 'Z';
+    }
+    const date = new Date(dateStr);
     const today = new Date();
-    
+
     const isToday = date.toDateString() === today.toDateString();
-    
-    const timeStr = date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
+
+    const timeStr = date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: true 
+        hour12: true
     });
-    
+
     if (isToday) {
         return `Today, ${timeStr}`;
     } else {
@@ -237,24 +241,24 @@ function formatDateTime(dateString) {
 
 async function startQRScanner() {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
+        const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment' }
         });
-        
+
         qrVideoStream = stream;
-        
+
         const videoElement = document.getElementById('qr-video');
         videoElement.srcObject = stream;
-        
+
         document.getElementById('camera-preview').style.display = 'block';
         document.getElementById('manual-entry').style.display = 'none';
         document.getElementById('start-camera-btn').style.display = 'none';
         document.getElementById('stop-camera-btn').style.display = 'inline-flex';
-        
+
         // In production, integrate QR scanning library like jsQR or QuaggaJS
         // For now, show instructions
         showScanResult('Camera started. Point at QR code to scan.', 'info');
-        
+
     } catch (error) {
         console.error('Camera error:', error);
         showScanResult('Failed to access camera. Please check permissions.', 'error');
@@ -266,44 +270,46 @@ function stopQRScanner() {
         qrVideoStream.getTracks().forEach(track => track.stop());
         qrVideoStream = null;
     }
-    
+
     document.getElementById('camera-preview').style.display = 'none';
     document.getElementById('manual-entry').style.display = 'block';
     document.getElementById('start-camera-btn').style.display = 'inline-flex';
     document.getElementById('stop-camera-btn').style.display = 'none';
-    
+
     clearScanResult();
 }
 
 async function markAttendanceManually() {
     const sessionIdInput = document.getElementById('session-id-input');
     const sessionData = sessionIdInput.value.trim();
-    
+
     if (!sessionData) {
         showScanResult('Please enter a session ID', 'error');
         return;
     }
-    
+
     // Try to parse as JSON (QR code data) or use as session ID
     let sessionId = sessionData;
+    let qrHash = null;
     try {
         const parsed = JSON.parse(sessionData);
         sessionId = parsed.session_id;
+        qrHash = parsed.hash;
     } catch {
         // Not JSON, use as-is
     }
-    
-    await markAttendance(sessionId);
+
+    await markAttendance(sessionId, qrHash);
 }
 
-async function markAttendance(sessionId) {
+async function markAttendance(sessionId, qrHash = null) {
     if (!currentLocation) {
         showScanResult('Location not available. Please enable location services.', 'error');
         return;
     }
-    
+
     showScanResult('Validating attendance...', 'info');
-    
+
     const requestData = {
         session_id: sessionId,
         student_id: 'student_123', // Mock - get from session in production
@@ -313,7 +319,7 @@ async function markAttendance(sessionId) {
         branch: 'CS',
         semester: 4,
         section: 'A',
-        qr_code_hash: 'hash_placeholder', // Would come from QR scan
+        qr_code_hash: qrHash || '0000000000000000000000000000000000000000000000000000000000000000', // Use provided hash or dummy
         location: {
             latitude: currentLocation.latitude,
             longitude: currentLocation.longitude,
@@ -323,7 +329,7 @@ async function markAttendance(sessionId) {
         scan_timestamp: new Date().toISOString(),
         scan_duration_ms: 1500
     };
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/qr-attendance/student/scan-qr`, {
             method: 'POST',
@@ -332,18 +338,18 @@ async function markAttendance(sessionId) {
             },
             body: JSON.stringify(requestData)
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
             showScanResult(
                 `✓ ${result.message}`,
                 'success',
-                result.session_info ? 
-                    `${result.session_info.subject} • ${result.session_info.faculty}` : 
+                result.session_info ?
+                    `${result.session_info.subject} • ${result.session_info.faculty}` :
                     null
             );
-            
+
             // Reload dashboard after 2 seconds
             setTimeout(() => {
                 loadStudentDashboard();
@@ -356,7 +362,7 @@ async function markAttendance(sessionId) {
                 errorMessages
             );
         }
-        
+
     } catch (error) {
         console.error('Attendance marking error:', error);
         showScanResult('Network error. Please try again.', 'error');
@@ -367,13 +373,13 @@ function showScanResult(message, type, details = null) {
     const scanResult = document.getElementById('scan-result');
     scanResult.style.display = 'block';
     scanResult.className = `scan-result ${type}`;
-    
+
     let icon = '';
     if (type === 'success') icon = '✓';
     else if (type === 'error') icon = '✗';
     else if (type === 'warning') icon = '⚠';
     else icon = 'ℹ';
-    
+
     scanResult.innerHTML = `
         <div class="scan-result-icon">${icon}</div>
         <div class="scan-result-message">${message}</div>
@@ -398,7 +404,7 @@ async function generateQRSession() {
         alert('Location not available. Please enable location services.');
         return;
     }
-    
+
     const formData = {
         faculty_id: 'faculty_001', // Mock - get from session
         faculty_name: 'Dr. Sharma',
@@ -420,7 +426,7 @@ async function generateQRSession() {
         allow_screenshot_scan: document.getElementById('allow-screenshot').checked,
         require_device_verification: document.getElementById('require-device-check').checked
     };
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/generate-qr`, {
             method: 'POST',
@@ -429,29 +435,29 @@ async function generateQRSession() {
             },
             body: JSON.stringify(formData)
         });
-        
+
         if (response.ok) {
             const session = await response.json();
             currentSessionId = session.session_id;
-            
+
             // Hide form, show QR display
             document.querySelector('.qr-generation-card').style.display = 'none';
             document.getElementById('qr-display-card').style.display = 'block';
             document.getElementById('live-dashboard').style.display = 'block';
-            
+
             // Display QR code
             await displayQRCode(session);
-            
+
             // Start live updates
             startLiveUpdates(session.id);
-            
+
             // Start timer
             startQRTimer(session.qr_expires_at);
-            
+
         } else {
             alert('Failed to generate QR session');
         }
-        
+
     } catch (error) {
         console.error('QR generation error:', error);
         alert('Network error. Please try again.');
@@ -462,50 +468,62 @@ async function displayQRCode(session) {
     // Fetch QR code image
     try {
         const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/qr-image/${session.session_id}`);
-        
+
         if (response.ok) {
             const data = await response.json();
-            
+
             document.getElementById('qr-code-img').src = `data:image/png;base64,${data.qr_code_base64}`;
             document.getElementById('qr-subject-display').textContent = session.subject_name;
-            document.getElementById('qr-class-details').textContent = 
+            document.getElementById('qr-class-details').textContent =
                 `${session.branch} • Semester ${session.semester} • ${session.location_name}`;
             document.getElementById('session-id-display').textContent = session.session_id;
+
+            // Reset timer UI to active state
+            const timerText = document.getElementById('qr-timer-text');
+            if (timerText) {
+                timerText.parentElement.style.background = 'linear-gradient(135deg, rgba(67, 233, 123, 0.1) 0%, rgba(56, 249, 215, 0.1) 100%)';
+                timerText.style.color = '#2d8659';
+            }
         }
-        
+
     } catch (error) {
         console.error('QR display error:', error);
     }
 }
 
 function startQRTimer(expiresAt) {
-    const expiryTime = new Date(expiresAt);
-    
+    // Force UTC interpretation by ensuring 'Z' suffix if no timezone offset present
+    let expiryStr = expiresAt;
+    if (typeof expiresAt === 'string' && !expiresAt.includes('Z') && !expiresAt.includes('+')) {
+        expiryStr += 'Z';
+    }
+    const expiryTime = new Date(expiryStr);
+
     qrTimer = setInterval(() => {
         const now = new Date();
         const remaining = expiryTime - now;
-        
+
         if (remaining <= 0) {
             clearInterval(qrTimer);
             document.getElementById('qr-timer-text').textContent = 'Expired';
-            document.getElementById('qr-timer-text').parentElement.style.background = 
+            document.getElementById('qr-timer-text').parentElement.style.background =
                 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)';
             return;
         }
-        
+
         const minutes = Math.floor(remaining / 60000);
         const seconds = Math.floor((remaining % 60000) / 1000);
-        
-        document.getElementById('qr-timer-text').textContent = 
+
+        document.getElementById('qr-timer-text').textContent =
             `Expires in ${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
+
     }, 1000);
 }
 
 function startLiveUpdates(sessionId) {
     // Initial load
     updateLiveAttendance(sessionId);
-    
+
     // Update every 5 seconds
     liveUpdateInterval = setInterval(() => {
         updateLiveAttendance(sessionId);
@@ -515,19 +533,19 @@ function startLiveUpdates(sessionId) {
 async function updateLiveAttendance(sessionId) {
     try {
         const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/live-attendance/${currentSessionId}`);
-        
+
         if (response.ok) {
             const data = await response.json();
-            
+
             document.getElementById('live-present-count').textContent = data.total_present;
             document.getElementById('live-absent-count').textContent = data.total_absent;
             document.getElementById('live-late-count').textContent = data.total_late;
             document.getElementById('live-percentage').textContent = `${Math.round(data.attendance_percentage)}%`;
-            
+
             // Load attendance records
             await loadAttendanceRecords(sessionId);
         }
-        
+
     } catch (error) {
         console.error('Live update error:', error);
     }
@@ -536,10 +554,10 @@ async function updateLiveAttendance(sessionId) {
 async function loadAttendanceRecords(sessionId) {
     try {
         const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/attendance-records/${currentSessionId}`);
-        
+
         if (response.ok) {
             const records = await response.json();
-            
+
             const tbody = document.getElementById('live-attendance-tbody');
             tbody.innerHTML = records.map(record => `
                 <tr>
@@ -548,14 +566,14 @@ async function loadAttendanceRecords(sessionId) {
                     <td>${formatDateTime(record.marked_at)}</td>
                     <td>${Math.round(record.distance_from_center)}m</td>
                     <td>
-                        <span class="attendance-badge ${record.is_late_entry ? 'warning' : 'success'}">
-                            ${record.is_late_entry ? 'Late' : 'On Time'}
+                        <span class="attendance-badge ${record.attendance_status === 'late' ? 'warning' : 'success'}">
+                            ${record.attendance_status === 'late' ? 'Late' : 'Present'}
                         </span>
                     </td>
                 </tr>
             `).join('');
         }
-        
+
     } catch (error) {
         console.error('Records load error:', error);
     }
@@ -566,23 +584,58 @@ function closeQRSession() {
         // Clear intervals
         if (qrTimer) clearInterval(qrTimer);
         if (liveUpdateInterval) clearInterval(liveUpdateInterval);
-        
+
         // Reset display
         document.querySelector('.qr-generation-card').style.display = 'block';
         document.getElementById('qr-display-card').style.display = 'none';
         document.getElementById('live-dashboard').style.display = 'none';
-        
+
         // Reset form
         document.getElementById('qr-generation-form').reset();
-        
+
         currentSessionId = null;
     }
 }
 
 async function refreshQRCode() {
     if (currentSessionId) {
-        // Regenerate QR code for same session
-        alert('QR code regeneration will be implemented');
+        try {
+            const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/regenerate-qr/${currentSessionId}`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                const session = await response.json();
+
+                // Update display
+                await displayQRCode(session);
+
+                // Restart timer
+                if (qrTimer) clearInterval(qrTimer);
+                startQRTimer(session.qr_expires_at);
+
+                // Update status UI
+                const timerText = document.getElementById('qr-timer-text');
+                if (timerText) {
+                    timerText.parentElement.style.background = 'linear-gradient(135deg, rgba(67, 233, 123, 0.1) 0%, rgba(56, 249, 215, 0.1) 100%)';
+                    timerText.style.color = '#2d8659';
+                }
+
+                // Update Badge if it exists
+                const expiredBadge = document.querySelector('.expired-badge');
+                if (expiredBadge) {
+                    expiredBadge.className = 'active-badge';
+                    expiredBadge.textContent = 'Active';
+                }
+
+                alert('QR Code regenerated successfully!');
+            } else {
+                alert('Failed to regenerate QR session');
+            }
+        } catch (error) {
+            console.error('QR regeneration error:', error);
+            alert('Network error. Please try again.');
+        }
     }
 }
 
