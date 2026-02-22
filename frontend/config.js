@@ -2,8 +2,9 @@
 const CONFIG = {
     // API Configuration
     API: {
-        BASE_URL: 'http://localhost:8000/api',
-        TIMEOUT: 10000,
+        // Updated: Pointing to your live Render backend
+        BASE_URL: 'https://sp0511-major-project-4.onrender.com',
+        TIMEOUT: 15000,
         RETRY_ATTEMPTS: 3
     },
 
@@ -43,8 +44,8 @@ const CONFIG = {
     },
 
     // Environment
-    ENVIRONMENT: 'development',
-    DEBUG: true
+    ENVIRONMENT: 'production',
+    DEBUG: false
 };
 
 // API Helper Functions
@@ -132,8 +133,12 @@ class APIClient {
     // Login
     async login(email, password) {
         const response = await this.post(this.config.ROUTES.LOGIN, { email, password });
-        if (response.data?.token) {
-            this.setToken(response.data.token);
+        
+        // FastAPI returns 'access_token', checking both for safety
+        const token = response.access_token || (response.data && response.data.token);
+        
+        if (token) {
+            this.setToken(token);
         }
         return response;
     }

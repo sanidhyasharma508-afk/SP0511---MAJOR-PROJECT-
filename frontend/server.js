@@ -2,12 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const http = require('http');
+const axios = require('axios');
 
 const app = express();
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:8000', 'http://127.0.0.1:3000'],
+    origin: ['http://localhost:3000', 'http://localhost:8000', 'http://127.0.0.1:3000', 'https://sp0511-major-project-4.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -21,13 +22,10 @@ app.use(express.static(path.join(__dirname)));
 // Also serve old interface if needed
 app.use(express.static(path.join(__dirname, 'stitch_student_attendance')));
 
-// API Base URL for backend
-const API_BASE_URL = 'http://localhost:8000/api';
+// --- UPDATED FOR LIVE RENDER BACKEND ---
+const API_BASE_URL = 'https://sp0511-major-project-4.onrender.com';
 
 // Proxy middleware to forward requests to backend
-const axios = require('axios');
-
-// Forward API requests to backend
 app.all('/api/*', async (req, res) => {
     try {
         const backendUrl = API_BASE_URL + req.path.replace('/api', '');
@@ -36,7 +34,8 @@ app.all('/api/*', async (req, res) => {
             url: backendUrl,
             headers: {
                 ...req.headers,
-                'host': 'localhost:8000'
+                // Host header updated for Render compatibility
+                'host': 'sp0511-major-project-4.onrender.com'
             }
         };
 
@@ -59,7 +58,7 @@ app.all('/api/*', async (req, res) => {
     }
 });
 
-// Serve frontend pages
+// --- ALL FRONTEND ROUTES RESTORED ---
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'homepage', 'index.html'));
 });
@@ -108,8 +107,8 @@ const server = http.createServer(app);
 
 server.listen(PORT, () => {
     console.log(`🚀 Marvel Frontend Server running on http://localhost:${PORT}`);
-    console.log(`📡 Backend API: http://localhost:8000/api`);
+    // Live Backend URL clearly visible in logs now
+    console.log(`📡 Connected to Live Backend: ${API_BASE_URL}`);
 });
 
 module.exports = app;
- 
