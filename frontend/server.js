@@ -84,6 +84,10 @@ app.get('/timetable', (req, res) => {
     res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'timetable_&_holidays', 'index.html'));
 });
 
+app.get('/gemini-settings', (req, res) => {
+    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'gemini_settings', 'index.html'));
+});
+
 // Health check
 app.get('/health', (req, res) => {
     res.json({ status: 'Marvel Frontend Server Running', port: 3000 });

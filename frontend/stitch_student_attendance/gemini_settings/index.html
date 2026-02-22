@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Chatbot Settings - Campus Automation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style>
+        :root {
+            --primary: #137fec;
+            --background-light: #f6f7f8;
+            --background-dark: #101922;
+            --card-dark: #1e293b;
+            --card-border: #324d67;
+            --text-secondary: #92adc9;
+        }
+
+        body {
+            background-color: var(--background-dark);
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .settings-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(50, 77, 103, 0.3);
+        }
+
+        .settings-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .settings-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .settings-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.5) 100%);
+            border: 1px solid rgba(50, 77, 103, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .settings-card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            color: #e5e7eb;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(30, 58, 138, 0.1);
+            border: 1px solid rgba(30, 58, 138, 0.3);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(30, 58, 138, 0.6);
+            background: rgba(30, 58, 138, 0.15);
+            box-shadow: 0 0 12px rgba(30, 58, 138, 0.2);
+        }
+
+        .form-input::placeholder {
+            color: rgba(229, 231, 235, 0.4);
+        }
+
+        .form-help {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(30, 58, 138, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(30, 58, 138, 0.2);
+        }
+
+        .toggle-label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: rgba(30, 58, 138, 0.3);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border: 1px solid rgba(30, 58, 138, 0.3);
+        }
+
+        .toggle-switch.on {
+            background: linear-gradient(135deg, #1E3A8A 0%, #0369A1 100%);
+            border-color: rgba(30, 58, 138, 0.6);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s;
+        }
+
+        .toggle-switch.on::after {
+            left: 26px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-top: 1rem;
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .status-loading {
+            background: rgba(30, 58, 138, 0.2);
+            color: rgba(229, 231, 235, 0.8);
+            border: 1px solid rgba(30, 58, 138, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .button {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, #1E3A8A 0%, #0369A1 100%);
+            color: white;
+        }
+
+        .button-primary:hover {
+            background: linear-gradient(135deg, #1E40AF 0%, #0284C7 100%);
+            box-shadow: 0 4px 16px rgba(30, 58, 138, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .button-secondary {
+            background: rgba(30, 58, 138, 0.1);
+            color: rgba(229, 231, 235, 0.8);
+            border: 1px solid rgba(30, 58, 138, 0.3);
+        }
+
+        .button-secondary:hover {
+            background: rgba(30, 58, 138, 0.2);
+            border-color: rgba(30, 58, 138, 0.5);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(30, 58, 138, 0.3);
+            border-top-color: #1E3A8A;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .info-box {
+            background: rgba(30, 58, 138, 0.1);
+            border: 1px solid rgba(30, 58, 138, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: rgba(229, 231, 235, 0.9);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #E5E7EB;
+        }
+
+        a {
+            color: #1E3A8A;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+
+        a:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(229, 231, 235, 0.8);
+            margin-bottom: 1.5rem;
+            transition: color 0.3s;
+        }
+
+        .nav-back:hover {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <a href="/dashboard" class="nav-back">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Back to Dashboard
+        </a>
+
+        <div class="settings-header">
+            <h1>🤖 Gemini ChatBot Configuration</h1>
+            <p>Manage your Campus AI Assistant settings and API integration</p>
+        </div>
+
+        <div class="settings-card">
+            <h2>
+                <span class="material-symbols-outlined">security</span>
+                API Key Management
+            </h2>
+
+            <div class="info-box">
+                <strong>📌 How to get your API Key:</strong><br>
+                1. Visit <a href="https://makersuite.google.com" target="_blank">Google AI Studio</a><br>
+                2. Click "Get API Key"<br>
+                3. Create a new API key<br>
+                4. Copy and paste it below
+            </div>
+
+            <form id="apiKeyForm">
+                <div class="form-group">
+                    <label class="form-label">Gemini API Key</label>
+                    <input
+                        type="password"
+                        id="apiKeyInput"
+                        class="form-input"
+                        placeholder="sk-xxxxxxxxxxxxxxxxxxxx"
+                        required
+                    >
+                    <p class="form-help">Your API key is stored securely and never shared</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Admin Password</label>
+                    <input
+                        type="password"
+                        id="adminPwdInput"
+                        class="form-input"
+                        placeholder="Enter admin password"
+                        required
+                    >
+                    <p class="form-help">Required for security verification</p>
+                </div>
+
+                <div id="statusMessage" class="status-badge" style="display: none;"></div>
+
+                <div class="button-group">
+                    <button type="submit" class="button button-primary">
+                        Validate & Save API Key
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="settings-card">
+            <h2>
+                <span class="material-symbols-outlined">tune</span>
+                Chatbot Settings
+            </h2>
+
+            <form id="settingsForm">
+                <div class="toggle-group">
+                    <div class="toggle-label">
+                        <span style="font-weight: 500;">Enable Chatbot</span>
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);">
+                            Turn chatbot on/off for all users
+                        </span>
+                    </div>
+                    <div class="toggle-switch on" id="enableToggle"></div>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <label class="form-label">Model</label>
+                    <select id="modelSelect" class="form-input" style="cursor: pointer;">
+                        <option value="gemini-pro" selected>Gemini Pro (Recommended)</option>
+                        <option value="gemini-pro-vision">Gemini Pro Vision</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <label class="form-label">Rate Limit (requests per hour)</label>
+                    <input
+                        type="number"
+                        id="rateLimitInput"
+                        class="form-input"
+                        value="100"
+                        min="1"
+                        max="1000"
+                    >
+                </div>
+            </form>
+        </div>
+
+        <div class="settings-card">
+            <h2>
+                <span class="material-symbols-outlined">info</span>
+                Status & Information
+            </h2>
+
+            <div style="display: grid; gap: 1rem;">
+                <div>
+                    <label class="form-label">Connection Status</label>
+                    <div id="connectionStatus" style="padding: 1rem; background: rgba(30, 58, 138, 0.1); border-radius: 8px; border: 1px solid rgba(30, 58, 138, 0.2);">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">cloud_off</span>
+                            <span>Checking connection...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">API Key Status</label>
+                    <div id="apiKeyStatus" style="padding: 1rem; background: rgba(30, 58, 138, 0.1); border-radius: 8px; border: 1px solid rgba(30, 58, 138, 0.2);">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">lock_open</span>
+                            <span>Not configured</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Last Updated</label>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem;" id="lastUpdated">-</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid rgba(50, 77, 103, 0.3); color: var(--text-secondary); font-size: 0.85rem; text-align: center;">
+            <p>Gemini ChatBot Integration • Campus Automation System • Phase 5</p>
+            <p>For support, contact your system administrator</p>
+        </div>
+    </div>
+
+    <script>
+        // API Base URL
+        const API_BASE_URL = 'http://localhost:3000/api';
+
+        // DOM Elements
+        const apiKeyForm = document.getElementById('apiKeyForm');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const adminPwdInput = document.getElementById('adminPwdInput');
+        const statusMessage = document.getElementById('statusMessage');
+        const enableToggle = document.getElementById('enableToggle');
+        const modelSelect = document.getElementById('modelSelect');
+        const rateLimitInput = document.getElementById('rateLimitInput');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const apiKeyStatus = document.getElementById('apiKeyStatus');
+        const lastUpdated = document.getElementById('lastUpdated');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkStatus();
+            attachEventListeners();
+            loadSettings();
+        });
+
+        // Event Listeners
+        function attachEventListeners() {
+            apiKeyForm.addEventListener('submit', handleSaveAPIKey);
+            enableToggle.addEventListener('click', handleToggle);
+            modelSelect.addEventListener('change', saveSettings);
+            rateLimitInput.addEventListener('change', saveSettings);
+        }
+
+        // Check Chatbot Status
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/gemini/status`);
+                const data = await response.json();
+
+                updateStatusUI(data);
+            } catch (error) {
+                console.error('Error checking status:', error);
+                updateConnectionStatus('offline');
+            }
+        }
+
+        // Update Status UI
+        function updateStatusUI(data) {
+            const isConnected = data.api_connected && data.enabled;
+
+            // Update connection status
+            const statusIcon = isConnected 
+                ? '<span class="material-symbols-outlined" style="font-size: 20px; color: #10B981;">cloud_done</span>'
+                : '<span class="material-symbols-outlined" style="font-size: 20px; color: #EF4444;">cloud_off</span>';
+            
+            const statusText = isConnected ? 'Connected' : 'Disconnected';
+            const statusColor = isConnected ? '#10B981' : '#EF4444';
+
+            connectionStatus.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.75rem; color: ${statusColor};">
+                    ${statusIcon}
+                    <span>${statusText}</span>
+                </div>
+            `;
+
+            // Update API key status
+            const keyIcon = data.api_connected
+                ? '<span class="material-symbols-outlined" style="font-size: 20px; color: #10B981;">lock</span>'
+                : '<span class="material-symbols-outlined" style="font-size: 20px; color: #FBBF24;">lock_open</span>';
+            
+            const keyText = data.api_connected ? 'Connected' : 'Not configured';
+            const keyColor = data.api_connected ? '#10B981' : '#FBBF24';
+
+            apiKeyStatus.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.75rem; color: ${keyColor};">
+                    ${keyIcon}
+                    <span>${keyText}</span>
+                </div>
+            `;
+
+            // Update toggle state
+            if (data.enabled) {
+                enableToggle.classList.add('on');
+            } else {
+                enableToggle.classList.remove('on');
+            }
+        }
+
+        // Save API Key
+        async function handleSaveAPIKey(e) {
+            e.preventDefault();
+
+            const apiKey = apiKeyInput.value.trim();
+            const adminPwd = adminPwdInput.value.trim();
+
+            if (!apiKey || !adminPwd) {
+                showStatus('Please fill in all fields', 'error');
+                return;
+            }
+
+            showStatus('Validating API key...', 'loading');
+            const submitBtn = apiKeyForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+
+            try {
+                // First validate
+                const validateResponse = await fetch(`${API_BASE_URL}/gemini/validate-key`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        api_key: apiKey,
+                        admin_password: adminPwd,
+                    }),
+                });
+
+                const validateData = await validateResponse.json();
+
+                if (!validateData.valid) {
+                    showStatus(`❌ ${validateData.message}`, 'error');
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                // Then update
+                const updateResponse = await fetch(`${API_BASE_URL}/gemini/update-key`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        api_key: apiKey,
+                        admin_password: adminPwd,
+                    }),
+                });
+
+                const updateData = await updateResponse.json();
+
+                if (updateResponse.ok && updateData.success) {
+                    showStatus('✅ API Key saved and validated!', 'success');
+                    apiKeyInput.value = '';
+                    adminPwdInput.value = '';
+                    lastUpdated.textContent = new Date().toLocaleString();
+                    setTimeout(() => checkStatus(), 1000);
+                } else {
+                    showStatus('❌ Failed to save API key', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Network error. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Toggle Enable/Disable
+        function handleToggle() {
+            enableToggle.classList.toggle('on');
+            saveSettings();
+        }
+
+        // Save Settings to localStorage
+        function saveSettings() {
+            const settings = {
+                enabled: enableToggle.classList.contains('on'),
+                model: modelSelect.value,
+                rateLimit: rateLimitInput.value,
+                lastUpdated: new Date().toISOString(),
+            };
+
+            localStorage.setItem('gemini-settings', JSON.stringify(settings));
+            console.log('Settings saved:', settings);
+        }
+
+        // Load Settings from localStorage
+        function loadSettings() {
+            const stored = localStorage.getItem('gemini-settings');
+            if (stored) {
+                const settings = JSON.parse(stored);
+                
+                if (settings.enabled) {
+                    enableToggle.classList.add('on');
+                } else {
+                    enableToggle.classList.remove('on');
+                }
+                
+                modelSelect.value = settings.model || 'gemini-pro';
+                rateLimitInput.value = settings.rateLimit || '100';
+                lastUpdated.textContent = new Date(settings.lastUpdated).toLocaleString();
+            }
+        }
+
+        // Show Status Message
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-badge status-${type}`;
+            statusMessage.style.display = 'block';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 4000);
+            }
+        }
+
+        // Refresh status every 10 seconds
+        setInterval(checkStatus, 10000);
+    </script>
+</body>
+</html>

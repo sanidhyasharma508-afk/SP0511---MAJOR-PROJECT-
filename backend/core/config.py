@@ -74,6 +74,12 @@ class Settings(BaseSettings):
     ENABLE_BACKGROUND_TASKS: bool = Field(default=False, env="ENABLE_BACKGROUND_TASKS")
     ENABLE_EMAIL_NOTIFICATIONS: bool = Field(default=False, env="ENABLE_EMAIL_NOTIFICATIONS")
 
+    # Gemini AI Chatbot (Phase 5 Enhancement)
+    GEMINI_API_KEY: Optional[str] = Field(default=None, env="GEMINI_API_KEY")
+    GEMINI_MODEL: str = Field(default="gemini-pro", env="GEMINI_MODEL")
+    ENABLE_GEMINI_CHATBOT: bool = Field(default=True, env="ENABLE_GEMINI_CHATBOT")
+    CHATBOT_RATE_LIMIT: int = Field(default=100, env="CHATBOT_RATE_LIMIT")
+
     # Performance
     MAX_POOL_SIZE: int = Field(default=10, env="MAX_POOL_SIZE")
     WORKER_THREADS: int = Field(default=4, env="WORKER_THREADS")

@@ -24,6 +24,7 @@ from backend.routes.auth import router as auth_router
 from backend.routes.schedule_feedback import router as schedule_feedback_router
 from backend.routes.events import router as events_router
 from backend.routes.qr_attendance import router as qr_attendance_router
+from backend.routes.gemini import router as gemini_router
 from backend.core.event_handlers import register_agents
 from backend.core.config import settings
 from backend.core.logging import setup_logging, get_logger, RequestLoggingMiddleware
@@ -60,7 +61,6 @@ app.add_middleware(
     allow_headers=settings.CORS_HEADERS,
 )
 
-# Include routers
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(students_router)
@@ -76,6 +76,7 @@ app.include_router(dashboard_router)
 app.include_router(analytics_router)
 app.include_router(clubs_router)
 app.include_router(ai_router)
+app.include_router(gemini_router)  # Phase 5: Gemini Chatbot Integration
 
 
 # Startup event to register agents and initialize Phase 5 components
