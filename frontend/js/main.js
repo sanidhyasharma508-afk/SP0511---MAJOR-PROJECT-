@@ -36,8 +36,10 @@ function initializeNavigation() {
             const titleMap = {
                 'dashboard': 'Dashboard',
                 'clubs': 'Clubs & Events',
-                'attendance': 'Attendance',
-                'schedule': 'Schedule',
+                'attendance': 'Attendance Overview',
+                'qr-attendance': 'QR-Based Smart Attendance',
+                'schedule': 'Academic Schedule',
+                'schedule-feedback': 'Schedule & Announcement Management',
                 'academics': 'Academics'
             };
             pageTitle.textContent = titleMap[sectionId] || 'Dashboard';
@@ -83,13 +85,140 @@ function initializeEventListeners() {
         });
     }
 
-    // Button events
-    const joinButtons = document.querySelectorAll('.btn-primary');
-    joinButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            if (btn.textContent.includes('Join')) {
-                e.preventDefault();
-                showNotification('Successfully joined the club!');
+    // Initialize real event registration
+    initializeEventRegistration();
+}
+
+async function initializeEventRegistration() {
+    const API_BASE = window.API_BASE_URL || '/api';
+    const token = localStorage.getItem('auth_token');
+    
+    // Fetch upcoming events from backend
+    let dbEvents = [];
+    try {
+        const res = await fetch(`${API_BASE}/events`, {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+            dbEvents = await res.json();
+        }
+    } catch (e) {}
+
+    // Check my registrations
+    let myRegs = [];
+    if (token) {
+        try {
+            const myRes = await fetch(`${API_BASE}/events/my-registrations`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (myRes.ok) {
+                myRegs = await myRes.json();
+            }
+        } catch (e) {}
+    }
+    const registeredEventIds = new Set(
+        myRegs.filter(r => r.status !== 'cancelled').map(r => r.event_id)
+    );
+
+    const eventCards = document.querySelectorAll('.events-section .event-card');
+    eventCards.forEach(card => {
+        const titleEl = card.querySelector('h4');
+        if (!titleEl) return;
+        const title = titleEl.textContent.trim();
+        const matched = dbEvents.find(e => 
+            e.name.toLowerCase() === title.toLowerCase() ||
+            e.name.toLowerCase().includes(title.toLowerCase()) ||
+            title.toLowerCase().includes(e.name.toLowerCase())
+        );
+
+        const btn = card.querySelector('button');
+        if (!btn) return;
+
+        if (matched && registeredEventIds.has(matched.id)) {
+            btn.textContent = 'Registered (Cancel)';
+            btn.className = 'btn btn-outline';
+            btn.dataset.registered = 'true';
+            btn.dataset.eventId = matched.id;
+        } else if (matched) {
+            btn.dataset.eventId = matched.id;
+            btn.dataset.registered = 'false';
+        }
+
+        btn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const curToken = localStorage.getItem('auth_token');
+            if (!curToken) {
+                showNotification('Please log in to register for events');
+                return;
+            }
+
+            const targetEvent = matched || (dbEvents.length > 0 ? dbEvents[0] : null);
+            if (!targetEvent) {
+                showNotification('Event not found in backend registry');
+                return;
+            }
+
+            if (btn.dataset.registered === 'true') {
+                // Cancel registration
+                const reg = myRegs.find(r => r.event_id === targetEvent.id && r.status !== 'cancelled');
+                if (reg) {
+                    try {
+                        const cancelRes = await fetch(`${API_BASE}/events/registrations/${reg.id}/cancel`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${curToken}` }
+                        });
+                        if (cancelRes.ok) {
+                            btn.dataset.registered = 'false';
+                            btn.textContent = 'Register Now →';
+                            btn.className = 'btn btn-primary';
+                            showNotification(`Cancelled registration for ${targetEvent.name}`);
+                            return;
+                        }
+                    } catch (err) {}
+                }
+            }
+
+            // Register
+            try {
+                const user = window.currentUser || {};
+                const student = window.currentStudent || {};
+                const studentId = student.id || user.linked_student_id || user.user_id || '1';
+                const studentName = student.name || user.full_name || user.username || 'Student';
+                const studentEmail = user.email || student.email || `${user.username || 'student'}@mbm.ac.in`;
+
+                const regPayload = {
+                    event_id: targetEvent.id,
+                    student_id: String(studentId),
+                    student_name: studentName,
+                    student_email: studentEmail,
+                    student_phone: "9876543210",
+                    branch: student.department || "Computer Science",
+                    year: "3rd Year",
+                    roll_number: student.roll_no || user.sub || "21BCS101"
+                };
+
+                const res = await fetch(`${API_BASE}/events/registrations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${curToken}`
+                    },
+                    body: JSON.stringify(regPayload)
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    myRegs.push(data);
+                    btn.dataset.registered = 'true';
+                    btn.textContent = 'Registered (Cancel)';
+                    btn.className = 'btn btn-outline';
+                    showNotification(`Successfully registered for ${targetEvent.name}!`);
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    showNotification(err.detail || 'Registration failed');
+                }
+            } catch (err) {
+                showNotification(`Network error: ${err.message}`);
             }
         });
     });

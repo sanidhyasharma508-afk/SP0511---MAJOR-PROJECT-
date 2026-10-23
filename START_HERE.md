@@ -72,7 +72,7 @@ campus automation/
 
 ### Terminal 1 - Start Backend
 ```bash
-cd backend
+python -m pip install -r backend/requirements.txt
 python -m uvicorn backend.main:app --reload --port 8000
 ```
 
@@ -83,16 +83,18 @@ npm install
 npm start
 ```
 
+Run the backend command from the repository root (the directory containing `backend/`), not from inside `backend/`.
+
 ### Terminal 3 - Test APIs (Optional)
 ```bash
 # Check backend health
-curl http://localhost:8000/api/health
+curl http://localhost:8000/health
 
 # Check frontend health
 curl http://localhost:3000/health
 
 # View API docs
-open http://localhost:8000/docs
+# Open http://localhost:8000/docs in a browser
 ```
 
 ---

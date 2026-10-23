@@ -1,6 +1,17 @@
 // Schedule Management JavaScript
 
-const API_BASE = 'http://localhost:8000/schedule-management';
+const API_BASE = (typeof window !== 'undefined' && window.location.port === '3000')
+    ? '/api/schedule-management'
+    : (typeof window !== 'undefined' && window.location.origin.includes(':8000') ? '/schedule-management' : 'http://localhost:8000/schedule-management');
+
+function getAuthHeaders(extraHeaders = {}) {
+    const token = window.api ? window.api.getToken() : localStorage.getItem('access_token');
+    const headers = { ...extraHeaders };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+}
 
 // Initialize Schedule Management
 document.addEventListener('DOMContentLoaded', function() {
@@ -8,7 +19,48 @@ document.addEventListener('DOMContentLoaded', function() {
     loadFeedbackStats();
     setupFormSubmission();
     setupAnnouncementForm();
+    syncUserInfo();
+    loadInstitutionalSchedules();
 });
+
+window.addEventListener('auth:login', function() {
+    syncUserInfo();
+    loadInstitutionalSchedules();
+});
+window.addEventListener('auth:ready', function() {
+    syncUserInfo();
+    loadInstitutionalSchedules();
+});
+
+function syncUserInfo() {
+    const user = window.currentUser;
+    const student = window.currentStudent;
+    if (!user) return;
+
+    const nameInput = document.getElementById('student-name');
+    const rollInput = document.getElementById('roll-number');
+    if (nameInput && (!nameInput.value || nameInput.value === 'Alex Johnson')) {
+        nameInput.value = student?.name || user.full_name || user.username;
+    }
+    if (rollInput && (!rollInput.value || rollInput.value === '21BCS101')) {
+        rollInput.value = student?.roll_no || user.username;
+    }
+
+    // Announcement author prefill
+    const authorInput = document.getElementById('announcement-author');
+    if (authorInput && !authorInput.value) {
+        authorInput.value = user.full_name || user.username;
+    }
+
+    // Role check for announcement container
+    const isStudent = (user.role || '').toLowerCase() === 'student';
+    const formContainer = document.getElementById('announcement-form')?.closest('.schedule-card');
+    if (formContainer && isStudent) {
+        formContainer.style.display = 'none';
+    } else if (formContainer) {
+        formContainer.style.display = 'block';
+    }
+}
 
 // Load and display announcements
 async function loadAnnouncements() {
@@ -70,9 +122,9 @@ function setupFormSubmission() {
             
             const response = await fetch(`${API_BASE}/feedback`, {
                 method: 'POST',
-                headers: {
+                headers: getAuthHeaders({
                     'Content-Type': 'application/json',
-                },
+                }),
                 body: JSON.stringify(formData)
             });
             
@@ -258,9 +310,9 @@ function setupAnnouncementForm() {
         try {
             const response = await fetch(`${API_BASE}/announcements`, {
                 method: 'POST',
-                headers: {
+                headers: getAuthHeaders({
                     'Content-Type': 'application/json',
-                },
+                }),
                 body: JSON.stringify(formData)
             });
             
@@ -368,4 +420,75 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', generateWeeklySchedule);
 } else {
     generateWeeklySchedule();
+}
+
+
+// Load institutional schedules from backend API (Task 7)
+async function loadInstitutionalSchedules() {
+    const apiBase = (typeof window !== 'undefined' && window.location.port === '3000')
+        ? '/api'
+        : (typeof window !== 'undefined' && window.location.origin.includes(':8000') ? '' : 'http://localhost:8000');
+    
+    const token = window.api ? window.api.getToken() : localStorage.getItem('access_token');
+    const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+
+    try {
+        const endpoint = token ? `${apiBase}/schedules/my-schedule` : `${apiBase}/schedules/active`;
+        const res = await fetch(endpoint, { headers });
+        if (!res.ok) return;
+        const schedules = await res.json();
+
+        // Update Daily Schedule Timeline
+        const timeline = document.querySelector('.schedule-timeline');
+        const dailyH4 = document.querySelector('.daily-schedule h4');
+        if (dailyH4) {
+            const now = new Date();
+            dailyH4.textContent = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', weekday: 'long' });
+        }
+
+        if (timeline) {
+            if (!schedules || schedules.length === 0) {
+                timeline.innerHTML = `
+                    <div class="empty-schedule-state" style="padding: 24px; text-align: center; color: #888;">
+                        <i class="fas fa-calendar-check" style="font-size: 32px; color: #5B7EFF; margin-bottom: 12px; display: block;"></i>
+                        <p style="font-weight: 500;">No institutional classes or events scheduled today.</p>
+                        <p style="font-size: 12px; margin-top: 4px;">Check your study tasks or consult your department timetable.</p>
+                    </div>
+                `;
+            } else {
+                timeline.innerHTML = schedules.map(s => {
+                    let iconClass = 'fas fa-chalkboard-user';
+                    if (s.event_type === 'Exam') iconClass = 'fas fa-file-pen';
+                    else if (s.event_type === 'Event') iconClass = 'fas fa-calendar-star';
+                    else if (s.event_type === 'Holiday') iconClass = 'fas fa-umbrella-beach';
+
+                    const startTime = s.start_date ? new Date(s.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBD';
+                    const endTime = s.end_date ? new Date(s.end_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                    const timeRange = endTime ? `${startTime} - ${endTime}` : startTime;
+
+                    return `
+                        <div class="timeline-item">
+                            <div class="timeline-marker">
+                                <i class="${iconClass}"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <p class="time">${timeRange}</p>
+                                <p class="title">${escapeScheduleHtml(s.title)} <span class="badge" style="font-size: 11px; margin-left: 6px; padding: 2px 6px; background: rgba(91, 126, 255, 0.15); color: #5B7EFF; border-radius: 4px;">${escapeScheduleHtml(s.event_type)}</span></p>
+                                <p class="description">${escapeScheduleHtml(s.location || 'Campus')} • ${escapeScheduleHtml(s.audience || 'All')}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (err) {
+        console.debug('Could not load institutional schedules:', err);
+    }
+}
+
+function escapeScheduleHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
 }

@@ -1,6 +1,7 @@
-/* Club pages modal & tab handling
-   - Opens club-specific page when any .club-card is clicked
-   - Provides tabs: Create Event, Organise Today's Meet, Attendance (attendance managed by club-attendance.js)
+/* Club pages modal, activities & membership handling
+   - Interacts directly with backend /clubs and /clubs/{id}/memberships
+   - Persists memberships and activities in database with JWT authentication
+   - No silent fallbacks to localStorage
 */
 (function() {
   const CLUB_DATA = {
@@ -33,15 +34,61 @@
       displayName: 'Kalakriti',
       hero: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1200&h=800&fit=crop',
       description: 'Kalakriti — painting, sketching, and cultural showcases.'
+    },
+    'Coding Club': {
+      displayName: 'Coding Club',
+      hero: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=1200&h=800&fit=crop',
+      description: 'MBM University coding & competitive programming society.'
     }
   };
 
-  function $(sel, ctx=document){ return ctx.querySelector(sel); }
+  function getAuthHeaders(headers = {}) {
+    const token = localStorage.getItem('auth_token');
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...headers
+    };
+  }
 
-  function openClubModal(title) {
+  function showToast(msg, type = 'success') {
+    const n = document.createElement('div');
+    n.textContent = msg;
+    const bg = type === 'error' ? 'rgba(214, 48, 49, 0.95)' : '#0b1a12';
+    const textCol = type === 'error' ? '#ffffff' : '#bfffe4';
+    n.style.cssText = `position:fixed;bottom:20px;left:20px;background:${bg};color:${textCol};padding:10px 16px;border-radius:8px;z-index:2200;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);`;
+    document.body.appendChild(n);
+    setTimeout(() => {
+      n.style.opacity = '0';
+      n.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => n.remove(), 300);
+    }, 2800);
+  }
+
+  async function getClubIdByName(name) {
+    const API_BASE = window.API_BASE_URL || '/api';
+    try {
+      const res = await fetch(`${API_BASE}/clubs`, { headers: getAuthHeaders() });
+      if (!res.ok) return null;
+      const clubs = await res.json();
+      const found = clubs.find(c => 
+        c.name.toLowerCase() === name.toLowerCase() ||
+        c.name.toLowerCase().includes(name.toLowerCase()) || 
+        name.toLowerCase().includes(c.name.toLowerCase())
+      );
+      return found ? found.id : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function openClubModal(title, clubIdParam = null) {
     const info = CLUB_DATA[title] || CLUB_DATA[title.split(' - ')[0]] || { displayName: title, hero: '', description: '' };
     const modal = document.getElementById('club-page-modal');
     const container = document.getElementById('club-page-content');
+    const API_BASE = window.API_BASE_URL || '/api';
+
+    const clubId = clubIdParam || await getClubIdByName(title);
 
     container.innerHTML = `
       <div class="club-hero">
@@ -49,7 +96,10 @@
         <div>
           <h2>${info.displayName}</h2>
           <p style="margin:6px 0 0; color:var(--muted-color)">${info.description || ''}</p>
-          <div style="margin-top:8px"><button id="club-back-btn" class="btn btn-outline">← Back to Clubs</button></div>
+          <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+            <button id="club-back-btn" class="btn btn-outline">← Back to Clubs</button>
+            ${clubId ? `<button id="modal-club-join-btn" class="btn btn-primary" data-club-id="${clubId}">Join Club</button>` : ''}
+          </div>
         </div>
       </div>
       <div class="club-tabs">
@@ -60,7 +110,7 @@
       <div class="club-body">
         <div class="club-column" id="club-panel-left">
           <div id="tab-create-event" class="tab-panel">
-            <h4>Create Event</h4>
+            <h4>Create Event / Activity</h4>
             <form id="club-create-event-form">
               <input id="event-title" placeholder="Event title" required />
               <input id="event-date" type="date" required />
@@ -91,7 +141,7 @@
       </div>
     `;
 
-    // wire tab buttons
+    // Wire tab buttons
     container.querySelectorAll('.club-tabs button').forEach(btn => {
       btn.addEventListener('click', () => {
         container.querySelectorAll('.club-tabs button').forEach(b => b.classList.remove('active'));
@@ -106,192 +156,305 @@
     // Back to clubs
     container.querySelector('#club-back-btn')?.addEventListener('click', () => closeClubModal());
 
-    // Create event form
+    // Join button in modal
+    const modalJoinBtn = container.querySelector('#modal-club-join-btn');
+    if (modalJoinBtn && clubId) {
+      checkMembershipStatus(clubId, modalJoinBtn);
+      modalJoinBtn.addEventListener('click', () => toggleJoinClub(clubId, modalJoinBtn));
+    }
+
+    // Create event form (backend only)
     container.querySelector('#club-create-event-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      const title = container.querySelector('#event-title').value.trim();
-      const date = container.querySelector('#event-date').value;
-      const time = container.querySelector('#event-time').value;
-      const desc = container.querySelector('#event-desc').value.trim();
-      const eventsKey = `club_events__${info.displayName}`;
+      const eventTitle = container.querySelector('#event-title').value.trim();
+      const eventDate = container.querySelector('#event-date').value;
+      const eventTime = container.querySelector('#event-time').value;
+      const eventDesc = container.querySelector('#event-desc').value.trim();
 
-      // Try backend first
-      const API_BASE = window.API_BASE_URL || 'http://localhost:8000';
-      const clubId = await getClubIdByName(info.displayName);
-      if (clubId) {
-        try {
-          const payload = {
-            club_id: clubId,
-            title,
-            description: desc,
-            activity_type: 'Event',
-            start_date: new Date(date + (time ? 'T' + time : '')).toISOString(),
-            location: '',
-            expected_participants: 0
-          };
-          const resp = await fetch(`${API_BASE}/clubs/${clubId}/activities`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (resp.ok) {
-            showToast('Event created (server)');
-            renderEventsList(eventsKey, container.querySelector('#club-events-list'), info.displayName);
-            container.querySelector('#club-create-event-form').reset();
-            return;
-          }
-        } catch (e) {
-          console.warn('Backend create event failed, falling back to localStorage');
-        }
+      if (!clubId) {
+        showToast('Club identifier not resolved. Cannot create event.', 'error');
+        return;
       }
 
-      // Fallback to localStorage (demo)
-      const existing = JSON.parse(localStorage.getItem(eventsKey) || '[]');
-      existing.unshift({ title, date, time, desc, created_at: new Date().toISOString() });
-      localStorage.setItem(eventsKey, JSON.stringify(existing));
-      renderEventsList(eventsKey, container.querySelector('#club-events-list'), info.displayName);
-      showToast('Event created');
-      container.querySelector('#club-create-event-form').reset();
+      try {
+        const payload = {
+          club_id: clubId,
+          title: eventTitle,
+          description: eventDesc,
+          activity_type: 'Event',
+          start_date: new Date(eventDate + (eventTime ? 'T' + eventTime : 'T09:00:00')).toISOString(),
+          location: 'Campus',
+          expected_participants: 0
+        };
+        const resp = await fetch(`${API_BASE}/clubs/${clubId}/activities`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        if (resp.ok) {
+          showToast('Event created successfully');
+          renderEventsList(container.querySelector('#club-events-list'), clubId);
+          container.querySelector('#club-create-event-form').reset();
+        } else {
+          const err = await resp.json().catch(() => ({}));
+          showToast(err.detail || 'Failed to create event. Advisor/Staff role required.', 'error');
+        }
+      } catch (e) {
+        showToast(`Request failed: ${e.message}`, 'error');
+      }
     });
 
-    // Today's meet form
+    // Today's meet form (backend only)
     container.querySelector('#club-today-meet-form')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const loc = container.querySelector('#meet-location').value.trim();
-      const time = container.querySelector('#meet-time').value;
+      const meetTime = container.querySelector('#meet-time').value;
       const notes = container.querySelector('#meet-notes').value.trim();
-      const key = `club_meets__${info.displayName}`;
 
-      // Try backend: create a ClubActivity with type 'Meeting'
-      const API_BASE = window.API_BASE_URL || 'http://localhost:8000';
-      const clubId = await getClubIdByName(info.displayName);
-      if (clubId) {
-        try {
-          const startIso = new Date().toISOString();
-          const payload = {
-            club_id: clubId,
-            title: `Meet - ${loc || 'On Campus'}`,
-            description: notes,
-            activity_type: 'Meeting',
-            start_date: startIso,
-            location: loc || undefined,
-            expected_participants: 0
-          };
-          const resp = await fetch(`${API_BASE}/clubs/${clubId}/activities`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-          });
-          if (resp.ok) {
-            showToast('Meet scheduled (server)');
-            renderMeetsList(key, container.querySelector('#club-meet-list'));
-            container.querySelector('#club-today-meet-form').reset();
-            return;
-          }
-        } catch (e) {
-          console.warn('Backend meet schedule failed, falling back to localStorage');
-        }
+      if (!clubId) {
+        showToast('Club identifier not resolved. Cannot schedule meet.', 'error');
+        return;
       }
 
-      const arr = JSON.parse(localStorage.getItem(key) || '[]');
-      arr.unshift({ loc, time, notes, at: new Date().toISOString() });
-      localStorage.setItem(key, JSON.stringify(arr));
-      renderMeetsList(key, container.querySelector('#club-meet-list'));
-      showToast('Meet scheduled');
-      container.querySelector('#club-today-meet-form').reset();
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const startIso = new Date(todayStr + (meetTime ? 'T' + meetTime : 'T17:00:00')).toISOString();
+        const payload = {
+          club_id: clubId,
+          title: `Meet - ${loc || 'Campus'}`,
+          description: notes,
+          activity_type: 'Meeting',
+          start_date: startIso,
+          location: loc || 'Campus',
+          expected_participants: 0
+        };
+        const resp = await fetch(`${API_BASE}/clubs/${clubId}/activities`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        if (resp.ok) {
+          showToast('Meet scheduled successfully');
+          renderEventsList(container.querySelector('#club-meet-list'), clubId, 'Meeting');
+          container.querySelector('#club-today-meet-form').reset();
+        } else {
+          const err = await resp.json().catch(() => ({}));
+          showToast(err.detail || 'Failed to schedule meet. Advisor/Staff role required.', 'error');
+        }
+      } catch (e) {
+        showToast(`Request failed: ${e.message}`, 'error');
+      }
     });
 
-    // Render lists
-    renderEventsList(`club_events__${info.displayName}`, container.querySelector('#club-events-list'), info.displayName);
-    renderMeetsList(`club_meets__${info.displayName}`, container.querySelector('#club-meet-list'));
+    // Render activities from backend
+    if (clubId) {
+      renderEventsList(container.querySelector('#club-events-list'), clubId, 'Event');
+      renderEventsList(container.querySelector('#club-meet-list'), clubId, 'Meeting');
+    }
 
-    // Mount attendance UI (club-attendance.js will handle behavior if present)
+    // Mount attendance UI
     const attendanceContainer = container.querySelector('#club-attendance-ui');
     attendanceContainer.innerHTML = `<div data-club="${info.displayName}" class="club-attendance-root"></div>`;
-    // let club-attendance script detect and bind to .club-attendance-root
 
-    // Show modal
     document.getElementById('club-page-modal').style.display = 'flex';
   }
 
-  async function getClubIdByName(name) {
-    const API_BASE = window.API_BASE_URL || 'http://localhost:8000';
+  async function renderEventsList(el, clubId, typeFilter = null) {
+    if (!el || !clubId) return;
+    const API_BASE = window.API_BASE_URL || '/api';
     try {
-      const res = await fetch(`${API_BASE}/clubs`);
-      if (!res.ok) return null;
-      const clubs = await res.json();
-      const found = clubs.find(c => c.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(c.name.toLowerCase()));
-      return found ? found.id : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  async function renderEventsList(key, el, clubName) {
-    if (!el) return;
-    const API_BASE = window.API_BASE_URL || 'http://localhost:8000';
-    const clubId = await getClubIdByName(clubName || key.replace('club_events__',''));
-
-    if (clubId) {
-      // fetch from backend
-      try {
-        const resp = await fetch(`${API_BASE}/clubs/${clubId}/activities`);
-        if (resp.ok) {
-          const items = await resp.json();
-          if (!items.length) { el.innerHTML = '<p style="color:var(--muted-color)">No events yet.</p>'; return; }
-          el.innerHTML = items.map(it => `
-            <div style="padding:8px 10px;border-radius:8px;background:var(--muted-bg);margin-bottom:8px;">
-              <strong>${it.title}</strong>
-              <div style="font-size:12px;color:var(--muted-color)">${new Date(it.start_date).toLocaleDateString()} ${it.start_date ? '• ' + new Date(it.start_date).toLocaleTimeString() : ''}</div>
-              <div style="margin-top:6px">${it.description || ''}</div>
-            </div>
-          `).join('');
+      const resp = await fetch(`${API_BASE}/clubs/${clubId}/activities`, {
+        headers: getAuthHeaders()
+      });
+      if (resp.ok) {
+        let items = await resp.json();
+        if (typeFilter) {
+          items = items.filter(it => it.activity_type === typeFilter);
+        }
+        if (!items.length) {
+          el.innerHTML = '<p style="color:var(--muted-color); padding: 8px 0;">No activities scheduled yet.</p>';
           return;
         }
-      } catch (e) {
-        /* fall back to localStorage */
+        el.innerHTML = items.map(it => `
+          <div style="padding:10px 12px;border-radius:8px;background:var(--muted-bg);margin-bottom:8px;">
+            <strong>${it.title}</strong>
+            <div style="font-size:12px;color:var(--muted-color)">
+              ${new Date(it.start_date).toLocaleDateString()} ${it.start_date ? '• ' + new Date(it.start_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+              ${it.location ? ' • ' + it.location : ''}
+            </div>
+            <div style="margin-top:6px;font-size:13px;">${it.description || ''}</div>
+          </div>
+        `).join('');
+      } else {
+        el.innerHTML = '<p style="color:var(--muted-color)">Unable to load activities.</p>';
       }
+    } catch (e) {
+      el.innerHTML = '<p style="color:var(--muted-color)">Unable to connect to server.</p>';
     }
-
-    const items = JSON.parse(localStorage.getItem(key) || '[]');
-    if (!items.length) { el.innerHTML = '<p style="color:var(--muted-color)">No events yet.</p>'; return; }
-    el.innerHTML = items.map(it => `
-      <div style="padding:8px 10px;border-radius:8px;background:var(--muted-bg);margin-bottom:8px;">
-        <strong>${it.title}</strong>
-        <div style="font-size:12px;color:var(--muted-color)">${it.date} ${it.time ? '• ' + it.time : ''}</div>
-        <div style="margin-top:6px">${it.desc || ''}</div>
-      </div>
-    `).join('');
   }
 
-  function renderMeetsList(key, el) {
-    const items = JSON.parse(localStorage.getItem(key) || '[]');
-    if (!el) return;
-    if (!items.length) { el.innerHTML = '<p style="color:var(--muted-color)">No meets scheduled.</p>'; return; }
-    el.innerHTML = items.map(it => `
-      <div style="padding:8px 10px;border-radius:8px;background:var(--muted-bg);margin-bottom:8px;">
-        <div><strong>${it.loc || '(location)'}</strong> ${it.time ? ' • ' + it.time : ''}</div>
-        <div style="font-size:12px;color:var(--muted-color)">${it.notes || ''}</div>
-      </div>
-    `).join('');
+  async function checkMembershipStatus(clubId, btn) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    const API_BASE = window.API_BASE_URL || '/api';
+    try {
+      const resp = await fetch(`${API_BASE}/clubs/my-memberships`, { headers: getAuthHeaders() });
+      if (resp.ok) {
+        const memberships = await resp.json();
+        const isMember = memberships.some(m => m.club_id === Number(clubId));
+        if (isMember) {
+          btn.dataset.isMember = 'true';
+          btn.textContent = 'Leave Club';
+          btn.className = 'btn btn-outline';
+        } else {
+          btn.dataset.isMember = 'false';
+          btn.textContent = 'Join Club';
+          btn.className = 'btn btn-primary';
+        }
+      }
+    } catch (e) {}
   }
 
-  function closeClubModal() { document.getElementById('club-page-modal').style.display = 'none'; }
-
-  function showToast(msg) {
-    const n = document.createElement('div'); n.textContent = msg; n.style.cssText = 'position:fixed;bottom:20px;left:20px;background:#0b1a12;color:#bfffe4;padding:8px 12px;border-radius:8px;z-index:2200;';
-    document.body.appendChild(n); setTimeout(() => n.remove(), 2000);
+  async function toggleJoinClub(clubId, btn) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      showToast('Please log in to join clubs', 'error');
+      return;
+    }
+    const isMember = btn.dataset.isMember === 'true';
+    const action = isMember ? 'leave' : 'join';
+    const API_BASE = window.API_BASE_URL || '/api';
+    try {
+      btn.disabled = true;
+      const resp = await fetch(`${API_BASE}/clubs/${clubId}/${action}`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
+      if (resp.ok) {
+        if (action === 'join') {
+          btn.dataset.isMember = 'true';
+          btn.textContent = 'Leave Club';
+          btn.className = btn.classList.contains('btn-small') ? 'btn btn-small btn-outline club-join-btn' : 'btn btn-outline';
+          showToast('Joined club successfully!');
+        } else {
+          btn.dataset.isMember = 'false';
+          btn.textContent = 'Join Club';
+          btn.className = btn.classList.contains('btn-small') ? 'btn btn-small btn-primary club-join-btn' : 'btn btn-primary';
+          showToast('Left club');
+        }
+        loadMyMemberships();
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        showToast(err.detail || `Failed to ${action} club`, 'error');
+      }
+    } catch (e) {
+      showToast(`Network error: ${e.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+    }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    // Attach click to every club-card
+  async function loadMyMemberships() {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    const API_BASE = window.API_BASE_URL || '/api';
+    try {
+      const resp = await fetch(`${API_BASE}/clubs/my-memberships`, { headers: getAuthHeaders() });
+      if (!resp.ok) return;
+      const memberships = await resp.json();
+      const memberClubIds = new Set(memberships.map(m => m.club_id));
+
+      document.querySelectorAll('.club-card').forEach(card => {
+        const clubId = card.dataset.clubId;
+        const btn = card.querySelector('.club-join-btn');
+        if (btn && clubId) {
+          if (memberClubIds.has(Number(clubId))) {
+            btn.dataset.isMember = 'true';
+            btn.textContent = 'Leave Club';
+            btn.className = 'btn btn-small btn-outline club-join-btn';
+          } else {
+            btn.dataset.isMember = 'false';
+            btn.textContent = 'Join Club';
+            btn.className = 'btn btn-small btn-primary club-join-btn';
+          }
+        }
+      });
+
+      // Update dashboard My Clubs card if present
+      const myClubsPreview = document.querySelector('.my-clubs-card .club-preview');
+      if (myClubsPreview && memberships.length > 0) {
+        myClubsPreview.innerHTML = memberships.map(m => `
+          <div class="club-item">
+            <div class="club-badge" style="background: linear-gradient(135deg, #5B7EFF 0%, #3B5FE8 100%);">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="club-details">
+              <p class="club-name">${m.club_name || 'Club #' + m.club_id}</p>
+              <p class="club-event">${m.role || 'Member'} • Joined ${new Date(m.joined_at).toLocaleDateString()}</p>
+            </div>
+          </div>
+        `).join('');
+      }
+    } catch (e) {
+      console.debug('Failed to load memberships:', e);
+    }
+  }
+
+  function closeClubModal() {
+    document.getElementById('club-page-modal').style.display = 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Match club cards to real database IDs
+    const API_BASE = window.API_BASE_URL || '/api';
+    let dbClubs = [];
+    try {
+      const res = await fetch(`${API_BASE}/clubs`);
+      if (res.ok) dbClubs = await res.json();
+    } catch (e) {}
+
     document.querySelectorAll('.club-card').forEach(card => {
       card.style.cursor = 'pointer';
+      const title = card.querySelector('h4')?.textContent?.trim() || 'Club';
+      const matchedClub = dbClubs.find(c => 
+        c.name.toLowerCase() === title.toLowerCase() ||
+        c.name.toLowerCase().includes(title.toLowerCase()) || 
+        title.toLowerCase().includes(c.name.toLowerCase())
+      );
+      if (matchedClub) {
+        card.dataset.clubId = matchedClub.id;
+      }
+
+      // Add click handler to card to open modal
       card.addEventListener('click', (e) => {
-        const title = card.querySelector('h4')?.textContent?.trim() || 'Club';
-        openClubModal(title);
+        if (e.target.closest('button')) return; // ignore join button click
+        openClubModal(title, card.dataset.clubId);
       });
+
+      // Wire join button
+      const joinBtn = card.querySelector('button');
+      if (joinBtn) {
+        joinBtn.classList.add('club-join-btn');
+        joinBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cid = card.dataset.clubId;
+          if (!cid) {
+            showToast('Club identifier not found', 'error');
+            return;
+          }
+          toggleJoinClub(cid, joinBtn);
+        });
+      }
     });
 
     // Close handlers
-    document.querySelectorAll('#club-page-modal .modal-close').forEach(btn => btn.addEventListener('click', () => { document.getElementById('club-page-modal').style.display = 'none'; }));
+    document.querySelectorAll('#club-page-modal .modal-close').forEach(btn => {
+      btn.addEventListener('click', closeClubModal);
+    });
+
+    // Initial membership load
+    loadMyMemberships();
   });
 })();

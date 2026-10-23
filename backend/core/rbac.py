@@ -11,12 +11,16 @@ from backend.core.auth import decode_token, TokenData, is_token_blacklisted
 logger = logging.getLogger(__name__)
 
 
+from sqlalchemy.orm import Session
+from backend.database import get_db
+
 # Role definitions
 class Role(str, Enum):
     """User roles"""
 
     ADMIN = "admin"
     STAFF = "staff"
+    FACULTY = "faculty"
     STUDENT = "student"
     GUEST = "guest"
 
@@ -25,13 +29,27 @@ class RoleHierarchy:
     """Role hierarchy for permission checking"""
 
     # Higher numbers = more permissions
-    hierarchy = {Role.GUEST: 0, Role.STUDENT: 1, Role.STAFF: 2, Role.ADMIN: 3}
+    hierarchy = {
+        "guest": 0,
+        "student": 1,
+        "faculty": 2,
+        "staff": 2,
+        "admin": 3,
+    }
+
+    @classmethod
+    def _normalize_role(cls, role) -> str:
+        if hasattr(role, "value"):
+            return str(role.value).strip().lower()
+        return str(role).strip().lower()
 
     @classmethod
     def has_role(cls, user_role: str, required_role: str) -> bool:
         """Check if user role has permission for required role"""
-        user_level = cls.hierarchy.get(user_role, 0)
-        required_level = cls.hierarchy.get(required_role, 0)
+        user_key = cls._normalize_role(user_role)
+        required_key = cls._normalize_role(required_role)
+        user_level = cls.hierarchy.get(user_key, -1)
+        required_level = cls.hierarchy.get(required_key, 999)
         return user_level >= required_level
 
     @classmethod
@@ -44,10 +62,13 @@ class RoleHierarchy:
 security = HTTPBearer(auto_error=False)
 
 
-async def get_current_user(credentials: Optional[object] = Depends(security)) -> "TokenData":
+async def get_current_user(
+    credentials: Optional[object] = Depends(security),
+    db: Session = Depends(get_db)
+) -> "TokenData":
     """
     Dependency to get current authenticated user
-    Validates JWT token and returns user info
+    Validates JWT token and database active status
     """
     if not credentials:
         raise HTTPException(
@@ -84,6 +105,28 @@ async def get_current_user(credentials: Optional[object] = Depends(security)) ->
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Validate against persistent database user record
+    from backend.models.user import User
+    db_user = db.query(User).filter(User.id == token_data.user_id).first()
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not db_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account is inactive",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Sync roles and links
+    token_data.role = db_user.role
+    token_data.linked_student_id = db_user.linked_student_id
+    token_data.email = db_user.email
+
     return token_data
 
 
@@ -112,12 +155,17 @@ def require_admin(current_user: TokenData = Depends(require_role(Role.ADMIN))) -
     return current_user
 
 
-def require_staff(current_user: TokenData = Depends(require_role(Role.STAFF))) -> TokenData:
+def require_staff(current_user: TokenData = Depends(require_role(Role.STAFF, Role.ADMIN))) -> TokenData:
     """Dependency for staff and admin endpoints"""
     return current_user
 
 
-def require_student(current_user: TokenData = Depends(require_role(Role.STUDENT))) -> TokenData:
+def require_faculty(current_user: TokenData = Depends(require_role(Role.FACULTY, Role.STAFF, Role.ADMIN))) -> TokenData:
+    """Dependency for faculty, staff, and admin endpoints"""
+    return current_user
+
+
+def require_student(current_user: TokenData = Depends(require_role(Role.STUDENT, Role.STAFF, Role.ADMIN))) -> TokenData:
     """Dependency for student, staff, and admin endpoints"""
     return current_user
 
@@ -125,6 +173,7 @@ def require_student(current_user: TokenData = Depends(require_role(Role.STUDENT)
 def require_any_auth(current_user: TokenData = Depends(get_current_user)) -> TokenData:
     """Dependency for authenticated users (any role)"""
     return current_user
+
 
 
 # Permission-based access control
@@ -246,6 +295,8 @@ class AuthContext:
         self.user_id = user.user_id
         self.username = user.sub
         self.role = user.role
+        self.linked_student_id = user.linked_student_id
+        self.email = user.email
 
     def has_role(self, *roles: str) -> bool:
         """Check if user has role"""
@@ -264,6 +315,11 @@ class AuthContext:
         """Check if user is staff"""
         return self.role in [Role.ADMIN, Role.STAFF]
 
+    def is_faculty(self) -> bool:
+        """Check if user is faculty"""
+        return self.role in [Role.ADMIN, Role.STAFF, Role.FACULTY]
+
     def is_student(self) -> bool:
         """Check if user is student"""
         return self.role in [Role.ADMIN, Role.STAFF, Role.STUDENT]
+

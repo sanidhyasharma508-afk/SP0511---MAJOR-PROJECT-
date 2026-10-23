@@ -3,7 +3,7 @@ Event Management Models
 Handles event creation, registration, leaderboards, and announcements
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Float, Boolean, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Float, Boolean, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -36,6 +36,7 @@ class RegistrationStatus(str, enum.Enum):
     APPROVED = "approved"
     REJECTED = "rejected"
     WAITLISTED = "waitlisted"
+    CANCELLED = "cancelled"
 
 
 class Event(Base):
@@ -122,6 +123,9 @@ class EventRegistration(Base):
     Event registration model for tracking participant registrations
     """
     __tablename__ = "event_registrations"
+    __table_args__ = (
+        UniqueConstraint("event_id", "student_id", name="uq_event_student_reg"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     event_id = Column(Integer, ForeignKey("events.id", ondelete="CASCADE"), nullable=False)

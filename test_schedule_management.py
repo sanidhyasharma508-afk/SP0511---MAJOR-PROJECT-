@@ -1,12 +1,50 @@
 #!/usr/bin/env python3
 """
 Quick test script for Schedule Management API endpoints
+Supports testing against a live server or in-process TestClient.
 """
-import requests
+import sys
 import json
 from datetime import datetime, timedelta
 
-API_BASE = "http://localhost:8000/schedule-management"
+class APIClientWrapper:
+    def __init__(self):
+        self.use_live = False
+        self.base_url = "http://localhost:8000/schedule-management"
+        try:
+            import requests
+            r = requests.get("http://localhost:8000/health", timeout=1)
+            if r.status_code == 200:
+                self.use_live = True
+                self.requests = requests
+        except Exception:
+            self.use_live = False
+
+        if not self.use_live:
+            from starlette.testclient import TestClient
+            from backend.main import app
+            self.client = TestClient(app)
+
+    def get(self, path):
+        if self.use_live:
+            return self.requests.get(f"{self.base_url}{path}")
+        else:
+            return self.client.get(f"/schedule-management{path}")
+
+    def post(self, path, json_data):
+        if self.use_live:
+            return self.requests.post(f"{self.base_url}{path}", json=json_data)
+        else:
+            return self.client.post(f"/schedule-management{path}", json=json_data)
+
+api_client = APIClientWrapper()
+
+def safe_print(msg):
+    try:
+        print(msg)
+    except UnicodeEncodeError:
+        enc = getattr(sys.stdout, 'encoding', 'ascii') or 'ascii'
+        print(msg.encode(enc, errors='replace').decode(enc))
 
 def test_feedback_submission():
     """Test submitting feedback"""
@@ -23,19 +61,19 @@ def test_feedback_submission():
     }
     
     try:
-        response = requests.post(f"{API_BASE}/feedback", json=feedback_data)
-        response.raise_for_status()
+        response = api_client.post("/feedback", feedback_data)
+        assert response.status_code == 201 or response.status_code == 200, f"Status: {response.status_code}"
         result = response.json()
         
-        print(f"✅ Feedback submitted successfully!")
-        print(f"📝 Feedback ID: {result.get('message', '')}")
-        print(f"\n📱 WhatsApp Message Preview:")
+        print("[OK] Feedback submitted successfully!")
+        print(f"[INFO] Feedback ID: {result.get('message', '')}")
+        print("\nWhatsApp Message Preview:")
         print("-" * 60)
-        print(result.get('whatsapp_message', '')[:300] + "...")
+        safe_print(result.get('whatsapp_message', '')[:300] + "...")
         
         return True
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[FAIL] Error: {e}")
         return False
 
 def test_get_feedback_stats():
@@ -45,20 +83,20 @@ def test_get_feedback_stats():
     print("="*60)
     
     try:
-        response = requests.get(f"{API_BASE}/feedback/stats/summary")
-        response.raise_for_status()
+        response = api_client.get("/feedback/stats/summary")
+        assert response.status_code == 200, f"Status: {response.status_code}"
         stats = response.json()
         
-        print(f"✅ Statistics retrieved successfully!")
-        print(f"📊 Total Feedback: {stats['total_feedback']}")
-        print(f"⏳ Pending: {stats['pending']}")
-        print(f"🔄 In Progress: {stats['in_progress']}")
-        print(f"✅ Resolved: {stats['resolved']}")
-        print(f"📈 Resolution Rate: {stats['resolution_rate']}%")
+        print("[OK] Statistics retrieved successfully!")
+        print(f"[STATS] Total Feedback: {stats['total_feedback']}")
+        print(f"[STATS] Pending: {stats['pending']}")
+        print(f"[STATS] In Progress: {stats['in_progress']}")
+        print(f"[STATS] Resolved: {stats['resolved']}")
+        print(f"[STATS] Resolution Rate: {stats['resolution_rate']}%")
         
         return True
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[FAIL] Error: {e}")
         return False
 
 def test_announcement_creation():
@@ -77,19 +115,19 @@ def test_announcement_creation():
     }
     
     try:
-        response = requests.post(f"{API_BASE}/announcements", json=announcement_data)
-        response.raise_for_status()
+        response = api_client.post("/announcements", announcement_data)
+        assert response.status_code == 201 or response.status_code == 200, f"Status: {response.status_code}"
         result = response.json()
         
-        print(f"✅ Announcement created successfully!")
-        print(f"📢 Title: {result['title']}")
-        print(f"👤 Author: {result['author']}")
-        print(f"🔴 Priority: {result['priority'].upper()}")
-        print(f"👥 Audience: {result['target_audience']}")
+        print("[OK] Announcement created successfully!")
+        print(f"[INFO] Title: {result['title']}")
+        print(f"[INFO] Author: {result['author']}")
+        print(f"[INFO] Priority: {result['priority'].upper()}")
+        print(f"[INFO] Audience: {result['target_audience']}")
         
         return True
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[FAIL] Error: {e}")
         return False
 
 def test_get_announcements():
@@ -99,11 +137,11 @@ def test_get_announcements():
     print("="*60)
     
     try:
-        response = requests.get(f"{API_BASE}/announcements?active_only=true")
-        response.raise_for_status()
+        response = api_client.get("/announcements?active_only=true")
+        assert response.status_code == 200, f"Status: {response.status_code}"
         announcements = response.json()
         
-        print(f"✅ Retrieved {len(announcements)} active announcement(s)")
+        print(f"[OK] Retrieved {len(announcements)} active announcement(s)")
         
         for idx, ann in enumerate(announcements[:3], 1):
             print(f"\n{idx}. {ann['title']}")
@@ -113,7 +151,7 @@ def test_get_announcements():
         
         return True
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[FAIL] Error: {e}")
         return False
 
 def test_all_feedback():
@@ -123,11 +161,11 @@ def test_all_feedback():
     print("="*60)
     
     try:
-        response = requests.get(f"{API_BASE}/feedback")
-        response.raise_for_status()
+        response = api_client.get("/feedback")
+        assert response.status_code == 200, f"Status: {response.status_code}"
         feedbacks = response.json()
         
-        print(f"✅ Retrieved {len(feedbacks)} feedback submission(s)")
+        print(f"[OK] Retrieved {len(feedbacks)} feedback submission(s)")
         
         for idx, fb in enumerate(feedbacks[:3], 1):
             print(f"\n{idx}. {fb['issue_type']}")
@@ -137,12 +175,13 @@ def test_all_feedback():
         
         return True
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[FAIL] Error: {e}")
         return False
 
 def main():
     """Run all tests"""
-    print("\n🚀 Starting Schedule Management API Tests")
+    mode = "Live Server" if api_client.use_live else "In-Process TestClient"
+    print(f"\n[START] Starting Schedule Management API Tests ({mode})")
     print("=" * 60)
     
     tests = [
@@ -159,7 +198,7 @@ def main():
             result = test_func()
             results.append((test_name, result))
         except Exception as e:
-            print(f"\n❌ {test_name} failed with error: {e}")
+            print(f"\n[FAIL] {test_name} failed with error: {e}")
             results.append((test_name, False))
     
     # Summary
@@ -171,15 +210,17 @@ def main():
     total = len(results)
     
     for test_name, result in results:
-        status = "✅ PASSED" if result else "❌ FAILED"
+        status = "[PASSED]" if result else "[FAILED]"
         print(f"{status} - {test_name}")
     
     print(f"\nResults: {passed}/{total} tests passed")
     
     if passed == total:
-        print("\n🎉 All tests passed successfully!")
+        print("\nAll tests passed successfully!")
+        return 0
     else:
-        print(f"\n⚠️  {total - passed} test(s) failed")
+        print(f"\n{total - passed} test(s) failed")
+        return 1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

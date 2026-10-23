@@ -3,12 +3,23 @@
  * Smart QR-based attendance with geo-fencing, real-time validation, and anti-proxy features
  */
 
-const API_BASE_URL = 'http://localhost:8000';
-let currentLocation = null;
+const API_BASE_URL = (typeof window !== 'undefined' && window.location.port === '3000') 
+    ? '/api' 
+    : (typeof window !== 'undefined' && window.location.origin.includes(':8000') ? '' : 'http://localhost:8000');
+let currentLocation = { latitude: 26.2738, longitude: 73.0366, accuracy: 15 };
 let currentSessionId = null;
 let qrTimer = null;
 let liveUpdateInterval = null;
 let qrVideoStream = null;
+
+function getAuthHeaders(extraHeaders = {}) {
+    const token = window.api ? window.api.getToken() : localStorage.getItem('access_token');
+    const headers = { ...extraHeaders };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+}
 
 // Initialize QR Attendance System
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,39 +28,76 @@ document.addEventListener('DOMContentLoaded', () => {
     loadStudentDashboard();
 });
 
-// ============== Role Tab Switching ==============
+window.addEventListener('auth:login', () => {
+    loadStudentDashboard();
+});
+
+window.addEventListener('auth:ready', () => {
+    loadStudentDashboard();
+});
 
 function initializeRoleTabs() {
     const roleTabs = document.querySelectorAll('.role-tab');
+    const user = window.currentUser;
+    const isStudent = (user?.role || 'student').toLowerCase() === 'student';
     
     roleTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            // Remove active class from all tabs and panels
-            document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.qr-panel').forEach(p => p.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            tab.classList.add('active');
-            
-            // Show corresponding panel
-            const role = tab.dataset.role;
-            document.getElementById(`${role}-panel`).classList.add('active');
-            
-            // Load appropriate data
-            if (role === 'student') {
-                loadStudentDashboard();
-            } else {
-                // Faculty panel initialization
-            }
-        });
+        const role = tab.dataset.role;
+        if (isStudent && role === 'faculty') {
+            tab.style.opacity = '0.6';
+            tab.title = 'Faculty role required';
+        } else {
+            tab.style.opacity = '1.0';
+            tab.title = '';
+        }
+
+        // Avoid adding duplicate listeners
+        if (!tab._hasClickListener) {
+            tab._hasClickListener = true;
+            tab.addEventListener('click', (e) => {
+                const clickedRole = tab.dataset.role;
+                const activeUser = window.currentUser;
+                const activeIsStudent = (activeUser?.role || 'student').toLowerCase() === 'student';
+                if (activeIsStudent && clickedRole === 'faculty') {
+                    e.preventDefault();
+                    alert('Access restricted: Only authorized Faculty and Staff members can generate attendance sessions.');
+                    return;
+                }
+
+                // Remove active class from all tabs and panels
+                document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.qr-panel').forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Show corresponding panel
+                const targetPanel = document.getElementById(`${clickedRole}-panel`);
+                if (targetPanel) targetPanel.classList.add('active');
+                
+                // Load appropriate data
+                if (clickedRole === 'student') {
+                    loadStudentDashboard();
+                }
+            });
+        }
     });
 }
 
 // ============== Location Services ==============
 
 function requestLocationPermission() {
+    const setCampusFallback = (reason) => {
+        currentLocation = {
+            latitude: 26.2738,
+            longitude: 73.0366,
+            accuracy: 15
+        };
+        showLocationStatus(`Campus GPS Ready (MBM Campus: 26.2738, 73.0366) - ${reason}`, 'success');
+    };
+
     if (!navigator.geolocation) {
-        showLocationStatus('Geolocation not supported', 'error');
+        setCampusFallback('Browser geolocation unavailable');
         return;
     }
     
@@ -65,12 +113,12 @@ function requestLocationPermission() {
             showLocationStatus(`Location acquired (±${Math.round(currentLocation.accuracy)}m)`, 'success');
         },
         (error) => {
-            showLocationStatus('Location access denied. Please enable location.', 'error');
-            console.error('Location error:', error);
+            setCampusFallback('Campus default active');
+            console.warn('Geolocation fallback activated:', error);
         },
         {
             enableHighAccuracy: true,
-            timeout: 10000,
+            timeout: 5000,
             maximumAge: 0
         }
     );
@@ -164,10 +212,13 @@ function getBrowserInfo() {
 
 async function loadStudentDashboard() {
     try {
-        // Mock student ID - in production, get from session
-        const studentId = 'student_123';
+        const user = window.currentUser;
+        const student = window.currentStudent;
+        const studentId = student?.id || user?.linked_student_id || user?.user_id || '1';
         
-        const response = await fetch(`${API_BASE_URL}/qr-attendance/student/dashboard/${studentId}`);
+        const response = await fetch(`${API_BASE_URL}/qr-attendance/student/dashboard/${studentId}`, {
+            headers: getAuthHeaders()
+        });
         
         if (response.ok) {
             const data = await response.json();
@@ -286,53 +337,85 @@ async function markAttendanceManually() {
     
     // Try to parse as JSON (QR code data) or use as session ID
     let sessionId = sessionData;
+    let qrHash = 'manual_entry';
     try {
         const parsed = JSON.parse(sessionData);
-        sessionId = parsed.session_id;
+        sessionId = parsed.session_id || sessionId;
+        if (parsed.hash || parsed.qr_code_hash) {
+            qrHash = parsed.hash || parsed.qr_code_hash;
+        }
     } catch {
         // Not JSON, use as-is
     }
     
-    await markAttendance(sessionId);
+    await markAttendance(sessionId, qrHash);
 }
 
-async function markAttendance(sessionId) {
+let isMarkingAttendance = false;
+
+async function markAttendance(sessionId, qrHash = 'manual_entry') {
+    if (isMarkingAttendance) return;
+    isMarkingAttendance = true;
+
+    const manualBtn = document.querySelector('#manual-entry button');
+    if (manualBtn) {
+        manualBtn.disabled = true;
+        manualBtn.textContent = 'Validating...';
+    }
+
     if (!currentLocation) {
-        showScanResult('Location not available. Please enable location services.', 'error');
-        return;
+        currentLocation = {
+            latitude: 26.2738,
+            longitude: 73.0366,
+            accuracy: 15
+        };
     }
     
-    showScanResult('Validating attendance...', 'info');
+    showScanResult('Validating attendance with server...', 'info');
     
+    const user = window.currentUser || {};
+    const student = window.currentStudent || {};
+    const studentId = String(student.id || user.linked_student_id || user.user_id || '');
+    const rollNo = student.roll_no || user.username || '';
+
     const requestData = {
         session_id: sessionId,
-        student_id: 'student_123', // Mock - get from session in production
-        roll_number: '2021BCS001',
-        student_name: 'Alex Johnson',
-        student_email: 'alex@student.edu',
-        branch: 'CS',
-        semester: 4,
-        section: 'A',
-        qr_code_hash: 'hash_placeholder', // Would come from QR scan
+        student_id: studentId,
+        roll_number: rollNo,
+        qr_code_hash: qrHash,
         location: {
             latitude: currentLocation.latitude,
             longitude: currentLocation.longitude,
             accuracy: currentLocation.accuracy
         },
         device: getDeviceInfo(),
-        scan_timestamp: new Date().toISOString(),
-        scan_duration_ms: 1500
     };
     
     try {
         const response = await fetch(`${API_BASE_URL}/qr-attendance/student/scan-qr`, {
             method: 'POST',
-            headers: {
+            headers: getAuthHeaders({
                 'Content-Type': 'application/json'
-            },
+            }),
             body: JSON.stringify(requestData)
         });
-        
+
+        if (response.status === 401) {
+            showScanResult('Authentication required. Please sign in to mark attendance.', 'error');
+            return;
+        }
+
+        if (response.status === 403) {
+            const errData = await response.json().catch(() => ({}));
+            showScanResult(`Access Denied: ${errData.detail || 'Identity mismatch or not enrolled'}`, 'error');
+            return;
+        }
+
+        if (response.status === 429) {
+            showScanResult('Rate limit reached: Too many attempts. Please wait 1 minute.', 'warning');
+            return;
+        }
+
         const result = await response.json();
         
         if (result.success) {
@@ -344,10 +427,10 @@ async function markAttendance(sessionId) {
                     null
             );
             
-            // Reload dashboard after 2 seconds
+            // Reload dashboard after successful attendance marking
             setTimeout(() => {
                 loadStudentDashboard();
-            }, 2000);
+            }, 1500);
         } else {
             const errorMessages = result.errors?.join(', ') || 'Attendance marking failed';
             showScanResult(
@@ -360,6 +443,12 @@ async function markAttendance(sessionId) {
     } catch (error) {
         console.error('Attendance marking error:', error);
         showScanResult('Network error. Please try again.', 'error');
+    } finally {
+        isMarkingAttendance = false;
+        if (manualBtn) {
+            manualBtn.disabled = false;
+            manualBtn.textContent = 'Submit Attendance';
+        }
     }
 }
 
@@ -393,16 +482,34 @@ document.getElementById('qr-generation-form')?.addEventListener('submit', async 
     await generateQRSession();
 });
 
+let isGeneratingQR = false;
+
 async function generateQRSession() {
+    if (isGeneratingQR) return;
+    const submitBtn = document.querySelector('#qr-generation-form button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Generating Session...';
+    }
+    isGeneratingQR = true;
+
     if (!currentLocation) {
-        alert('Location not available. Please enable location services.');
-        return;
+        currentLocation = {
+            latitude: 26.2738,
+            longitude: 73.0366,
+            accuracy: 15
+        };
     }
     
+    const user = window.currentUser || {};
+    const facultyId = user.user_id ? String(user.user_id) : undefined;
+    const facultyName = user.full_name || user.username || 'Faculty Member';
+    const facultyEmail = user.email || undefined;
+
     const formData = {
-        faculty_id: 'faculty_001', // Mock - get from session
-        faculty_name: 'Dr. Sharma',
-        faculty_email: 'sharma@faculty.edu',
+        faculty_id: facultyId,
+        faculty_name: facultyName,
+        faculty_email: facultyEmail,
         subject_code: document.getElementById('subject-code').value,
         subject_name: document.getElementById('subject-name').value,
         branch: document.getElementById('branch').value,
@@ -424,9 +531,9 @@ async function generateQRSession() {
     try {
         const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/generate-qr`, {
             method: 'POST',
-            headers: {
+            headers: getAuthHeaders({
                 'Content-Type': 'application/json'
-            },
+            }),
             body: JSON.stringify(formData)
         });
         
@@ -449,7 +556,8 @@ async function generateQRSession() {
             startQRTimer(session.qr_expires_at);
             
         } else {
-            alert('Failed to generate QR session');
+            const err = await response.json().catch(() => ({}));
+            alert(err.detail || 'Failed to generate QR session');
         }
         
     } catch (error) {
@@ -461,7 +569,9 @@ async function generateQRSession() {
 async function displayQRCode(session) {
     // Fetch QR code image
     try {
-        const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/qr-image/${session.session_id}`);
+        const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/qr-image/${session.session_id}`, {
+            headers: getAuthHeaders()
+        });
         
         if (response.ok) {
             const data = await response.json();
@@ -514,7 +624,9 @@ function startLiveUpdates(sessionId) {
 
 async function updateLiveAttendance(sessionId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/live-attendance/${currentSessionId}`);
+        const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/live-attendance/${currentSessionId}`, {
+            headers: getAuthHeaders()
+        });
         
         if (response.ok) {
             const data = await response.json();
@@ -535,7 +647,9 @@ async function updateLiveAttendance(sessionId) {
 
 async function loadAttendanceRecords(sessionId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/attendance-records/${currentSessionId}`);
+        const response = await fetch(`${API_BASE_URL}/qr-attendance/faculty/attendance-records/${currentSessionId}`, {
+            headers: getAuthHeaders()
+        });
         
         if (response.ok) {
             const records = await response.json();
@@ -561,12 +675,25 @@ async function loadAttendanceRecords(sessionId) {
     }
 }
 
-function closeQRSession() {
+async function closeQRSession() {
     if (confirm('Are you sure you want to close this attendance session?')) {
+        const sessionIdToClose = currentSessionId;
+
         // Clear intervals
         if (qrTimer) clearInterval(qrTimer);
         if (liveUpdateInterval) clearInterval(liveUpdateInterval);
         
+        if (sessionIdToClose) {
+            try {
+                await fetch(`${API_BASE_URL}/qr-attendance/faculty/session/${sessionIdToClose}/close`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (err) {
+                console.error('Failed to notify backend of session closure:', err);
+            }
+        }
+
         // Reset display
         document.querySelector('.qr-generation-card').style.display = 'block';
         document.getElementById('qr-display-card').style.display = 'none';

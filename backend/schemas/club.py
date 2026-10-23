@@ -5,10 +5,12 @@ from typing import Optional, List
 
 class ClubMemberResponse(BaseModel):
     id: int
+    club_id: int
     student_id: int
-    position: Optional[str]
+    position: Optional[str] = None
     join_date: datetime
     is_active: bool
+    club_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -3,7 +3,7 @@ QR-Based Attendance System Models with Geo-Fencing
 Ensures proxy-free attendance with location validation
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, Text, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
 from backend.database import Base
@@ -129,6 +129,9 @@ class QRAttendanceRecord(Base):
     QR Attendance Record - Individual student attendance with location
     """
     __tablename__ = "qr_attendance_records"
+    __table_args__ = (
+        UniqueConstraint("session_id", "roll_number", name="uq_session_roll"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(Integer, ForeignKey("qr_attendance_sessions.id", ondelete="CASCADE"), nullable=False)

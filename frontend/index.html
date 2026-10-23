@@ -192,12 +192,15 @@
 
             <div class="sidebar-footer">
                 <div class="user-profile-mini">
-                    <img src="https://ui-avatars.com/api/?name=Alex+Johnson&background=5B7EFF&color=fff&size=40" alt="User">
+                    <img src="https://ui-avatars.com/api/?name=User&background=5B7EFF&color=fff&size=40" alt="User">
                     <div class="user-info-mini">
-                        <p>Alex Johnson</p>
-                        <span>CS • Sem 4</span>
+                        <p>Sign In Required</p>
+                        <span>Guest</span>
                     </div>
                 </div>
+                <button type="button" class="btn-logout btn-logout-trigger" title="Sign out of portal">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             </div>
         </aside>
 
@@ -225,8 +228,11 @@
                         <i class="fas fa-bell"></i>
                         <span class="notification-badge">3</span>
                     </button>
-                    <button class="profile-btn">
-                        <img src="https://ui-avatars.com/api/?name=Alex+Johnson&background=5B7EFF&color=fff&size=40" alt="User">
+                    <button class="profile-btn" title="User Profile">
+                        <img src="https://ui-avatars.com/api/?name=User&background=5B7EFF&color=fff&size=40" alt="User">
+                    </button>
+                    <button type="button" class="btn-icon header-logout-btn btn-logout-trigger" title="Log out" aria-label="Log out">
+                        <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
             </header>
@@ -239,15 +245,15 @@
                     <div class="student-profile-card">
                         <div class="profile-header">
                             <div class="profile-avatar">
-                                <img id="student-avatar" src="https://ui-avatars.com/api/?name=Alex+Johnson&background=5B7EFF&color=fff&size=100" alt="Student">
+                                <img id="student-avatar" src="https://ui-avatars.com/api/?name=User&background=5B7EFF&color=fff&size=100" alt="Student">
                                 <div class="profile-status online"></div>
                             </div>
                             <div class="profile-info">
-                                <h2 id="student-name">Alex Johnson</h2>
+                                <h2 id="student-name">Loading Profile...</h2>
                                 <p class="profile-meta">
-                                    <span id="student-branch">Computer Science Engineering</span> • 
-                                    <span id="student-year">3rd Year</span> • 
-                                    <span id="student-roll">21BCS101</span>
+                                    <span id="student-branch">Campus Member</span> • 
+                                    <span id="student-year">---</span> • 
+                                    <span id="student-roll">---</span>
                                 </p>
                                 <div class="profile-tags">
                                     <span class="tag">Dean's List</span>
@@ -1589,6 +1595,8 @@
     </div>
 
     <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/main.js"></script>
     <script src="js/navigation.js"></script>
     <script src="js/schedule-management.js"></script>
@@ -1699,5 +1707,121 @@
     <script src="js/club-attendance.js"></script>
     <script src="js/schedule-tasks.js"></script>
     <script src="js/qr-extensions.js"></script>
+    <!-- Authentication Overlay Modal -->
+    <div id="auth-modal" class="auth-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="auth-portal-title">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo" aria-hidden="true">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h2 id="auth-portal-title" class="auth-title">MBM University Portal</h2>
+                <p class="auth-subtitle">Campus Automation & Student Management System</p>
+            </div>
+
+            <div class="auth-tabs" role="tablist">
+                <button type="button" id="tab-btn-login" class="auth-tab-btn active" role="tab" aria-selected="true" aria-controls="login-form">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+                <button type="button" id="tab-btn-register" class="auth-tab-btn" role="tab" aria-selected="false" aria-controls="register-form">
+                    <i class="fas fa-user-plus"></i> Student Register
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form" role="tabpanel">
+                <div id="login-error" class="auth-alert error" role="alert" style="display: none;"></div>
+
+                <div class="form-group">
+                    <label for="login-username">Username or Email</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-user icon-prefix" aria-hidden="true"></i>
+                        <input type="text" id="login-username" name="username" placeholder="Enter username or email" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock icon-prefix" aria-hidden="true"></i>
+                        <input type="password" id="login-password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                        <button type="button" class="btn-toggle-password" id="toggle-login-password" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="login-submit-btn" class="auth-btn">
+                    <i class="fas fa-sign-in-alt"></i> <span>Sign In</span>
+                </button>
+
+                <div class="demo-hint">
+                    <strong>Demo Accounts:</strong><br>
+                    Student: <code>student1</code> / <code>student123</code><br>
+                    Staff: <code>staff1</code> / <code>staff123</code><br>
+                    Admin: <code>admin</code> / <code>admin123</code>
+                </div>
+            </form>
+
+            <!-- Student Registration Form -->
+            <form id="register-form" class="auth-form" role="tabpanel" style="display: none;">
+                <div class="reg-note">
+                    <i class="fas fa-info-circle"></i> Public self-registration is permitted for <strong>Students</strong> only. Faculty and Staff accounts are provisioned by college administration.
+                </div>
+
+                <div id="reg-error" class="auth-alert error" role="alert" style="display: none;"></div>
+                <div id="reg-success" class="auth-alert success" role="alert" style="display: none;"></div>
+
+                <div class="form-group">
+                    <label for="reg-fullname">Full Name</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-id-card icon-prefix" aria-hidden="true"></i>
+                        <input type="text" id="reg-fullname" placeholder="e.g. Alex Johnson" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-username">Username / Roll Number</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-user icon-prefix" aria-hidden="true"></i>
+                        <input type="text" id="reg-username" placeholder="e.g. 21BCS101 or student username" required minlength="3">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-email">College Email</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope icon-prefix" aria-hidden="true"></i>
+                        <input type="email" id="reg-email" placeholder="e.g. student@mbm.edu" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password">Password (min. 8 characters)</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock icon-prefix" aria-hidden="true"></i>
+                        <input type="password" id="reg-password" placeholder="Create password" required minlength="8" autocomplete="new-password">
+                        <button type="button" class="btn-toggle-password" id="toggle-reg-password" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-confirm-password">Confirm Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-check-double icon-prefix" aria-hidden="true"></i>
+                        <input type="password" id="reg-confirm-password" placeholder="Re-type password" required minlength="8" autocomplete="new-password">
+                        <button type="button" class="btn-toggle-password" id="toggle-reg-confirm-password" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="reg-submit-btn" class="auth-btn">
+                    <i class="fas fa-user-plus"></i> <span>Create Student Account</span>
+                </button>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

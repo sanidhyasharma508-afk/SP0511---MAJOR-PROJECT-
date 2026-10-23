@@ -1,7 +1,7 @@
 # 🤖 MULTIPLE AGENT PROJECT - Campus Automation System
 
 **Project Name**: Multiple Agent Project - Campus Automation  
-**Status**: ✅ **PRODUCTION READY**  
+**Status**: Local development prototype  
 **Date**: January 22, 2026  
 **Version**: 1.0  
 
@@ -9,13 +9,13 @@
 
 ## 🎯 Welcome to the Multiple Agent Project!
 
-This is a **sophisticated, production-grade campus automation system** built on a **multi-agent architecture**. Both the frontend and backend are designed as collections of specialized agents that work together seamlessly.
+This repository contains a campus portal prototype with a FastAPI backend, an Express frontend server, and SQLite persistence. Some interface data and agent responses are demo implementations; review security, persistence, and deployment configuration before using this with real campus data.
 
 ### What Makes This Special?
 
 ✨ **Multi-Agent Design** - Frontend AND backend agents coordinating  
 ✨ **Fully Integrated** - Express.js + FastAPI + SQLite + AI  
-✨ **Production Ready** - Docker, Kubernetes, AWS compatible  
+✨ **Local development** - frontend, API, and database can run locally  
 ✨ **Comprehensive Docs** - 1000+ pages of documentation  
 ✨ **Enterprise Grade** - Security, monitoring, scaling included  
 
@@ -25,13 +25,13 @@ This is a **sophisticated, production-grade campus automation system** built on 
 
 ### Step 1: Install Dependencies
 ```bash
+python -m pip install -r backend/requirements.txt
 cd frontend
 npm install
 ```
 
 ### Step 2: Start Backend (Terminal 1)
 ```bash
-cd backend
 python -m uvicorn backend.main:app --reload --port 8000
 ```
 
@@ -40,6 +40,9 @@ python -m uvicorn backend.main:app --reload --port 8000
 cd frontend
 npm start
 ```
+
+The demo login accounts are `admin` / `admin123`, `staff1` / `staff123`, and `student1` / `student123`. User accounts are stored in memory and reset when the backend restarts; do not use these credentials or this demo authentication setup for production.
+Run the backend command from the repository root (the directory containing `backend/`).
 
 ### Access the System
 - **Frontend**: http://localhost:3000

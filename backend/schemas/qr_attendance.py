@@ -11,8 +11,8 @@ from datetime import datetime
 
 class QRSessionCreate(BaseModel):
     """Schema for faculty to create QR attendance session"""
-    faculty_id: str = Field(..., min_length=1)
-    faculty_name: str = Field(..., min_length=2)
+    faculty_id: Optional[str] = None
+    faculty_name: Optional[str] = None
     faculty_email: Optional[EmailStr] = None
     
     subject_code: str = Field(..., min_length=2)
@@ -30,17 +30,22 @@ class QRSessionCreate(BaseModel):
     geo_fence_radius_meters: float = Field(default=50.0, ge=10, le=200)
     location_name: Optional[str] = None
     
-    qr_validity_minutes: int = Field(default=3, ge=1, le=10)
+    qr_validity_minutes: int = Field(default=3, ge=1, le=60)
     total_students_expected: int = Field(default=0, ge=0)
     
     allow_screenshot_scan: bool = False
     require_device_verification: bool = True
+
+    @validator("semester", pre=True)
+    def validate_semester(cls, v):
+        return str(v)
 
 
 class QRSessionResponse(BaseModel):
     """Response after creating QR session"""
     id: int
     session_id: str
+    faculty_id: Optional[str] = None
     faculty_name: str
     subject_code: str
     subject_name: str
@@ -118,21 +123,25 @@ class DeviceData(BaseModel):
 class QRScanRequest(BaseModel):
     """Student QR scan request"""
     session_id: str = Field(..., min_length=10)
-    qr_code_hash: str = Field(..., min_length=64)
+    qr_code_hash: Optional[str] = "manual_entry"
     
-    student_id: str = Field(..., min_length=1)
-    roll_number: str = Field(..., min_length=1)
-    student_name: str = Field(..., min_length=2)
+    student_id: Optional[str] = None
+    roll_number: Optional[str] = None
+    student_name: Optional[str] = None
     student_email: Optional[EmailStr] = None
-    branch: str = Field(..., min_length=2)
-    semester: str = Field(..., min_length=1)
+    branch: Optional[str] = None
+    semester: Optional[str] = None
     section: Optional[str] = None
     
     location: StudentLocationData
-    device: DeviceData
+    device: Optional[DeviceData] = None
     
-    scan_timestamp: datetime
+    scan_timestamp: Optional[datetime] = None
     scan_duration_ms: Optional[int] = None
+
+    @validator("semester", pre=True)
+    def validate_semester(cls, v):
+        return str(v)
 
 
 class QRScanResponse(BaseModel):

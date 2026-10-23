@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from backend.database import Base
@@ -45,6 +45,7 @@ class Club(Base):
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(Integer, nullable=True)  # User ID of creator/advisor
 
     # Relationships
     activities = relationship("ClubActivity", back_populates="club", cascade="all, delete-orphan")
@@ -75,6 +76,9 @@ class ClubActivity(Base):
 
 class ClubMember(Base):
     __tablename__ = "club_members"
+    __table_args__ = (
+        UniqueConstraint("club_id", "student_id", name="uq_club_student_member"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)

@@ -5,10 +5,10 @@ sys.path.insert(0, '.')
 
 try:
     from backend.main import app
-    print("✓ Backend imports successfully")
-    print(f"✓ FastAPI app created: {app.title}")
-    print(f"✓ Routes configured: {len(app.routes)} routes")
+    print("[OK] Backend imports successfully")
+    print(f"[OK] FastAPI app created: {app.title}")
+    print(f"[OK] Routes configured: {len(app.routes)} routes")
 except Exception as e:
-    print(f"✗ Import failed: {e}")
+    print(f"[FAIL] Import failed: {e}")
     import traceback
     traceback.print_exc()

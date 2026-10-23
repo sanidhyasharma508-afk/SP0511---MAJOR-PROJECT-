@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from datetime import datetime
+from typing import List, Optional
+
 from backend.database import get_db
 from backend.models.club import Club, ClubActivity, ClubMember, ClubAttendance
+from backend.models.student import Student
+from backend.models.user import User
 from backend.schemas.club import (
     ClubCreate,
     ClubUpdate,
@@ -18,19 +24,60 @@ from backend.schemas.club import (
     ClubAttendanceCreate,
     ClubAttendanceResponse,
 )
-from typing import List
+from backend.core.auth import TokenData
+from backend.core.rbac import get_current_user, require_staff, require_faculty, require_admin
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
 
 
+# ==================== HELPERS ====================
+
+def resolve_student_from_user(current_user: TokenData, db: Session) -> Optional[Student]:
+    """Resolve authenticated user to an enrolled Student record"""
+    user = db.query(User).filter(User.id == current_user.user_id).first()
+    if not user:
+        return None
+    if user.linked_student_id:
+        student = db.query(Student).filter(Student.id == user.linked_student_id).first()
+        if student:
+            return student
+    student = db.query(Student).filter(
+        (Student.roll_no == user.username) | (Student.name.ilike(user.full_name or ""))
+    ).first()
+    if student and not user.linked_student_id:
+        user.linked_student_id = student.id
+        db.commit()
+    return student
+
+
+def check_club_permission(club: Club, current_user: TokenData, db: Session) -> bool:
+    """Check if user has administrative rights over this club"""
+    role = current_user.role.lower()
+    if role == "admin":
+        return True
+    if role in ["staff", "faculty"]:
+        if club.created_by and club.created_by == current_user.user_id:
+            return True
+        if club.advisor == current_user.sub or (club.advisor_email and club.advisor_email == current_user.email):
+            return True
+        if not club.created_by:
+            return True
+        return False
+    return False
+
+
 # ==================== CLUB ROUTES ====================
 
-
 @router.post("/", response_model=ClubResponse, status_code=status.HTTP_201_CREATED)
-def create_club(club: ClubCreate, db: Session = Depends(get_db)):
-    """Create a new club"""
+def create_club(
+    club: ClubCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_staff),
+):
+    """Create a new club (Staff or Admin required)"""
     try:
         db_club = Club(**club.model_dump())
+        db_club.created_by = current_user.user_id
         db.add(db_club)
         db.commit()
         db.refresh(db_club)
@@ -47,6 +94,55 @@ def list_clubs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return clubs
 
 
+@router.get("/my-memberships", response_model=List[ClubMemberResponse])
+def get_my_memberships(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Get all active club memberships for the authenticated student."""
+    student = resolve_student_from_user(current_user, db)
+    if not student:
+        return []
+
+    memberships = (
+        db.query(ClubMember)
+        .filter(ClubMember.student_id == student.id, ClubMember.is_active == True)
+        .all()
+    )
+    for m in memberships:
+        c = db.query(Club).filter(Club.id == m.club_id).first()
+        if c:
+            m.club_name = c.name
+    return memberships
+
+
+@router.get("/memberships/student/{student_id}", response_model=List[ClubMemberResponse])
+def get_student_memberships(
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Get club memberships for a student. Enforces ownership: students can only view their own."""
+    if current_user.role.lower() == "student":
+        student = resolve_student_from_user(current_user, db)
+        if not student or student.id != student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Students can only view their own club memberships",
+            )
+
+    memberships = (
+        db.query(ClubMember)
+        .filter(ClubMember.student_id == student_id, ClubMember.is_active == True)
+        .all()
+    )
+    for m in memberships:
+        c = db.query(Club).filter(Club.id == m.club_id).first()
+        if c:
+            m.club_name = c.name
+    return memberships
+
+
 @router.get("/{club_id}", response_model=ClubDetailResponse)
 def get_club(club_id: int, db: Session = Depends(get_db)):
     """Get club details with activities and members"""
@@ -57,11 +153,28 @@ def get_club(club_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{club_id}", response_model=ClubResponse)
-def update_club(club_id: int, club_update: ClubUpdate, db: Session = Depends(get_db)):
-    """Update club information"""
+def update_club(
+    club_id: int,
+    club_update: ClubUpdate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Update club information (Staff/Admin or Club Advisor required)"""
     db_club = db.query(Club).filter(Club.id == club_id).first()
     if not db_club:
         raise HTTPException(status_code=404, detail="Club not found")
+
+    if current_user.role.lower() == "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Students cannot edit clubs",
+        )
+
+    if not check_club_permission(db_club, current_user, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Unauthorized to modify this club",
+        )
 
     try:
         update_data = club_update.model_dump(exclude_unset=True)
@@ -76,15 +189,33 @@ def update_club(club_id: int, club_update: ClubUpdate, db: Session = Depends(get
 
 
 @router.delete("/{club_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_club(club_id: int, db: Session = Depends(get_db)):
-    """Delete a club"""
+def delete_club(
+    club_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Delete a club (Admin or authorized Club Advisor required)"""
     db_club = db.query(Club).filter(Club.id == club_id).first()
     if not db_club:
         raise HTTPException(status_code=404, detail="Club not found")
 
+    if current_user.role.lower() == "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Students cannot delete clubs",
+        )
+
+    if current_user.role.lower() != "admin":
+        if not check_club_permission(db_club, current_user, db):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Only administrators or club advisors can delete clubs",
+            )
+
     try:
         db.delete(db_club)
         db.commit()
+        return None
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Error deleting club: {str(e)}")
@@ -120,20 +251,37 @@ def get_club_statistics(club_id: int, db: Session = Depends(get_db)):
 
 # ==================== CLUB ACTIVITY ROUTES ====================
 
-
 @router.post(
     "/{club_id}/activities",
     response_model=ClubActivityResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_activity(club_id: int, activity: ClubActivityCreate, db: Session = Depends(get_db)):
-    """Create a new club activity/event"""
+def create_activity(
+    club_id: int,
+    activity: ClubActivityCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Create a new club activity/event (Staff or Club Advisor required)"""
     club = db.query(Club).filter(Club.id == club_id).first()
     if not club:
         raise HTTPException(status_code=404, detail="Club not found")
 
+    if current_user.role.lower() == "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Students cannot create club activities without advisor authorization",
+        )
+
+    if not check_club_permission(club, current_user, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Unauthorized to manage activities for this club",
+        )
+
     try:
         db_activity = ClubActivity(**activity.model_dump())
+        db_activity.club_id = club_id
         db.add(db_activity)
         db.commit()
         db.refresh(db_activity)
@@ -177,8 +325,25 @@ def update_activity(
     activity_id: int,
     activity_update: ClubActivityUpdate,
     db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
 ):
-    """Update activity details"""
+    """Update activity details (Staff/Admin required)"""
+    club = db.query(Club).filter(Club.id == club_id).first()
+    if not club:
+        raise HTTPException(status_code=404, detail="Club not found")
+
+    if current_user.role.lower() == "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Students cannot update club activities",
+        )
+
+    if not check_club_permission(club, current_user, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Unauthorized to manage this club's activities",
+        )
+
     activity = (
         db.query(ClubActivity)
         .filter(ClubActivity.id == activity_id, ClubActivity.club_id == club_id)
@@ -200,8 +365,29 @@ def update_activity(
 
 
 @router.delete("/{club_id}/activities/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_activity(club_id: int, activity_id: int, db: Session = Depends(get_db)):
-    """Delete an activity"""
+def delete_activity(
+    club_id: int,
+    activity_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Delete an activity (Staff/Admin required)"""
+    club = db.query(Club).filter(Club.id == club_id).first()
+    if not club:
+        raise HTTPException(status_code=404, detail="Club not found")
+
+    if current_user.role.lower() == "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Students cannot delete club activities",
+        )
+
+    if not check_club_permission(club, current_user, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Unauthorized to manage this club's activities",
+        )
+
     activity = (
         db.query(ClubActivity)
         .filter(ClubActivity.id == activity_id, ClubActivity.club_id == club_id)
@@ -213,27 +399,142 @@ def delete_activity(club_id: int, activity_id: int, db: Session = Depends(get_db
     try:
         db.delete(activity)
         db.commit()
+        return None
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Error deleting activity: {str(e)}")
 
 
-# ==================== CLUB MEMBER ROUTES ====================
+# ==================== STUDENT JOIN & LEAVE ROUTES ====================
 
+@router.post("/{club_id}/join", response_model=ClubMemberResponse, status_code=status.HTTP_201_CREATED)
+def join_club(
+    club_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Authenticated student joins a club."""
+    student = resolve_student_from_user(current_user, db)
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is not linked to any student record. Only enrolled students can join clubs.",
+        )
+
+    club = db.query(Club).filter(Club.id == club_id).first()
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+
+    if not club.is_active or not club.accepting_members:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Club is currently not accepting new members")
+
+    existing = db.query(ClubMember).filter(
+        ClubMember.club_id == club_id,
+        ClubMember.student_id == student.id,
+        ClubMember.is_active == True,
+    ).first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student is already a member of this club")
+
+    try:
+        new_member = ClubMember(
+            club_id=club_id,
+            student_id=student.id,
+            position="Member",
+            is_active=True,
+            join_date=datetime.utcnow(),
+        )
+        db.add(new_member)
+        club.member_count = (
+            db.query(ClubMember)
+            .filter(ClubMember.club_id == club_id, ClubMember.is_active == True)
+            .count()
+            + 1
+        )
+        db.commit()
+        db.refresh(new_member)
+        new_member.club_name = club.name
+        return new_member
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student is already a member of this club")
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Error joining club: {str(e)}")
+
+
+@router.post("/{club_id}/leave", status_code=status.HTTP_200_OK)
+def leave_club(
+    club_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Authenticated student leaves a club."""
+    student = resolve_student_from_user(current_user, db)
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is not linked to any student record.",
+        )
+
+    club = db.query(Club).filter(Club.id == club_id).first()
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found")
+
+    member = db.query(ClubMember).filter(
+        ClubMember.club_id == club_id,
+        ClubMember.student_id == student.id,
+        ClubMember.is_active == True,
+    ).first()
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not an active member of this club")
+
+    try:
+        db.delete(member)
+        club.member_count = max(0, (
+            db.query(ClubMember)
+            .filter(ClubMember.club_id == club_id, ClubMember.is_active == True)
+            .count()
+            - 1
+        ))
+        db.commit()
+        return {"success": True, "message": f"Left {club.name} successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Error leaving club: {str(e)}")
+
+
+# ==================== CLUB MEMBER ROUTES ====================
 
 @router.post(
     "/{club_id}/members", response_model=ClubMemberResponse, status_code=status.HTTP_201_CREATED
 )
-def add_member(club_id: int, member: ClubMemberCreate, db: Session = Depends(get_db)):
-    """Add a member to a club"""
+def add_member(
+    club_id: int,
+    member: ClubMemberCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Add a member to a club."""
     club = db.query(Club).filter(Club.id == club_id).first()
     if not club:
         raise HTTPException(status_code=404, detail="Club not found")
 
-    # Check if member already exists
+    if current_user.role.lower() == "student":
+        student = resolve_student_from_user(current_user, db)
+        if not student or student.id != member.student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot add membership on behalf of another student",
+            )
+    else:
+        target_student = db.query(Student).filter(Student.id == member.student_id).first()
+        if not target_student:
+            raise HTTPException(status_code=404, detail="Student not found")
+
     existing = (
         db.query(ClubMember)
-        .filter(ClubMember.club_id == club_id, ClubMember.student_id == member.student_id)
+        .filter(ClubMember.club_id == club_id, ClubMember.student_id == member.student_id, ClubMember.is_active == True)
         .first()
     )
     if existing:
@@ -250,7 +551,11 @@ def add_member(club_id: int, member: ClubMemberCreate, db: Session = Depends(get
         )
         db.commit()
         db.refresh(db_member)
+        db_member.club_name = club.name
         return db_member
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Student is already a member of this club")
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Error adding member: {str(e)}")
@@ -266,14 +571,116 @@ def list_club_members(club_id: int, skip: int = 0, limit: int = 100, db: Session
     members = (
         db.query(ClubMember).filter(ClubMember.club_id == club_id).offset(skip).limit(limit).all()
     )
+    for m in members:
+        m.club_name = club.name
     return members
 
 
-# ==================== CLUB ATTENDANCE (NEW) ====================
+@router.put("/{club_id}/members/{member_id}", response_model=ClubMemberResponse)
+def update_member(
+    club_id: int,
+    member_id: int,
+    member_update: ClubMemberUpdate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Update member information (Staff or Club Advisor required)"""
+    club = db.query(Club).filter(Club.id == club_id).first()
+    if not club:
+        raise HTTPException(status_code=404, detail="Club not found")
 
-@router.post("/{club_id}/attendance", response_model=list[ClubAttendanceResponse], status_code=status.HTTP_201_CREATED)
-def record_club_attendance(club_id: int, payload: ClubAttendanceCreate, db: Session = Depends(get_db)):
-    """Record attendance for a club on a specific date. Accepts a roster array."""
+    if current_user.role.lower() == "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Students cannot update member positions or status",
+        )
+
+    if not check_club_permission(club, current_user, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Unauthorized to manage this club's members",
+        )
+
+    member = (
+        db.query(ClubMember)
+        .filter(ClubMember.id == member_id, ClubMember.club_id == club_id)
+        .first()
+    )
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    try:
+        update_data = member_update.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(member, key, value)
+        db.commit()
+        db.refresh(member)
+        member.club_name = club.name
+        return member
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Error updating member: {str(e)}")
+
+
+@router.delete("/{club_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_member(
+    club_id: int,
+    member_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Remove a member from a club"""
+    club = db.query(Club).filter(Club.id == club_id).first()
+    if not club:
+        raise HTTPException(status_code=404, detail="Club not found")
+
+    member = (
+        db.query(ClubMember)
+        .filter(ClubMember.id == member_id, ClubMember.club_id == club_id)
+        .first()
+    )
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    if current_user.role.lower() == "student":
+        student = resolve_student_from_user(current_user, db)
+        if not student or student.id != member.student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Students cannot remove other members",
+            )
+    else:
+        if not check_club_permission(club, current_user, db):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Unauthorized to manage this club's memberships",
+            )
+
+    try:
+        db.delete(member)
+        club.member_count = max(0, (
+            db.query(ClubMember)
+            .filter(ClubMember.club_id == club_id, ClubMember.is_active == True)
+            .count()
+            - 1
+        ))
+        db.commit()
+        return None
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Error removing member: {str(e)}")
+
+
+# ==================== CLUB ATTENDANCE ====================
+
+@router.post("/{club_id}/attendance", response_model=List[ClubAttendanceResponse], status_code=status.HTTP_201_CREATED)
+def record_club_attendance(
+    club_id: int,
+    payload: ClubAttendanceCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
+    """Record attendance for a club on a specific date (Faculty/Staff/Admin required)."""
     club = db.query(Club).filter(Club.id == club_id).first()
     if not club:
         raise HTTPException(status_code=404, detail="Club not found")
@@ -294,7 +701,6 @@ def record_club_attendance(club_id: int, payload: ClubAttendanceCreate, db: Sess
             records.append(att)
 
         db.commit()
-        # refresh objects
         for r in records:
             db.refresh(r)
 
@@ -304,17 +710,20 @@ def record_club_attendance(club_id: int, payload: ClubAttendanceCreate, db: Sess
         raise HTTPException(status_code=400, detail=f"Error saving attendance: {str(e)}")
 
 
-@router.get("/{club_id}/attendance", response_model=list[ClubAttendanceResponse])
-def get_club_attendance(club_id: int, date: str | None = None, db: Session = Depends(get_db)):
-    """Get attendance for a club; filter by ISO date string if provided."""
+@router.get("/{club_id}/attendance", response_model=List[ClubAttendanceResponse])
+def get_club_attendance(
+    club_id: int,
+    date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Get attendance for a club; filter by ISO date string if provided (Authenticated users)."""
     club = db.query(Club).filter(Club.id == club_id).first()
     if not club:
         raise HTTPException(status_code=404, detail="Club not found")
 
     query = db.query(ClubAttendance).filter(ClubAttendance.club_id == club_id)
     if date:
-        # accept YYYY-MM-DD or full ISO; compare date portion
-        from datetime import datetime
         try:
             dt = datetime.fromisoformat(date)
             start = datetime(dt.year, dt.month, dt.day)
@@ -341,62 +750,10 @@ def get_club_attendance_dates(club_id: int, db: Session = Depends(get_db)):
         .order_by(ClubAttendance.attendance_date.desc())
         .all()
     )
-    # Flatten to ISO date strings
     return [r[0].isoformat() for r in rows]
-
-@router.put("/{club_id}/members/{member_id}", response_model=ClubMemberResponse)
-def update_member(
-    club_id: int, member_id: int, member_update: ClubMemberUpdate, db: Session = Depends(get_db)
-):
-    """Update member information"""
-    member = (
-        db.query(ClubMember)
-        .filter(ClubMember.id == member_id, ClubMember.club_id == club_id)
-        .first()
-    )
-    if not member:
-        raise HTTPException(status_code=404, detail="Member not found")
-
-    try:
-        update_data = member_update.model_dump(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(member, key, value)
-        db.commit()
-        db.refresh(member)
-        return member
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=f"Error updating member: {str(e)}")
-
-
-@router.delete("/{club_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
-def remove_member(club_id: int, member_id: int, db: Session = Depends(get_db)):
-    """Remove a member from a club"""
-    member = (
-        db.query(ClubMember)
-        .filter(ClubMember.id == member_id, ClubMember.club_id == club_id)
-        .first()
-    )
-    if not member:
-        raise HTTPException(status_code=404, detail="Member not found")
-
-    try:
-        db.delete(member)
-        # Update member count
-        club = db.query(Club).filter(Club.id == club_id).first()
-        club.member_count = (
-            db.query(ClubMember)
-            .filter(ClubMember.club_id == club_id, ClubMember.is_active == True)
-            .count()
-        )
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=f"Error removing member: {str(e)}")
 
 
 # ==================== DASHBOARD / ANALYTICS ====================
-
 
 @router.get("/dashboard/all-clubs-summary")
 def get_all_clubs_summary(db: Session = Depends(get_db)):
@@ -423,11 +780,9 @@ def get_all_clubs_summary(db: Session = Depends(get_db)):
         summary["total_members"] += members
         summary["total_activities"] += len(activities)
 
-        # Count by category
         category = club.category
         summary["clubs_by_category"][category] = summary["clubs_by_category"].get(category, 0) + 1
 
-        # Count by activity type
         for activity in activities:
             activity_type = activity.activity_type
             summary["activities_by_type"][activity_type] = (
@@ -451,7 +806,7 @@ def get_all_clubs_summary(db: Session = Depends(get_db)):
 @router.get("/dashboard/upcoming-events")
 def get_upcoming_events(days: int = 30, db: Session = Depends(get_db)):
     """Get upcoming club events in the next N days"""
-    from datetime import datetime, timedelta
+    from datetime import timedelta
 
     upcoming_date = datetime.utcnow() + timedelta(days=days)
     activities = (
@@ -471,8 +826,8 @@ def get_upcoming_events(days: int = 30, db: Session = Depends(get_db)):
         events.append(
             {
                 "activity_id": activity.id,
-                "club_name": club.name,
-                "club_id": club.id,
+                "club_name": club.name if club else "Campus Club",
+                "club_id": activity.club_id,
                 "title": activity.title,
                 "activity_type": activity.activity_type,
                 "start_date": activity.start_date,

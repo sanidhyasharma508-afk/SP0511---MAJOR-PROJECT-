@@ -2,8 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const http = require('http');
+require('dotenv').config();
 
 const app = express();
+const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
 
 // Middleware
 app.use(cors({
@@ -21,23 +23,23 @@ app.use(express.static(path.join(__dirname)));
 // Also serve old interface if needed
 app.use(express.static(path.join(__dirname, 'stitch_student_attendance')));
 
-// API Base URL for backend
-const API_BASE_URL = 'http://localhost:8000/api';
-
 // Proxy middleware to forward requests to backend
 const axios = require('axios');
 
 // Forward API requests to backend
 app.all('/api/*', async (req, res) => {
     try {
-        const backendUrl = API_BASE_URL + req.path.replace('/api', '');
+        const backendPath = req.path.startsWith('/api/v1/')
+            ? req.path
+            : req.path.replace(/^\/api(?=\/|$)/, '');
+        
+        const proxyHeaders = { ...req.headers, host: new URL(backendUrl).host };
+        delete proxyHeaders['content-length'];
+
         const config = {
             method: req.method,
-            url: backendUrl,
-            headers: {
-                ...req.headers,
-                'host': 'localhost:8000'
-            }
+            url: `${backendUrl}${backendPath}`,
+            headers: proxyHeaders
         };
 
         if (req.body && Object.keys(req.body).length > 0) {
@@ -51,37 +53,44 @@ app.all('/api/*', async (req, res) => {
         const response = await axios(config);
         res.status(response.status).json(response.data);
     } catch (error) {
-        console.error('API Error:', error.message);
-        res.status(error.response?.status || 500).json({
+        const status = error.response?.status || 500;
+        const errorDetail = error.response?.data?.detail || error.response?.data?.message || error.message;
+        const message = typeof errorDetail === 'string' 
+            ? errorDetail 
+            : (Array.isArray(errorDetail) ? errorDetail.map(d => d.msg || d).join(', ') : JSON.stringify(errorDetail));
+        
+        console.error(`API Error [${req.method} ${req.path} -> ${status}]:`, message);
+        res.status(status).json({
             status: 'error',
-            message: error.response?.data?.message || error.message
+            detail: errorDetail,
+            message: message
         });
     }
 });
 
 // Serve frontend pages
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'homepage', 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/attendance', (req, res) => {
-    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'student_attendance', 'index.html'));
+    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'student_attendance', 'code.html'));
 });
 
 app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'student_performance_dashboard', 'index.html'));
+    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'student_performance_dashboard', 'code.html'));
 });
 
 app.get('/clubs', (req, res) => {
-    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'club_information', 'index.html'));
+    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'club_information', 'code.html'));
 });
 
 app.get('/events', (req, res) => {
-    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'events_hub', 'index.html'));
+    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'events_hub', 'code.html'));
 });
 
 app.get('/timetable', (req, res) => {
-    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'timetable_&_holidays', 'index.html'));
+    res.sendFile(path.join(__dirname, 'stitch_student_attendance', 'timetable_&_holidays', 'code.html'));
 });
 
 // Health check
@@ -104,7 +113,7 @@ const server = http.createServer(app);
 
 server.listen(PORT, () => {
     console.log(`🚀 Marvel Frontend Server running on http://localhost:${PORT}`);
-    console.log(`📡 Backend API: http://localhost:8000/api`);
+    console.log(`📡 Backend API: ${backendUrl}`);
 });
 
 module.exports = app;

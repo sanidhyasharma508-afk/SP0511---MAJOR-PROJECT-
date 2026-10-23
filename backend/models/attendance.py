@@ -9,6 +9,9 @@ class Attendance(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    subject_code = Column(String(50), nullable=True, index=True)
+    faculty_id = Column(String(50), nullable=True, index=True)
+    session_name = Column(String(100), nullable=True)
     date = Column(DateTime, default=datetime.utcnow, nullable=False)
     status = Column(String, nullable=False)  # Present, Absent, Late, Excused
     remarks = Column(String, nullable=True)

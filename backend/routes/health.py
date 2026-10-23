@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from backend.database import get_db
 
@@ -9,11 +11,18 @@ router = APIRouter(tags=["Health"])
 def health_check(db: Session = Depends(get_db)):
     """Health check endpoint"""
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         return {
             "status": "healthy",
             "message": "Campus Automation Backend is running",
             "database": "connected",
         }
-    except Exception as e:
-        return {"status": "unhealthy", "message": str(e), "database": "disconnected"}
+    except Exception:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "message": "Campus Automation Backend database is unavailable",
+                "database": "disconnected",
+            },
+        )

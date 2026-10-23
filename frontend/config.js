@@ -1,188 +1,245 @@
 // Frontend Configuration
 const CONFIG = {
-    // API Configuration
     API: {
-        BASE_URL: 'http://localhost:8000/api',
-        TIMEOUT: 10000,
-        RETRY_ATTEMPTS: 3
+        BASE_URL: '/api',
+        TIMEOUT: 10000
     },
-
-    // Authentication
     AUTH: {
         TOKEN_KEY: 'auth_token',
         REFRESH_TOKEN_KEY: 'refresh_token',
         TOKEN_EXPIRY_KEY: 'token_expiry'
     },
-
-    // Routes
     ROUTES: {
-        LOGIN: '/auth/login',
-        LOGOUT: '/auth/logout',
-        PROFILE: '/auth/me',
+        LOGIN: '/v1/auth/login',
+        LOGOUT: '/v1/auth/logout',
+        PROFILE: '/v1/auth/profile',
+        REGISTER: '/v1/auth/register',
+        STUDY_TASKS: '/v1/study-tasks',
         STUDENTS: '/students',
         ATTENDANCE: '/attendance',
         CLUBS: '/clubs',
+        EVENTS: '/events',
+        COMPLAINTS: '/complaints',
         DASHBOARD: '/dashboard/summary',
-        ANALYTICS: '/analytics/reports',
-        AGENTS: '/ai/agents'
+        STUDENT_DASHBOARD: '/dashboard/student/me',
+        ACADEMIC_RISK: '/risk/my-risk',
+        SCHEDULES: '/schedules/my-schedule',
+        ANALYTICS: '/analytics/complaint-heatmap',
+        AGENTS: '/agents/'
     },
-
-    // UI Configuration
     UI: {
         ITEMS_PER_PAGE: 10,
         TOAST_DURATION: 3000,
         MODAL_ANIMATION_DURATION: 300
     },
-
-    // Feature Flags
     FEATURES: {
         ENABLE_AI_AGENTS: true,
         ENABLE_ANALYTICS: true,
         ENABLE_REAL_TIME_UPDATES: true,
         ENABLE_NOTIFICATIONS: true
     },
-
-    // Environment
     ENVIRONMENT: 'development',
     DEBUG: true
 };
 
-// API Helper Functions
 class APIClient {
     constructor(config = CONFIG) {
         this.config = config;
-        this.baseURL = config.API.BASE_URL;
+        this.baseURL = config.API.BASE_URL.replace(/\/+$/, '');
     }
 
-    // Get stored token
     getToken() {
         return localStorage.getItem(this.config.AUTH.TOKEN_KEY);
     }
 
-    // Set token
     setToken(token) {
         localStorage.setItem(this.config.AUTH.TOKEN_KEY, token);
     }
 
-    // Clear token
+    hasValidToken() {
+        const token = this.getToken();
+        if (!token) return false;
+        const expiry = localStorage.getItem(this.config.AUTH.TOKEN_EXPIRY_KEY);
+        if (expiry && Date.now() > parseInt(expiry, 10)) {
+            this.clearToken();
+            return false;
+        }
+        return true;
+    }
+
     clearToken() {
         localStorage.removeItem(this.config.AUTH.TOKEN_KEY);
         localStorage.removeItem(this.config.AUTH.REFRESH_TOKEN_KEY);
+        localStorage.removeItem(this.config.AUTH.TOKEN_EXPIRY_KEY);
     }
 
-    // Make API request
     async request(method, endpoint, data = null, options = {}) {
-        try {
-            const url = `${this.baseURL}${endpoint}`;
-            const headers = {
-                'Content-Type': 'application/json',
-                ...options.headers
-            };
+        const url = `${this.baseURL}/${endpoint.replace(/^\/+/, '')}`;
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
 
-            // Add auth token if available
-            const token = this.getToken();
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            const config = {
-                method,
-                headers,
-                timeout: this.config.API.TIMEOUT
-            };
-
-            if (data) {
-                config.body = JSON.stringify(data);
-            }
-
-            const response = await fetch(url, config);
-            const responseData = await response.json();
-
-            if (!response.ok) {
-                throw new Error(responseData.message || `HTTP ${response.status}`);
-            }
-
-            return responseData;
-        } catch (error) {
-            console.error('API Error:', error);
-            throw error;
+        const token = this.getToken();
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
         }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.config.API.TIMEOUT);
+        const requestConfig = {
+            method,
+            headers,
+            signal: options.signal || controller.signal
+        };
+        if (data !== null && data !== undefined) {
+            requestConfig.body = JSON.stringify(data);
+        }
+
+        let response;
+        try {
+            response = await fetch(url, requestConfig);
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error(`Request timed out after ${this.config.API.TIMEOUT}ms`);
+            }
+            throw new Error(`Network failure: ${error.message}`);
+        } finally {
+            clearTimeout(timeoutId);
+        }
+
+        const responseData = response.status === 204
+            ? null
+            : await response.json().catch(() => null);
+
+        if (!response.ok) {
+            const errorMsg = responseData?.detail || responseData?.message || `HTTP ${response.status}`;
+            const formattedMsg = typeof errorMsg === 'string' 
+                ? errorMsg 
+                : (Array.isArray(errorMsg) ? errorMsg.map(e => e.msg || e).join(', ') : JSON.stringify(errorMsg));
+
+            // On 401 Unauthorized for protected endpoints (excluding login/register attempts)
+            if (response.status === 401 && !endpoint.includes('login') && !endpoint.includes('register')) {
+                this.clearToken();
+                if (typeof window !== 'undefined' && window.AuthManager && typeof window.AuthManager.handleSessionExpired === 'function') {
+                    window.AuthManager.handleSessionExpired();
+                }
+            }
+
+            throw new Error(formattedMsg);
+        }
+        return responseData;
     }
 
-    // GET request
     get(endpoint, options = {}) {
         return this.request('GET', endpoint, null, options);
     }
 
-    // POST request
     post(endpoint, data, options = {}) {
         return this.request('POST', endpoint, data, options);
     }
 
-    // PUT request
     put(endpoint, data, options = {}) {
         return this.request('PUT', endpoint, data, options);
     }
 
-    // DELETE request
     delete(endpoint, options = {}) {
         return this.request('DELETE', endpoint, null, options);
     }
 
-    // Login
-    async login(email, password) {
-        const response = await this.post(this.config.ROUTES.LOGIN, { email, password });
-        if (response.data?.token) {
-            this.setToken(response.data.token);
+    async login(username, password) {
+        const response = await this.post(this.config.ROUTES.LOGIN, { username, password });
+        if (response?.access_token) {
+            this.setToken(response.access_token);
+            if (response.refresh_token) {
+                localStorage.setItem(this.config.AUTH.REFRESH_TOKEN_KEY, response.refresh_token);
+            }
+            if (response.expires_in) {
+                localStorage.setItem(
+                    this.config.AUTH.TOKEN_EXPIRY_KEY,
+                    String(Date.now() + response.expires_in * 1000)
+                );
+            }
         }
         return response;
     }
 
-    // Logout
-    async logout() {
-        this.clearToken();
-        return this.post(this.config.ROUTES.LOGOUT, {});
+    async register(userData) {
+        return this.post(this.config.ROUTES.REGISTER, userData);
     }
 
-    // Get current user
+    async logout() {
+        const token = this.getToken();
+        try {
+            if (token) {
+                return await this.post(this.config.ROUTES.LOGOUT, { token });
+            }
+        } finally {
+            this.clearToken();
+        }
+    }
+
     getProfile() {
         return this.get(this.config.ROUTES.PROFILE);
     }
 
-    // Get students
+    updateProfile(profileData) {
+        return this.put(this.config.ROUTES.PROFILE, profileData);
+    }
+
+    getStudyTasks(params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(this.config.ROUTES.STUDY_TASKS + (query ? `?${query}` : ''));
+    }
+
+    createStudyTask(taskData) {
+        return this.post(this.config.ROUTES.STUDY_TASKS, taskData);
+    }
+
+    updateStudyTask(taskId, taskData) {
+        return this.put(`${this.config.ROUTES.STUDY_TASKS}/${taskId}`, taskData);
+    }
+
+    toggleStudyTask(taskId) {
+        return this.request('PATCH', `${this.config.ROUTES.STUDY_TASKS}/${taskId}/complete`);
+    }
+
+    deleteStudyTask(taskId) {
+        return this.delete(`${this.config.ROUTES.STUDY_TASKS}/${taskId}`);
+    }
+
     getStudents(params = {}) {
         const query = new URLSearchParams(params).toString();
         return this.get(this.config.ROUTES.STUDENTS + (query ? `?${query}` : ''));
     }
 
-    // Get attendance
     getAttendance(params = {}) {
         const query = new URLSearchParams(params).toString();
         return this.get(this.config.ROUTES.ATTENDANCE + (query ? `?${query}` : ''));
     }
 
-    // Get clubs
     getClubs(params = {}) {
         const query = new URLSearchParams(params).toString();
         return this.get(this.config.ROUTES.CLUBS + (query ? `?${query}` : ''));
     }
 
-    // Get dashboard summary
     getDashboard() {
         return this.get(this.config.ROUTES.DASHBOARD);
     }
 
-    // Get analytics
     getAnalytics(params = {}) {
         const query = new URLSearchParams(params).toString();
         return this.get(this.config.ROUTES.ANALYTICS + (query ? `?${query}` : ''));
     }
 }
 
-// Initialize API client
 const api = new APIClient(CONFIG);
 
-// Export for use in other scripts
+if (typeof window !== 'undefined') {
+    window.CONFIG = CONFIG;
+    window.api = api;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { CONFIG, APIClient, api };
 }

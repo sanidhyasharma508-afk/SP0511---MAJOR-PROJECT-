@@ -8,13 +8,15 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 import logging
 
+from backend.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 # Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
-REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 # Password hashing - Use simple SHA256 with salt for compatibility
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto", argon2__memory_cost=65536)
@@ -29,6 +31,14 @@ class TokenData(BaseModel):
     exp: Optional[datetime] = None
     iat: Optional[datetime] = None
     type: str = "access"  # access or refresh
+    linked_student_id: Optional[int] = None
+    email: Optional[str] = None
+
+    @property
+    def username(self) -> str:
+        """Alias for sub to maintain backward compatibility"""
+        return self.sub
+
 
 
 class Token(BaseModel):
@@ -98,7 +108,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(
-    user_id: int, username: str, role: str, expires_delta: Optional[timedelta] = None
+    user_id: int,
+    username: str,
+    role: str,
+    expires_delta: Optional[timedelta] = None,
+    linked_student_id: Optional[int] = None,
+    email: Optional[str] = None,
 ) -> str:
     """Create JWT access token"""
     if expires_delta:
@@ -114,6 +129,10 @@ def create_access_token(
         "iat": datetime.utcnow(),
         "type": "access",
     }
+    if linked_student_id is not None:
+        payload["linked_student_id"] = linked_student_id
+    if email:
+        payload["email"] = email
 
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -136,9 +155,17 @@ def create_refresh_token(user_id: int, username: str, role: str) -> str:
     return encoded_jwt
 
 
-def create_tokens(user_id: int, username: str, role: str) -> Token:
+def create_tokens(
+    user_id: int,
+    username: str,
+    role: str,
+    linked_student_id: Optional[int] = None,
+    email: Optional[str] = None,
+) -> Token:
     """Create both access and refresh tokens"""
-    access_token = create_access_token(user_id, username, role)
+    access_token = create_access_token(
+        user_id, username, role, linked_student_id=linked_student_id, email=email
+    )
     refresh_token = create_refresh_token(user_id, username, role)
 
     return Token(
@@ -156,19 +183,28 @@ def decode_token(token: str) -> Optional[TokenData]:
         user_id: int = payload.get("user_id")
         role: str = payload.get("role")
         token_type: str = payload.get("type", "access")
+        linked_student_id: Optional[int] = payload.get("linked_student_id")
+        email: Optional[str] = payload.get("email")
 
         if username is None or user_id is None:
             logger.warning(f"Invalid token: missing required fields")
             return None
 
-        return TokenData(sub=username, user_id=user_id, role=role, type=token_type)
+        return TokenData(
+            sub=username,
+            user_id=user_id,
+            role=role,
+            type=token_type,
+            linked_student_id=linked_student_id,
+            email=email,
+        )
     except jwt.ExpiredSignatureError:
         logger.warning("Token has expired")
         return None
-    except jwt.JWTClaimsError:
-        logger.warning("Invalid token claims")
+    except jwt.InvalidTokenError as e:
+        logger.warning(f"Invalid token: {str(e)}")
         return None
-    except jwt.JWTError as e:
+    except Exception as e:
         logger.warning(f"Error decoding token: {str(e)}")
         return None
 

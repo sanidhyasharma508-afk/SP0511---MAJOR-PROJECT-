@@ -21,17 +21,50 @@ from backend.schemas.events import (
     AnnouncementCreate, AnnouncementUpdate, AnnouncementResponse,
     EventStats, RegistrationStats, MessageResponse
 )
+from backend.core.auth import TokenData
+from backend.core.rbac import get_current_user, require_faculty, require_staff, require_admin
+from sqlalchemy.exc import IntegrityError
+from backend.models.student import Student
 
 router = APIRouter(prefix="/events", tags=["Events Management"])
+
+
+def check_event_permission(event: Event, user: TokenData):
+    """
+    Check if user has permission to manage the event.
+    Admin has full access. Faculty/staff can manage if creator or organizer.
+    """
+    if user.role.lower() == "admin":
+        return True
+    if user.role.lower() in ["faculty", "staff"]:
+        if event.created_by is not None and event.created_by == user.user_id:
+            return True
+        if user.email and event.organizer_email and user.email.lower() == event.organizer_email.lower():
+            return True
+        if event.created_by is None:
+            return True
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to manage this event"
+        )
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Only faculty or administrators can manage events"
+    )
 
 
 # ============== Event CRUD Operations ==============
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
-def create_event(event_data: EventCreate, db: Session = Depends(get_db)):
+def create_event(
+    event_data: EventCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Create a new event
+    Create a new event (Faculty/Staff/Admin required)
     """
+
     # Check if event with same name already exists
     existing_event = db.query(Event).filter(Event.name == event_data.name).first()
     if existing_event:
@@ -62,6 +95,10 @@ def create_event(event_data: EventCreate, db: Session = Depends(get_db)):
     elif now > event_data.event_end_date:
         event_dict['status'] = EventStatus.COMPLETED
     
+    event_dict['created_by'] = current_user.user_id
+    if current_user.email and not event_dict.get('organizer_email'):
+        event_dict['organizer_email'] = current_user.email
+
     # Create event
     new_event = Event(**event_dict)
     db.add(new_event)
@@ -112,74 +149,6 @@ def get_upcoming_events(
     return events
 
 
-@router.get("/{event_id}", response_model=EventResponse)
-def get_event_by_id(event_id: int, db: Session = Depends(get_db)):
-    """
-    Get event details by ID
-    """
-    event = db.query(Event).filter(Event.id == event_id).first()
-    if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event with ID {event_id} not found"
-        )
-    
-    return event
-
-
-@router.put("/{event_id}", response_model=EventResponse)
-def update_event(event_id: int, event_data: EventUpdate, db: Session = Depends(get_db)):
-    """
-    Update event details
-    """
-    event = db.query(Event).filter(Event.id == event_id).first()
-    if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event with ID {event_id} not found"
-        )
-    
-    # Update only provided fields
-    update_data = event_data.dict(exclude_unset=True)
-    
-    # Convert dicts to JSON strings if present
-    if 'prizes' in update_data and update_data['prizes']:
-        import json
-        update_data['prizes'] = json.dumps(update_data['prizes'])
-    
-    for field, value in update_data.items():
-        setattr(event, field, value)
-    
-    event.updated_at = datetime.utcnow()
-    db.commit()
-    db.refresh(event)
-    
-    return event
-
-
-@router.delete("/{event_id}", response_model=MessageResponse)
-def delete_event(event_id: int, db: Session = Depends(get_db)):
-    """
-    Delete an event (soft delete by marking as cancelled)
-    """
-    event = db.query(Event).filter(Event.id == event_id).first()
-    if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event with ID {event_id} not found"
-        )
-    
-    # Soft delete by changing status
-    event.status = EventStatus.CANCELLED
-    event.updated_at = datetime.utcnow()
-    db.commit()
-    
-    return MessageResponse(
-        message=f"Event '{event.name}' has been cancelled successfully",
-        success=True
-    )
-
-
 @router.get("/stats/overview", response_model=EventStats)
 def get_event_statistics(db: Session = Depends(get_db)):
     """
@@ -214,15 +183,143 @@ def get_event_statistics(db: Session = Depends(get_db)):
     )
 
 
+@router.get("/my-registrations", response_model=List[EventRegistrationResponse])
+def get_my_registrations(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """
+    Get all event registrations for the authenticated student
+    """
+    candidate_ids = {str(current_user.user_id), current_user.sub}
+    if current_user.linked_student_id:
+        candidate_ids.add(str(current_user.linked_student_id))
+    st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
+    if st:
+        candidate_ids.add(str(st.id))
+        candidate_ids.add(st.roll_no)
+
+    registrations = db.query(EventRegistration).filter(
+        EventRegistration.student_id.in_(list(candidate_ids))
+    ).order_by(EventRegistration.registration_date.desc()).all()
+    
+    return registrations
+
+
+@router.get("/{event_id}", response_model=EventResponse)
+def get_event_by_id(event_id: int, db: Session = Depends(get_db)):
+    """
+    Get event details by ID
+    """
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with ID {event_id} not found"
+        )
+    
+    return event
+
+
+@router.put("/{event_id}", response_model=EventResponse)
+def update_event(
+    event_id: int,
+    event_data: EventUpdate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """
+    Update event details (Authorized faculty or admin)
+    """
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with ID {event_id} not found"
+        )
+    check_event_permission(event, current_user)
+    
+    # Update only provided fields
+    update_data = event_data.dict(exclude_unset=True)
+    
+    # Convert dicts to JSON strings if present
+    if 'prizes' in update_data and update_data['prizes']:
+        import json
+        update_data['prizes'] = json.dumps(update_data['prizes'])
+    
+    for field, value in update_data.items():
+        setattr(event, field, value)
+    
+    event.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(event)
+    
+    return event
+
+
+@router.delete("/{event_id}", response_model=MessageResponse)
+def delete_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """
+    Delete an event (soft delete by marking as cancelled, authorized faculty or admin)
+    """
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with ID {event_id} not found"
+        )
+    check_event_permission(event, current_user)
+    
+    # Soft delete by changing status
+    event.status = EventStatus.CANCELLED
+    event.updated_at = datetime.utcnow()
+    db.commit()
+    
+    return MessageResponse(
+        message=f"Event '{event.name}' has been cancelled successfully",
+        success=True
+    )
+
+
 # ============== Event Registration Operations ==============
 
 @router.post("/registrations", response_model=EventRegistrationResponse, status_code=status.HTTP_201_CREATED)
-def register_for_event(registration_data: EventRegistrationCreate, db: Session = Depends(get_db)):
+def register_for_event(
+    registration_data: EventRegistrationCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
     """
-    Register a student for an event
+    Register a student for an event (Authenticated user).
+    Enforces that students cannot register under someone else's ID.
     """
+    if current_user.role.lower() == "student":
+        student_rec = None
+        if current_user.linked_student_id:
+            student_rec = db.query(Student).filter(Student.id == current_user.linked_student_id).first()
+        if not student_rec:
+            student_rec = db.query(Student).filter(Student.roll_no == current_user.sub).first()
+
+        expected_ids = {str(current_user.user_id), current_user.sub}
+        if current_user.linked_student_id:
+            expected_ids.add(str(current_user.linked_student_id))
+        if student_rec:
+            expected_ids.add(str(student_rec.id))
+            expected_ids.add(student_rec.roll_no)
+
+        if str(registration_data.student_id) not in expected_ids:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot register for event on behalf of another student"
+            )
+
     # Check if event exists
     event = db.query(Event).filter(Event.id == registration_data.event_id).first()
+
     if not event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -252,10 +349,20 @@ def register_for_event(registration_data: EventRegistrationCreate, db: Session =
     ).first()
     
     if existing_registration:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You have already registered for this event"
-        )
+        if existing_registration.status == RegistrationStatus.CANCELLED:
+            # Re-activate previously cancelled registration
+            existing_registration.status = RegistrationStatus.PENDING if event.requires_approval else RegistrationStatus.APPROVED
+            existing_registration.registration_date = datetime.utcnow()
+            existing_registration.updated_at = datetime.utcnow()
+            event.current_participants += 1
+            db.commit()
+            db.refresh(existing_registration)
+            return existing_registration
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You have already registered for this event"
+            )
     
     # Validate team information for team events
     if event.team_event:
@@ -293,16 +400,29 @@ def register_for_event(registration_data: EventRegistrationCreate, db: Session =
     # Update participant count
     event.current_participants += 1
     
-    db.commit()
-    db.refresh(new_registration)
+    try:
+        db.commit()
+        db.refresh(new_registration)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already registered for this event"
+        )
     
     return new_registration
 
 
-@router.get("/registrations/{registration_id}", response_model=EventRegistrationResponse)
-def get_registration(registration_id: int, db: Session = Depends(get_db)):
+@router.post("/registrations/{registration_id}/cancel", response_model=EventRegistrationResponse)
+def cancel_registration(
+    registration_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
     """
-    Get registration details
+    Cancel an event registration.
+    Students can cancel their own registrations.
+    Faculty/Admin can cancel any registration.
     """
     registration = db.query(EventRegistration).filter(EventRegistration.id == registration_id).first()
     if not registration:
@@ -311,6 +431,71 @@ def get_registration(registration_id: int, db: Session = Depends(get_db)):
             detail=f"Registration with ID {registration_id} not found"
         )
     
+    # Check permissions
+    if current_user.role.lower() == "student":
+        is_owner = False
+        if current_user.linked_student_id is not None and str(current_user.linked_student_id) == str(registration.student_id):
+            is_owner = True
+        elif str(current_user.user_id) == str(registration.student_id) or current_user.sub == str(registration.student_id):
+            is_owner = True
+        else:
+            st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
+            if st and (str(st.id) == str(registration.student_id) or st.roll_no == str(registration.student_id)):
+                is_owner = True
+        if not is_owner:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot cancel registration belonging to another student"
+            )
+            
+    if registration.status == RegistrationStatus.CANCELLED:
+        return registration
+        
+    registration.status = RegistrationStatus.CANCELLED
+    registration.updated_at = datetime.utcnow()
+    
+    # Decrement participant count
+    event = db.query(Event).filter(Event.id == registration.event_id).first()
+    if event and event.current_participants > 0:
+        event.current_participants -= 1
+        
+    db.commit()
+    db.refresh(registration)
+    return registration
+
+
+@router.get("/registrations/{registration_id}", response_model=EventRegistrationResponse)
+def get_registration(
+    registration_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """
+    Get registration details (owner student or staff/admin)
+    """
+    registration = db.query(EventRegistration).filter(EventRegistration.id == registration_id).first()
+    if not registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Registration with ID {registration_id} not found"
+        )
+    
+    if current_user.role.lower() == "student":
+        is_owner = False
+        if current_user.linked_student_id is not None and str(current_user.linked_student_id) == str(registration.student_id):
+            is_owner = True
+        elif str(current_user.user_id) == str(registration.student_id) or current_user.sub == str(registration.student_id):
+            is_owner = True
+        else:
+            st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
+            if st and (str(st.id) == str(registration.student_id) or st.roll_no == str(registration.student_id)):
+                is_owner = True
+        if not is_owner:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to view this registration"
+            )
+    
     return registration
 
 
@@ -318,10 +503,11 @@ def get_registration(registration_id: int, db: Session = Depends(get_db)):
 def get_event_registrations(
     event_id: int,
     status: Optional[RegistrationStatus] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
 ):
     """
-    Get all registrations for an event
+    Get all registrations for an event (Faculty or Admin required)
     """
     query = db.query(EventRegistration).filter(EventRegistration.event_id == event_id)
     
@@ -336,10 +522,11 @@ def get_event_registrations(
 def update_registration(
     registration_id: int,
     update_data: EventRegistrationUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
 ):
     """
-    Update registration status (approve/reject/payment)
+    Update registration status (Faculty or Admin required)
     """
     registration = db.query(EventRegistration).filter(EventRegistration.id == registration_id).first()
     if not registration:
@@ -403,9 +590,13 @@ def get_registration_stats(event_id: int, db: Session = Depends(get_db)):
 # ============== Leaderboard Operations ==============
 
 @router.post("/leaderboard", response_model=LeaderboardEntryResponse, status_code=status.HTTP_201_CREATED)
-def create_leaderboard_entry(entry_data: LeaderboardEntryCreate, db: Session = Depends(get_db)):
+def create_leaderboard_entry(
+    entry_data: LeaderboardEntryCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Add an entry to event leaderboard
+    Add an entry to event leaderboard (Faculty/Admin required)
     """
     # Check if event exists
     event = db.query(Event).filter(Event.id == entry_data.event_id).first()
@@ -470,10 +661,11 @@ def get_event_leaderboard(
 def update_leaderboard_entry(
     entry_id: int,
     update_data: LeaderboardEntryUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
 ):
     """
-    Update a leaderboard entry
+    Update a leaderboard entry (Faculty/Admin required)
     """
     entry = db.query(EventLeaderboard).filter(EventLeaderboard.id == entry_id).first()
     if not entry:
@@ -503,9 +695,13 @@ def update_leaderboard_entry(
 
 
 @router.delete("/leaderboard/{entry_id}", response_model=MessageResponse)
-def delete_leaderboard_entry(entry_id: int, db: Session = Depends(get_db)):
+def delete_leaderboard_entry(
+    entry_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Delete a leaderboard entry
+    Delete a leaderboard entry (Faculty/Admin required)
     """
     entry = db.query(EventLeaderboard).filter(EventLeaderboard.id == entry_id).first()
     if not entry:
@@ -544,9 +740,13 @@ def update_leaderboard_ranks(event_id: int, db: Session):
 # ============== Announcement Operations ==============
 
 @router.post("/announcements", response_model=AnnouncementResponse, status_code=status.HTTP_201_CREATED)
-def create_announcement(announcement_data: AnnouncementCreate, db: Session = Depends(get_db)):
+def create_announcement(
+    announcement_data: AnnouncementCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Create a new announcement
+    Create a new announcement (Faculty/Admin required)
     """
     # Verify event exists if event_id is provided
     if announcement_data.event_id:
@@ -558,6 +758,7 @@ def create_announcement(announcement_data: AnnouncementCreate, db: Session = Dep
             )
     
     announcement = EventAnnouncement(**announcement_data.dict())
+    announcement.created_by = current_user.user_id
     db.add(announcement)
     db.commit()
     db.refresh(announcement)
@@ -620,10 +821,11 @@ def get_announcement(announcement_id: int, db: Session = Depends(get_db)):
 def update_announcement(
     announcement_id: int,
     update_data: AnnouncementUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
 ):
     """
-    Update an announcement
+    Update an announcement (Faculty/Admin required)
     """
     announcement = db.query(EventAnnouncement).filter(EventAnnouncement.id == announcement_id).first()
     if not announcement:
@@ -643,9 +845,13 @@ def update_announcement(
 
 
 @router.delete("/announcements/{announcement_id}", response_model=MessageResponse)
-def delete_announcement(announcement_id: int, db: Session = Depends(get_db)):
+def delete_announcement(
+    announcement_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Delete an announcement
+    Delete an announcement (Faculty/Admin required)
     """
     announcement = db.query(EventAnnouncement).filter(EventAnnouncement.id == announcement_id).first()
     if not announcement:

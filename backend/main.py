@@ -4,10 +4,11 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 import asyncio
+from datetime import datetime
 from dotenv import load_dotenv
 
 from backend.database import engine
-from backend.models import student
+from backend.models import student, user
 from backend.models import attendance, complaint, schedule, risk, club, schedule_feedback, events, qr_attendance
 from backend.routes.students import router as students_router
 from backend.routes.health import router as health_router
@@ -15,7 +16,7 @@ from backend.routes.agents import router as agents_router
 from backend.routes.attendance import router as attendance_router
 from backend.routes.complaint import router as complaint_router
 from backend.routes.schedule import router as schedule_router
-from backend.routes.risk import router as risk_router
+from backend.routes.risk import router as risk_router, academic_risk_router, academic_risk_alias_router
 from backend.routes.dashboard import router as dashboard_router
 from backend.routes.analytics import router as analytics_router
 from backend.routes.clubs import router as clubs_router
@@ -24,6 +25,7 @@ from backend.routes.auth import router as auth_router
 from backend.routes.schedule_feedback import router as schedule_feedback_router
 from backend.routes.events import router as events_router
 from backend.routes.qr_attendance import router as qr_attendance_router
+from backend.routes.study_task import router as study_task_router
 from backend.core.event_handlers import register_agents
 from backend.core.config import settings
 from backend.core.logging import setup_logging, get_logger, RequestLoggingMiddleware
@@ -71,11 +73,16 @@ app.include_router(schedule_feedback_router)
 app.include_router(events_router)
 app.include_router(qr_attendance_router)
 app.include_router(risk_router)
+app.include_router(academic_risk_router)
+app.include_router(academic_risk_alias_router)
 app.include_router(agents_router)
 app.include_router(dashboard_router)
 app.include_router(analytics_router)
 app.include_router(clubs_router)
 app.include_router(ai_router)
+app.include_router(study_task_router, prefix="/api/v1/study-tasks")
+app.include_router(study_task_router, prefix="/v1/study-tasks")
+app.include_router(study_task_router, prefix="/study-tasks")
 
 
 # Startup event to register agents and initialize Phase 5 components
@@ -83,6 +90,21 @@ app.include_router(ai_router)
 async def startup_event():
     """Initialize agents, background tasks, and Phase 5 components"""
     logger.log_event("startup_event", level="INFO", environment=settings.ENV, debug=settings.DEBUG)
+
+    # Auto-seed database if empty
+    try:
+        from backend.seed_data import ensure_schema, seed_database, seed_default_users
+        from backend.database import SessionLocal
+        from backend.models.student import Student
+        ensure_schema()
+        db = SessionLocal()
+        seed_default_users(db)
+        if db.query(Student).count() == 0:
+            logger.log_event("auto_seeding_database", level="INFO")
+            seed_database()
+        db.close()
+    except Exception as e:
+        logger.log_event("auto_seeding_error", level="WARNING", error=str(e))
 
     # Register event-driven agents (Phase 2)
     register_agents()
@@ -181,8 +203,6 @@ def home():
 @app.get("/health/full")
 def full_health():
     """Full health check including all Phase 5 components"""
-    import time
-
     health_status = {
         "timestamp": datetime.utcnow().isoformat(),
         "status": "healthy",
@@ -216,7 +236,6 @@ def full_health():
 
 if __name__ == "__main__":
     import uvicorn
-    from datetime import datetime
 
     logger.log_event(
         "server_starting",

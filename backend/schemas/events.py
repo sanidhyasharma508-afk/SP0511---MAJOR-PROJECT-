@@ -93,6 +93,7 @@ class EventResponse(EventBase):
     gallery_images: Optional[List[str]] = None
     created_at: datetime
     updated_at: datetime
+    created_by: Optional[int] = None
 
     class Config:
         from_attributes = True

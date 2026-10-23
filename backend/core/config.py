@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     API_PREFIX: str = Field(default="/api/v1", env="API_PREFIX")
 
     # Database
-    DATABASE_URL: str = Field(default="sqlite:///./test.db", env="DATABASE_URL")
+    DATABASE_URL: str = Field(default="sqlite:///./campus_automation.db", env="DATABASE_URL")
     DB_ECHO: bool = Field(default=False, env="DB_ECHO")
     DB_POOL_SIZE: int = Field(default=5, env="DB_POOL_SIZE")
     DB_MAX_OVERFLOW: int = Field(default=10, env="DB_MAX_OVERFLOW")
@@ -125,9 +125,15 @@ class Settings(BaseSettings):
         return self.ENVIRONMENT == Environment.TESTING
 
     def get_database_url(self) -> str:
-        """Get database URL based on environment"""
+        """Get database URL based on environment, resolving relative SQLite paths to project root"""
         if self.is_testing:
             return "sqlite:///:memory:"
+        if self.DATABASE_URL.startswith("sqlite:///./"):
+            from pathlib import Path
+            base_dir = Path(__file__).resolve().parent.parent.parent
+            rel_name = self.DATABASE_URL[len("sqlite:///./"):]
+            abs_db_path = (base_dir / rel_name).resolve().as_posix()
+            return f"sqlite:///{abs_db_path}"
         return self.DATABASE_URL
 
 
