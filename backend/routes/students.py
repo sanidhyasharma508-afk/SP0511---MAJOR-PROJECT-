@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.schemas.student import StudentCreate, StudentOut
 from backend.models.student import Student
-from backend.core.rbac import get_current_user, require_staff, require_admin, Role
+from backend.core.rbac import get_current_user, require_staff, require_admin, require_faculty, Role
 from backend.core.auth import TokenData
 
 router = APIRouter(prefix="/students", tags=["Students"])
@@ -35,9 +35,9 @@ def add_student(
 @router.get("/", response_model=list[StudentOut])
 def get_all_students(
     db: Session = Depends(get_db),
-    current_user: TokenData = Depends(get_current_user),
+    current_user: TokenData = Depends(require_faculty),
 ):
-    """Get all students (Authenticated users)"""
+    """Get all students (Faculty, Staff, and Admin only)"""
     return db.query(Student).all()
 
 

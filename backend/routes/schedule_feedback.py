@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from backend.database import get_db
+from backend.models.student import Student
+from backend.core.rbac import get_current_user, require_faculty, require_staff, require_admin
+from backend.core.auth import TokenData
 from backend.schemas.schedule_feedback import (
     ScheduleFeedbackCreate,
     ScheduleFeedbackOut,
@@ -92,16 +95,47 @@ MBM University Schedule Management System
     }
 
 
+def _get_student_for_user(current_user: TokenData, db: Session) -> Optional[Student]:
+    """Helper to resolve Student record for user"""
+    if current_user.linked_student_id:
+        return db.query(Student).filter(Student.id == current_user.linked_student_id).first()
+    if current_user.sub:
+        return db.query(Student).filter(Student.roll_no == current_user.sub).first()
+    return None
+
+
 # ===================== FEEDBACK ROUTES =====================
 
 @router.post("/feedback", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
-def submit_schedule_feedback(feedback: ScheduleFeedbackCreate, db: Session = Depends(get_db)):
+def submit_schedule_feedback(
+    feedback: ScheduleFeedbackCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
     """Submit schedule feedback/issue and generate notifications"""
+    role = (current_user.role or "").lower()
+    student_roll = None
+    student_name = feedback.name
+
+    if role == "student":
+        student = _get_student_for_user(current_user, db)
+        if student:
+            student_roll = student.roll_no
+            student_name = student.name
+            if feedback.roll_number and feedback.roll_number.strip().lower() != student.roll_no.strip().lower():
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied: Students can only submit feedback under their own roll number",
+                )
+        else:
+            student_roll = current_user.sub
+    else:
+        student_roll = feedback.roll_number
 
     # Create feedback record
     new_feedback = ScheduleFeedback(
-        name=feedback.name,
-        roll_number=feedback.roll_number,
+        name=student_name,
+        roll_number=student_roll or feedback.roll_number,
         issue_type=feedback.issue_type,
         preferred_timing=feedback.preferred_timing,
         additional_comments=feedback.additional_comments,
@@ -130,9 +164,16 @@ def get_all_feedback(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
 ):
     """Get all schedule feedback with optional status filter"""
     query = db.query(ScheduleFeedback)
+
+    role = (current_user.role or "").lower()
+    if role == "student":
+        student = _get_student_for_user(current_user, db)
+        roll = student.roll_no if student else current_user.sub
+        query = query.filter(ScheduleFeedback.roll_number == roll)
 
     if status_filter:
         query = query.filter(ScheduleFeedback.status == status_filter)
@@ -142,12 +183,26 @@ def get_all_feedback(
 
 
 @router.get("/feedback/{feedback_id}", response_model=ScheduleFeedbackOut)
-def get_feedback_by_id(feedback_id: int, db: Session = Depends(get_db)):
+def get_feedback_by_id(
+    feedback_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
     """Get specific feedback by ID"""
     feedback = db.query(ScheduleFeedback).filter(ScheduleFeedback.id == feedback_id).first()
 
     if not feedback:
         raise HTTPException(status_code=404, detail="Feedback not found")
+
+    role = (current_user.role or "").lower()
+    if role == "student":
+        student = _get_student_for_user(current_user, db)
+        roll = (student.roll_no if student else current_user.sub or "").strip().lower()
+        if (feedback.roll_number or "").strip().lower() != roll:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Students can only view their own feedback",
+            )
 
     return feedback
 
@@ -157,8 +212,9 @@ def update_feedback_status(
     feedback_id: int,
     update_data: ScheduleFeedbackUpdate,
     db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_staff),
 ):
-    """Update feedback status"""
+    """Update feedback status (Staff or Admin required)"""
     feedback = db.query(ScheduleFeedback).filter(ScheduleFeedback.id == feedback_id).first()
 
     if not feedback:
@@ -180,13 +236,17 @@ def update_feedback_status(
 # ===================== ANNOUNCEMENT ROUTES =====================
 
 @router.post("/announcements", response_model=AnnouncementOut, status_code=status.HTTP_201_CREATED)
-def create_announcement(announcement: AnnouncementCreate, db: Session = Depends(get_db)):
-    """Create a new announcement (Faculty to Students)"""
+def create_announcement(
+    announcement: AnnouncementCreate,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
+    """Create a new announcement (Faculty, Staff, Admin)"""
 
     new_announcement = Announcement(
         title=announcement.title,
         content=announcement.content,
-        author=announcement.author,
+        author=announcement.author or current_user.sub or "Faculty",
         priority=announcement.priority,
         target_audience=announcement.target_audience,
         expires_at=announcement.expires_at,
@@ -206,8 +266,9 @@ def get_all_announcements(
     skip: int = 0,
     limit: int = 50,
     db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
 ):
-    """Get all announcements with filters"""
+    """Get all announcements with filters (Authenticated users)"""
     query = db.query(Announcement)
 
     if active_only:
@@ -228,8 +289,12 @@ def get_all_announcements(
 
 
 @router.get("/announcements/{announcement_id}", response_model=AnnouncementOut)
-def get_announcement_by_id(announcement_id: int, db: Session = Depends(get_db)):
-    """Get specific announcement by ID"""
+def get_announcement_by_id(
+    announcement_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Get specific announcement by ID (Authenticated users)"""
     announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
 
     if not announcement:
@@ -243,8 +308,9 @@ def update_announcement(
     announcement_id: int,
     update_data: AnnouncementUpdate,
     db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
 ):
-    """Update an announcement"""
+    """Update an announcement (Faculty, Staff, Admin)"""
     announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
 
     if not announcement:
@@ -267,8 +333,12 @@ def update_announcement(
 
 
 @router.delete("/announcements/{announcement_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_announcement(announcement_id: int, db: Session = Depends(get_db)):
-    """Soft delete an announcement (set is_active to 0)"""
+def delete_announcement(
+    announcement_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_staff),
+):
+    """Soft delete an announcement (Staff or Admin required)"""
     announcement = db.query(Announcement).filter(Announcement.id == announcement_id).first()
 
     if not announcement:
@@ -282,8 +352,11 @@ def delete_announcement(announcement_id: int, db: Session = Depends(get_db)):
 # ===================== STATS & ANALYTICS =====================
 
 @router.get("/feedback/stats/summary")
-def get_feedback_stats(db: Session = Depends(get_db)):
-    """Get feedback statistics"""
+def get_feedback_stats(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
+    """Get feedback statistics (Faculty, Staff, Admin)"""
     total = db.query(ScheduleFeedback).count()
     pending = db.query(ScheduleFeedback).filter(ScheduleFeedback.status == "pending").count()
     resolved = db.query(ScheduleFeedback).filter(ScheduleFeedback.status == "resolved").count()

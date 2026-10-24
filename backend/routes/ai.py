@@ -1,6 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import Optional
 from backend.database import get_db
+from backend.models.student import Student
+from backend.models.risk import RiskLog
+from backend.core.rbac import get_current_user, require_faculty, require_staff
+from backend.core.auth import TokenData
 from backend.schemas.ai import (
     AttendanceExplanationResponse,
     ComplaintSpikeExplanationResponse,
@@ -19,6 +24,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ai", tags=["ai-intelligence"])
+
+
+def _resolve_student_id(current_user: TokenData, db: Session) -> Optional[int]:
+    """Helper to safely resolve student_id without conflating user_id with student_id"""
+    if current_user.linked_student_id is not None:
+        return current_user.linked_student_id
+    if current_user.sub:
+        student = db.query(Student).filter(Student.roll_no == current_user.sub).first()
+        if student:
+            return student.id
+    return None
 
 
 # ==================== HEALTH & STATUS ====================
@@ -55,16 +71,29 @@ def ai_health_check():
 
 
 @router.get("/explain-attendance/{student_id}", response_model=AttendanceExplanationResponse)
-def explain_attendance_issues(student_id: int, days: int = 30, db: Session = Depends(get_db)):
+def explain_attendance_issues(
+    student_id: int,
+    days: int = 30,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
     """
     Explain why a student's attendance has dropped
-
-    Uses:
-    - Student attendance records
-    - Complaint history
-    - Campus attendance policies
-    - Historical patterns
     """
+    role = (current_user.role or "").lower()
+    if role == "student":
+        resolved_id = _resolve_student_id(current_user, db)
+        if resolved_id != student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Students can only access their own attendance explanation",
+            )
+    elif role not in ("faculty", "staff", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Unauthorized role",
+        )
+
     try:
         agent = get_attendance_agent()
         result = agent.explain_attendance_drop(student_id, db, days)
@@ -73,16 +102,37 @@ def explain_attendance_issues(student_id: int, days: int = 30, db: Session = Dep
             raise HTTPException(status_code=404, detail=result["error"])
 
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error explaining attendance: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error analyzing attendance: {str(e)}")
 
 
 @router.get("/why-attendance-dropped/{student_id}")
-def why_attendance_dropped(student_id: int, days: int = 30, db: Session = Depends(get_db)):
+def why_attendance_dropped(
+    student_id: int,
+    days: int = 30,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
     """
     Natural language explanation for why attendance dropped
     """
+    role = (current_user.role or "").lower()
+    if role == "student":
+        resolved_id = _resolve_student_id(current_user, db)
+        if resolved_id != student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Students can only access their own attendance explanation",
+            )
+    elif role not in ("faculty", "staff", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Unauthorized role",
+        )
+
     try:
         agent = get_attendance_agent()
         result = agent.explain_attendance_drop(student_id, db, days)
@@ -105,6 +155,8 @@ def why_attendance_dropped(student_id: int, days: int = 30, db: Session = Depend
         }
 
         return response
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -114,15 +166,13 @@ def why_attendance_dropped(student_id: int, days: int = 30, db: Session = Depend
 
 
 @router.get("/explain-complaints", response_model=ComplaintSpikeExplanationResponse)
-def explain_complaint_spike(days: int = 7, db: Session = Depends(get_db)):
+def explain_complaint_spike(
+    days: int = 7,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Explain why complaints have increased
-
-    Uses:
-    - Recent complaint history
-    - Complaint categorization
-    - Historical patterns
-    - Campus policies
+    Explain why complaints have increased (Faculty, Staff, Admin)
     """
     try:
         agent = get_complaint_agent()
@@ -132,15 +182,21 @@ def explain_complaint_spike(days: int = 7, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail=result["error"])
 
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error explaining complaints: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error analyzing complaints: {str(e)}")
 
 
 @router.get("/why-complaints-increased")
-def why_complaints_increased(days: int = 7, db: Session = Depends(get_db)):
+def why_complaints_increased(
+    days: int = 7,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Natural language explanation for complaint spike
+    Natural language explanation for complaint spike (Faculty, Staff, Admin)
     """
     try:
         agent = get_complaint_agent()
@@ -163,6 +219,8 @@ def why_complaints_increased(days: int = 7, db: Session = Depends(get_db)):
         }
 
         return response
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -172,16 +230,32 @@ def why_complaints_increased(days: int = 7, db: Session = Depends(get_db)):
 
 
 @router.get("/explain-risk/{risk_id}", response_model=RiskExplanationResponse)
-def explain_risk(risk_id: int, db: Session = Depends(get_db)):
+def explain_risk(
+    risk_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
     """
     Explain a risk and provide AI-driven insights
-
-    Uses:
-    - Risk information
-    - Related student data
-    - Intervention strategies
-    - Historical patterns
     """
+    risk_record = db.query(RiskLog).filter(RiskLog.id == risk_id).first()
+    if not risk_record:
+        raise HTTPException(status_code=404, detail="Risk record not found")
+
+    role = (current_user.role or "").lower()
+    if role == "student":
+        resolved_id = _resolve_student_id(current_user, db)
+        if resolved_id != risk_record.student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Students can only view their own risk explanations",
+            )
+    elif role not in ("faculty", "staff", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Unauthorized role",
+        )
+
     try:
         agent = get_risk_agent()
         result = agent.explain_risk(risk_id, db)
@@ -190,16 +264,40 @@ def explain_risk(risk_id: int, db: Session = Depends(get_db)):
             raise HTTPException(status_code=404, detail=result["error"])
 
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error explaining risk: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error analyzing risk: {str(e)}")
 
 
 @router.post("/explain-risk-natural-language")
-def explain_risk_natural_language(risk_id: int, db: Session = Depends(get_db)):
+def explain_risk_natural_language(
+    risk_id: int,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
     """
     Natural language explanation for a specific risk
     """
+    risk_record = db.query(RiskLog).filter(RiskLog.id == risk_id).first()
+    if not risk_record:
+        raise HTTPException(status_code=404, detail="Risk record not found")
+
+    role = (current_user.role or "").lower()
+    if role == "student":
+        resolved_id = _resolve_student_id(current_user, db)
+        if resolved_id != risk_record.student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Students can only view their own risk explanations",
+            )
+    elif role not in ("faculty", "staff", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Unauthorized role",
+        )
+
     try:
         agent = get_risk_agent()
         result = agent.explain_risk(risk_id, db)
@@ -217,6 +315,8 @@ def explain_risk_natural_language(risk_id: int, db: Session = Depends(get_db)):
         }
 
         return response
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -226,15 +326,12 @@ def explain_risk_natural_language(risk_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/query", response_model=NaturalLanguageQueryResponse)
-def query_knowledge_base(request: NaturalLanguageQueryRequest):
+def query_knowledge_base(
+    request: NaturalLanguageQueryRequest,
+    current_user: TokenData = Depends(get_current_user),
+):
     """
-    Query campus knowledge base using RAG
-
-    Retrieves relevant documents about:
-    - Campus policies
-    - Historical patterns
-    - Intervention strategies
-    - Support services
+    Query campus knowledge base using RAG (Authenticated users)
     """
     try:
         rag = get_rag_pipeline()
@@ -259,15 +356,21 @@ def query_knowledge_base(request: NaturalLanguageQueryRequest):
         }
 
         return response
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error querying knowledge base: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error querying knowledge base: {str(e)}")
 
 
 @router.get("/knowledge-base/retrieve")
-def retrieve_documents(query: str, limit: int = 5):
+def retrieve_documents(
+    query: str,
+    limit: int = 5,
+    current_user: TokenData = Depends(get_current_user),
+):
     """
-    Retrieve documents from knowledge base
+    Retrieve documents from knowledge base (Authenticated users)
     """
     try:
         rag = get_rag_pipeline()
@@ -289,15 +392,19 @@ def retrieve_documents(query: str, limit: int = 5):
             ],
             "timestamp": datetime.utcnow().isoformat(),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error retrieving documents: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/knowledge-base/info")
-def knowledge_base_info():
+def knowledge_base_info(
+    current_user: TokenData = Depends(get_current_user),
+):
     """
-    Get information about knowledge base
+    Get information about knowledge base (Authenticated users)
     """
     try:
         rag = get_rag_pipeline()
@@ -315,6 +422,8 @@ def knowledge_base_info():
             "categories": list(set(doc["category"] for doc in kb.documents)),
             "timestamp": datetime.utcnow().isoformat(),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting KB info: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -324,9 +433,12 @@ def knowledge_base_info():
 
 
 @router.get("/insights/attendance-patterns")
-def attendance_patterns_insight(db: Session = Depends(get_db)):
+def attendance_patterns_insight(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Get AI insights about attendance patterns
+    Get AI insights about attendance patterns (Faculty, Staff, Admin)
     """
     try:
         rag = get_rag_pipeline()
@@ -338,15 +450,20 @@ def attendance_patterns_insight(db: Session = Depends(get_db)):
             "key_takeaway": "Attendance follows predictable patterns - understanding these helps with early intervention",
             "timestamp": datetime.utcnow().isoformat(),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting insights: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/insights/complaint-patterns")
-def complaint_patterns_insight(db: Session = Depends(get_db)):
+def complaint_patterns_insight(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Get AI insights about complaint patterns
+    Get AI insights about complaint patterns (Faculty, Staff, Admin)
     """
     try:
         rag = get_rag_pipeline()
@@ -358,15 +475,20 @@ def complaint_patterns_insight(db: Session = Depends(get_db)):
             "key_takeaway": "Complaints follow temporal patterns - specific times and days see higher volumes",
             "timestamp": datetime.utcnow().isoformat(),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting insights: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/insights/intervention-strategies/{risk_type}")
-def intervention_strategies_insight(risk_type: str):
+def intervention_strategies_insight(
+    risk_type: str,
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Get recommended intervention strategies for a risk type
+    Get recommended intervention strategies for a risk type (Faculty, Staff, Admin)
     """
     try:
         rag = get_rag_pipeline()
@@ -381,6 +503,9 @@ def intervention_strategies_insight(risk_type: str):
             "description": f"Recommended interventions for {risk_type} risks",
             "timestamp": datetime.utcnow().isoformat(),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting strategies: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+

@@ -37,8 +37,6 @@ def _resolve_authenticated_student(current_user: TokenData, db: Session) -> Opti
         student = db.query(Student).filter(Student.id == current_user.linked_student_id).first()
     if not student and current_user.sub:
         student = db.query(Student).filter(Student.roll_no == current_user.sub).first()
-    if not student and current_user.user_id:
-        student = db.query(Student).filter(Student.id == current_user.user_id).first()
     return student
 
 
@@ -81,14 +79,8 @@ def get_student_academic_risk(
 
     role = (current_user.role or "").lower()
     if role == "student":
-        is_owner = False
-        if current_user.linked_student_id == student_id:
-            is_owner = True
-        elif current_user.user_id == student_id:
-            is_owner = True
-        elif student.roll_no == current_user.sub:
-            is_owner = True
-        if not is_owner:
+        resolved_student = _resolve_authenticated_student(current_user, db)
+        if not resolved_student or resolved_student.id != student_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: Students can only view their own academic risk evaluation",
@@ -207,16 +199,8 @@ def get_student_risk_logs(
     Students can only view their own advisory records.
     """
     if current_user.role.lower() == "student":
-        is_owner = False
-        if current_user.linked_student_id is not None and current_user.linked_student_id == student_id:
-            is_owner = True
-        elif current_user.user_id == student_id:
-            is_owner = True
-        else:
-            st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
-            if st and st.id == student_id:
-                is_owner = True
-        if not is_owner:
+        resolved_student = _resolve_authenticated_student(current_user, db)
+        if not resolved_student or resolved_student.id != student_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: Students can only view their own risk advisory logs",

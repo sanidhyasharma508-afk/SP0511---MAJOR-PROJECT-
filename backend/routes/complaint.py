@@ -24,6 +24,23 @@ VALID_TRANSITIONS = {
 }
 
 
+def resolve_student_id(current_user: TokenData, db: Session) -> Optional[int]:
+    """
+    Safely resolve the authenticated user's linked student ID.
+    Checks linked_student_id on TokenData first, then looks up by roll number (current_user.sub).
+    Never treats current_user.user_id as Student.id.
+    """
+    if current_user.linked_student_id is not None:
+        st = db.query(Student).filter(Student.id == current_user.linked_student_id).first()
+        if st:
+            return st.id
+    if current_user.sub:
+        st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
+        if st:
+            return st.id
+    return None
+
+
 @router.post("/", response_model=ComplaintOut, status_code=status.HTTP_201_CREATED)
 def file_complaint(
     complaint: ComplaintCreate,
@@ -43,40 +60,25 @@ def file_complaint(
     # Validate student ownership if caller is a student
     student_id_to_use = complaint.student_id
     if current_user.role.lower() == "student":
-        st = None
-        if current_user.linked_student_id:
-            st = db.query(Student).filter(Student.id == current_user.linked_student_id).first()
-        if not st:
-            st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
+        resolved_student_id = resolve_student_id(current_user, db)
+        if not resolved_student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No student record linked to the authenticated user account.",
+            )
 
-        resolved_student_id = None
-        if current_user.linked_student_id:
-            resolved_student_id = current_user.linked_student_id
-        elif st:
-            resolved_student_id = st.id
-        else:
-            resolved_student_id = current_user.user_id
-
-        if complaint.student_id is not None:
-            is_owner = False
-            if current_user.linked_student_id is not None and current_user.linked_student_id == complaint.student_id:
-                is_owner = True
-            elif current_user.user_id == complaint.student_id:
-                is_owner = True
-            elif st and st.id == complaint.student_id:
-                is_owner = True
-
-            if not is_owner:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Cannot file complaint on behalf of another student",
-                )
-            student_id_to_use = complaint.student_id
-        else:
-            student_id_to_use = resolved_student_id
+        if complaint.student_id is not None and complaint.student_id != resolved_student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot file complaint on behalf of another student",
+            )
+        student_id_to_use = resolved_student_id
     else:
         if student_id_to_use is None:
-            student_id_to_use = current_user.user_id
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="student_id is required when staff files a complaint",
+            )
 
     new_complaint = Complaint(
         student_id=student_id_to_use,
@@ -130,16 +132,12 @@ def get_all_complaints(
     if current_user.role.lower() in ["admin", "staff", "faculty"]:
         return db.query(Complaint).all()
 
-    # Filter for student's own complaints
-    user_student_ids = []
-    if current_user.linked_student_id is not None:
-        user_student_ids.append(current_user.linked_student_id)
-    user_student_ids.append(current_user.user_id)
-    st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
-    if st:
-        user_student_ids.append(st.id)
+    # Filter strictly for student's own complaints
+    resolved_student_id = resolve_student_id(current_user, db)
+    if not resolved_student_id:
+        return []
 
-    return db.query(Complaint).filter(Complaint.student_id.in_(user_student_ids)).all()
+    return db.query(Complaint).filter(Complaint.student_id == resolved_student_id).all()
 
 
 @router.get("/student/{student_id}", response_model=list[ComplaintOut])
@@ -153,17 +151,8 @@ def get_student_complaints(
     Enforces ownership: students can only view their own complaints.
     """
     if current_user.role.lower() == "student":
-        is_owner = False
-        if current_user.linked_student_id is not None and current_user.linked_student_id == student_id:
-            is_owner = True
-        elif current_user.user_id == student_id:
-            is_owner = True
-        else:
-            st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
-            if st and st.id == student_id:
-                is_owner = True
-
-        if not is_owner:
+        resolved_student_id = resolve_student_id(current_user, db)
+        if resolved_student_id is None or resolved_student_id != student_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: Students can only view their own complaints",
@@ -185,17 +174,8 @@ def get_complaint(
         raise HTTPException(status_code=404, detail="Complaint not found")
 
     if current_user.role.lower() == "student":
-        is_owner = False
-        if current_user.linked_student_id is not None and current_user.linked_student_id == complaint.student_id:
-            is_owner = True
-        elif current_user.user_id == complaint.student_id:
-            is_owner = True
-        else:
-            st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
-            if st and st.id == complaint.student_id:
-                is_owner = True
-
-        if not is_owner:
+        resolved_student_id = resolve_student_id(current_user, db)
+        if resolved_student_id is None or resolved_student_id != complaint.student_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: You can only view your own complaints",
@@ -216,17 +196,8 @@ def get_complaint_history(
         raise HTTPException(status_code=404, detail="Complaint not found")
 
     if current_user.role.lower() == "student":
-        is_owner = False
-        if current_user.linked_student_id is not None and current_user.linked_student_id == complaint.student_id:
-            is_owner = True
-        elif current_user.user_id == complaint.student_id:
-            is_owner = True
-        else:
-            st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
-            if st and st.id == complaint.student_id:
-                is_owner = True
-
-        if not is_owner:
+        resolved_student_id = resolve_student_id(current_user, db)
+        if resolved_student_id is None or resolved_student_id != complaint.student_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: You can only view history for your own complaints",
@@ -256,17 +227,8 @@ def update_complaint(
     is_staff = current_user.role.lower() in ["admin", "staff", "faculty"]
 
     if not is_staff:
-        is_owner = False
-        if current_user.linked_student_id is not None and current_user.linked_student_id == db_complaint.student_id:
-            is_owner = True
-        elif current_user.user_id == db_complaint.student_id:
-            is_owner = True
-        else:
-            st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
-            if st and st.id == db_complaint.student_id:
-                is_owner = True
-
-        if not is_owner:
+        resolved_student_id = resolve_student_id(current_user, db)
+        if resolved_student_id is None or resolved_student_id != db_complaint.student_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: Cannot edit another student's complaint",

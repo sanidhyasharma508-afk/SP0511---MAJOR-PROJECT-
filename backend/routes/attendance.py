@@ -123,6 +123,23 @@ def get_all_attendance(
     return query.order_by(Attendance.date.desc()).all()
 
 
+def resolve_student_id(current_user: TokenData, db: Session) -> Optional[int]:
+    """
+    Safely resolve the authenticated user's linked student ID.
+    Checks linked_student_id on TokenData first, then looks up by roll number (current_user.sub).
+    Never treats current_user.user_id as Student.id.
+    """
+    if current_user.linked_student_id is not None:
+        st = db.query(Student).filter(Student.id == current_user.linked_student_id).first()
+        if st:
+            return st.id
+    if current_user.sub:
+        st = db.query(Student).filter(Student.roll_no == current_user.sub).first()
+        if st:
+            return st.id
+    return None
+
+
 @router.get("/student/{student_id}", response_model=List[AttendanceOut])
 def get_student_attendance(
     student_id: int,
@@ -134,16 +151,8 @@ def get_student_attendance(
     Enforces ownership: students can only view their own attendance.
     """
     if current_user.role.lower() == "student":
-        student = db.query(Student).filter(Student.id == student_id).first()
-        is_owner = False
-        if current_user.linked_student_id is not None and current_user.linked_student_id == student_id:
-            is_owner = True
-        elif str(current_user.user_id) == str(student_id):
-            is_owner = True
-        elif student and current_user.sub == student.roll_no:
-            is_owner = True
-
-        if not is_owner:
+        resolved_student_id = resolve_student_id(current_user, db)
+        if resolved_student_id is None or resolved_student_id != student_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: Students can only view their own attendance records",
@@ -164,16 +173,8 @@ def get_student_attendance_summary(
     Enforces ownership: students can only view their own summary.
     """
     if current_user.role.lower() == "student":
-        student = db.query(Student).filter(Student.id == student_id).first()
-        is_owner = False
-        if current_user.linked_student_id is not None and current_user.linked_student_id == student_id:
-            is_owner = True
-        elif str(current_user.user_id) == str(student_id):
-            is_owner = True
-        elif student and current_user.sub == student.roll_no:
-            is_owner = True
-
-        if not is_owner:
+        resolved_student_id = resolve_student_id(current_user, db)
+        if resolved_student_id is None or resolved_student_id != student_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: Students can only view their own attendance summary",
@@ -229,16 +230,8 @@ def get_attendance(
         raise HTTPException(status_code=404, detail="Attendance record not found")
 
     if current_user.role.lower() == "student":
-        student = db.query(Student).filter(Student.id == record.student_id).first()
-        is_owner = False
-        if current_user.linked_student_id is not None and current_user.linked_student_id == record.student_id:
-            is_owner = True
-        elif str(current_user.user_id) == str(record.student_id):
-            is_owner = True
-        elif student and current_user.sub == student.roll_no:
-            is_owner = True
-
-        if not is_owner:
+        resolved_student_id = resolve_student_id(current_user, db)
+        if resolved_student_id is None or resolved_student_id != record.student_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: Students can only view their own attendance records",

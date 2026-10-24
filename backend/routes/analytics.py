@@ -19,19 +19,52 @@ from backend.models.complaint import Complaint
 from backend.models.risk import RiskLog
 from backend.models.student import Student
 from backend.core.agents import TrendDetectionAgent, AnomalyDetectionAgent
+from backend.core.rbac import get_current_user, require_faculty, require_staff
+from backend.core.auth import TokenData
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import List, Dict, Optional
 from collections import defaultdict
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
+def _resolve_student_id(current_user: TokenData, db: Session) -> Optional[int]:
+    """Helper to safely resolve student_id without conflating user_id with student_id"""
+    if current_user.linked_student_id is not None:
+        return current_user.linked_student_id
+    if current_user.sub:
+        student = db.query(Student).filter(Student.roll_no == current_user.sub).first()
+        if student:
+            return student.id
+    return None
+
+
+
 @router.get("/attendance-trends/{student_id}", response_model=AttendanceTrendResponse)
-def get_attendance_trends(student_id: int, days: int = 30, db: Session = Depends(get_db)):
+def get_attendance_trends(
+    student_id: int,
+    days: int = 30,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
     """
     Get attendance trends for a specific student
     Includes daily data, moving average, and trend direction
     """
+    role = (current_user.role or "").lower()
+    if role == "student":
+        resolved_id = _resolve_student_id(current_user, db)
+        if resolved_id != student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Students can only view their own attendance trends",
+            )
+    elif role not in ("faculty", "staff", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Unauthorized role",
+        )
+
     try:
         student = db.query(Student).filter(Student.id == student_id).first()
         if not student:
@@ -50,9 +83,13 @@ def get_attendance_trends(student_id: int, days: int = 30, db: Session = Depends
 
 
 @router.get("/complaint-heatmap", response_model=ComplaintHeatmapResponse)
-def get_complaint_heatmap(days: int = 30, db: Session = Depends(get_db)):
+def get_complaint_heatmap(
+    days: int = 30,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Get complaint filing patterns as heatmap
+    Get complaint filing patterns as heatmap (Faculty, Staff, Admin)
     Shows when complaints are filed most frequently (day/hour)
     """
     try:
@@ -120,9 +157,12 @@ def get_complaint_heatmap(days: int = 30, db: Session = Depends(get_db)):
 
 
 @router.get("/risk-distribution", response_model=RiskDistributionResponse)
-def get_risk_distribution(db: Session = Depends(get_db)):
+def get_risk_distribution(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Get distribution of risks by type and severity
+    Get distribution of risks by type and severity (Faculty, Staff, Admin)
     Shows which risk types are most common
     """
     try:
@@ -188,9 +228,13 @@ def get_risk_distribution(db: Session = Depends(get_db)):
 
 
 @router.get("/complaint-trends", response_model=ComplaintTrendResponse)
-def get_complaint_trends(days: int = 30, db: Session = Depends(get_db)):
+def get_complaint_trends(
+    days: int = 30,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Get complaint trends over time
+    Get complaint trends over time (Faculty, Staff, Admin)
     Weekly aggregation with moving averages
     """
     try:
@@ -207,9 +251,12 @@ def get_complaint_trends(days: int = 30, db: Session = Depends(get_db)):
 
 
 @router.post("/detect-anomalies")
-def detect_anomalies(db: Session = Depends(get_db)):
+def detect_anomalies(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_staff),
+):
     """
-    Manually trigger anomaly detection
+    Manually trigger anomaly detection (Staff, Admin)
     Checks for attendance drops and complaint spikes
     """
     try:
@@ -249,9 +296,13 @@ def detect_anomalies(db: Session = Depends(get_db)):
 
 
 @router.get("/anomalies", response_model=AnalyticsAnomalies)
-def get_recent_anomalies(days: int = 7, db: Session = Depends(get_db)):
+def get_recent_anomalies(
+    days: int = 7,
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(require_faculty),
+):
     """
-    Get recent anomalies detected by system
+    Get recent anomalies detected by system (Faculty, Staff, Admin)
     """
     try:
         cutoff = datetime.utcnow() - timedelta(days=days)
@@ -301,9 +352,12 @@ def get_recent_anomalies(days: int = 7, db: Session = Depends(get_db)):
 
 
 @router.get("/summary")
-def get_analytics_summary(db: Session = Depends(get_db)):
+def get_analytics_summary(
+    db: Session = Depends(get_db),
+    current_user: TokenData = Depends(get_current_user),
+):
     """
-    Get overall analytics summary
+    Get overall analytics summary (Authenticated users)
     Key metrics and insights
     """
     try:
@@ -365,3 +419,4 @@ def get_analytics_summary(db: Session = Depends(get_db)):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating summary: {str(e)}")
+
