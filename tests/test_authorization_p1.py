@@ -25,8 +25,9 @@ class SourcelessPycFinder(importlib.abc.MetaPathFinder):
             return None
         name = fullname.split(".")[-1]
         for p in path:
+            py = Path(p) / f"{name}.py"
             pyc = Path(p) / "__pycache__" / f"{name}.cpython-313.pyc"
-            if pyc.is_file():
+            if not py.is_file() and pyc.is_file():
                 return importlib.util.spec_from_file_location(fullname, pyc)
         return None
 
