@@ -328,24 +328,30 @@ function stopQRScanner() {
 
 async function markAttendanceManually() {
     const sessionIdInput = document.getElementById('session-id-input');
-    const sessionData = sessionIdInput.value.trim();
+    const sessionData = sessionIdInput ? sessionIdInput.value.trim() : '';
     
     if (!sessionData) {
-        showScanResult('Please enter a session ID', 'error');
+        showScanResult('Please scan a QR code or paste the QR code payload.', 'error');
         return;
     }
     
-    // Try to parse as JSON (QR code data) or use as session ID
-    let sessionId = sessionData;
-    let qrHash = 'manual_entry';
+    // Parse QR code payload to extract session_id and verification hash
+    let sessionId = null;
+    let qrHash = null;
     try {
         const parsed = JSON.parse(sessionData);
-        sessionId = parsed.session_id || sessionId;
-        if (parsed.hash || parsed.qr_code_hash) {
-            qrHash = parsed.hash || parsed.qr_code_hash;
-        }
+        sessionId = parsed.session_id || null;
+        qrHash = parsed.hash || parsed.qr_code_hash || null;
     } catch {
-        // Not JSON, use as-is
+        // Not JSON
+    }
+    
+    if (!sessionId || !qrHash) {
+        showScanResult(
+            'Invalid QR code data. Verification requires the complete QR payload with its cryptographic security hash. Bare session IDs are not accepted.',
+            'error'
+        );
+        return;
     }
     
     await markAttendance(sessionId, qrHash);
@@ -353,7 +359,11 @@ async function markAttendanceManually() {
 
 let isMarkingAttendance = false;
 
-async function markAttendance(sessionId, qrHash = 'manual_entry') {
+async function markAttendance(sessionId, qrHash) {
+    if (!sessionId || !qrHash) {
+        showScanResult('Verification failed: QR code hash and session ID are required.', 'error');
+        return;
+    }
     if (isMarkingAttendance) return;
     isMarkingAttendance = true;
 
@@ -733,6 +743,7 @@ async function downloadAttendance() {
 window.startQRScanner = startQRScanner;
 window.stopQRScanner = stopQRScanner;
 window.markAttendanceManually = markAttendanceManually;
+window.markAttendance = markAttendance;
 window.closeQRSession = closeQRSession;
 window.refreshQRCode = refreshQRCode;
 window.copySessionId = copySessionId;

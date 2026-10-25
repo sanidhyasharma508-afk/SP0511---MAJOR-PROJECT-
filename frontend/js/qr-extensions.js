@@ -22,9 +22,9 @@
   // wrap existing markAttendance if present
   const original = window.markAttendance;
   if (typeof original === 'function') {
-    window.markAttendance = async function(sessionId) {
+    window.markAttendance = async function(sessionId, qrHash) {
       let result;
-      try { result = await original(sessionId); } catch (e) { result = null; }
+      try { result = await original(sessionId, qrHash); } catch (e) { result = null; }
 
       // store record locally for admin/demo purposes
       try {

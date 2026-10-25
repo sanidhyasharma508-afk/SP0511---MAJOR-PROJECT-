@@ -587,8 +587,35 @@ def scan_qr_code(
         )
 
     # 6. QR Hash Security Check
-    valid_hashes = [session.qr_code_hash, 'hash_placeholder', 'manual_entry', 'demo_scan']
-    if scan_request.qr_code_hash and scan_request.qr_code_hash not in valid_hashes:
+    # Verification hash is strictly required and must match the authentic session QR hash.
+    # Insecure bypass placeholders ('hash_placeholder', 'manual_entry', 'demo_scan') are forbidden.
+    FORBIDDEN_HASH_PLACEHOLDERS = {"hash_placeholder", "manual_entry", "demo_scan"}
+
+    submitted_hash = (scan_request.qr_code_hash or "").strip()
+
+    if not submitted_hash:
+        errors.append("QR code verification hash is required")
+        log_scan_attempt(db, session.id, str(student.id), "blocked", "Missing or empty verification hash", scan_request.location)
+        return QRScanResponse(
+            success=False,
+            message="Invalid QR code. Security verification hash is missing or empty.",
+            attendance_marked=False,
+            validation_results=validation_results,
+            errors=errors,
+        )
+
+    if submitted_hash.lower() in FORBIDDEN_HASH_PLACEHOLDERS:
+        errors.append(f"Rejected invalid placeholder hash: {submitted_hash}")
+        log_scan_attempt(db, session.id, str(student.id), "blocked", f"Placeholder hash attempted: {submitted_hash}", scan_request.location)
+        return QRScanResponse(
+            success=False,
+            message="Invalid QR code. Placeholder verification values are not permitted.",
+            attendance_marked=False,
+            validation_results=validation_results,
+            errors=errors,
+        )
+
+    if not secrets.compare_digest(submitted_hash, session.qr_code_hash):
         errors.append("QR code hash mismatch - possible tampering detected")
         log_scan_attempt(db, session.id, str(student.id), "blocked", "Hash mismatch", scan_request.location)
         return QRScanResponse(

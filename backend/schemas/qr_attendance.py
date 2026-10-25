@@ -123,7 +123,7 @@ class DeviceData(BaseModel):
 class QRScanRequest(BaseModel):
     """Student QR scan request"""
     session_id: str = Field(..., min_length=10)
-    qr_code_hash: Optional[str] = "manual_entry"
+    qr_code_hash: Optional[str] = Field(None, description="SHA-256 validation hash from the scanned QR code")
     
     student_id: Optional[str] = None
     roll_number: Optional[str] = None
