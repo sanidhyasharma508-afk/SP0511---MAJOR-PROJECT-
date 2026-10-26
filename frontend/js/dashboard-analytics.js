@@ -71,7 +71,7 @@ async function fetchDashboardData() {
         ? '/api'
         : (window.location.origin.includes(':8000') ? '' : 'http://localhost:8000');
     
-    const token = window.api ? window.api.getToken() : localStorage.getItem('access_token');
+    const token = window.api ? window.api.getToken() : (localStorage.getItem('auth_token') || localStorage.getItem('access_token'));
     if (!token) {
         isFetchingDashboard = false;
         return;
@@ -201,9 +201,13 @@ function checkAlerts(data) {
             }
             if (textEl) {
                 const primaryReason = risk.contributing_reasons && risk.contributing_reasons.length > 0
-                    ? risk.contributing_reasons[0]
+                    ? String(risk.contributing_reasons[0])
                     : 'Advisory notice based on current attendance and task engagement.';
-                textEl.innerHTML = `<strong>Attention:</strong> ${primaryReason}`;
+                textEl.textContent = '';
+                const strongEl = document.createElement('strong');
+                strongEl.textContent = 'Attention: ';
+                textEl.appendChild(strongEl);
+                textEl.appendChild(document.createTextNode(primaryReason));
             }
         } else {
             riskCard.style.display = 'none';

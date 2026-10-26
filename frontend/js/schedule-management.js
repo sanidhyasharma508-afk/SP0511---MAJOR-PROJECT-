@@ -5,7 +5,7 @@ const API_BASE = (typeof window !== 'undefined' && window.location.port === '300
     : (typeof window !== 'undefined' && window.location.origin.includes(':8000') ? '/schedule-management' : 'http://localhost:8000/schedule-management');
 
 function getAuthHeaders(extraHeaders = {}) {
-    const token = window.api ? window.api.getToken() : localStorage.getItem('access_token');
+    const token = window.api ? window.api.getToken() : (localStorage.getItem('auth_token') || localStorage.getItem('access_token'));
     const headers = { ...extraHeaders };
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -76,24 +76,56 @@ async function loadAnnouncements() {
             return;
         }
         
-        container.innerHTML = announcements.map(announcement => `
-            <div class="announcement-card priority-${announcement.priority}">
-                <div class="announcement-header">
-                    <span class="priority-badge ${announcement.priority}">${announcement.priority.toUpperCase()}</span>
-                    <span class="announcement-date">${formatDate(announcement.created_at)}</span>
-                </div>
-                <h4 class="announcement-title">${announcement.title}</h4>
-                <p class="announcement-content">${announcement.content}</p>
-                <div class="announcement-footer">
-                    <span class="announcement-author">
-                        <i class="fas fa-user-tie"></i> ${announcement.author}
-                    </span>
-                    <span class="announcement-audience">
-                        <i class="fas fa-users"></i> ${announcement.target_audience}
-                    </span>
-                </div>
-            </div>
-        `).join('');
+        container.textContent = '';
+        announcements.forEach(announcement => {
+            const card = document.createElement('div');
+            const safePriority = String(announcement.priority || 'medium').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+            card.className = `announcement-card priority-${safePriority}`;
+
+            const header = document.createElement('div');
+            header.className = 'announcement-header';
+            const badge = document.createElement('span');
+            badge.className = `priority-badge ${safePriority}`;
+            badge.textContent = String(announcement.priority || 'MEDIUM').toUpperCase();
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'announcement-date';
+            dateSpan.textContent = formatDate(announcement.created_at);
+            header.appendChild(badge);
+            header.appendChild(dateSpan);
+
+            const titleEl = document.createElement('h4');
+            titleEl.className = 'announcement-title';
+            titleEl.textContent = announcement.title || '';
+
+            const contentEl = document.createElement('p');
+            contentEl.className = 'announcement-content';
+            contentEl.textContent = announcement.content || '';
+
+            const footer = document.createElement('div');
+            footer.className = 'announcement-footer';
+            const authorSpan = document.createElement('span');
+            authorSpan.className = 'announcement-author';
+            const authorIcon = document.createElement('i');
+            authorIcon.className = 'fas fa-user-tie';
+            authorSpan.appendChild(authorIcon);
+            authorSpan.appendChild(document.createTextNode(` ${announcement.author || 'Faculty'}`));
+
+            const audienceSpan = document.createElement('span');
+            audienceSpan.className = 'announcement-audience';
+            const audienceIcon = document.createElement('i');
+            audienceIcon.className = 'fas fa-users';
+            audienceSpan.appendChild(audienceIcon);
+            audienceSpan.appendChild(document.createTextNode(` ${announcement.target_audience || 'All'}`));
+
+            footer.appendChild(authorSpan);
+            footer.appendChild(audienceSpan);
+
+            card.appendChild(header);
+            card.appendChild(titleEl);
+            card.appendChild(contentEl);
+            card.appendChild(footer);
+            container.appendChild(card);
+        });
     } catch (error) {
         console.error('Error loading announcements:', error);
     }
@@ -158,75 +190,118 @@ function setupFormSubmission() {
 function showNotificationModal(result) {
     const modal = document.createElement('div');
     modal.className = 'notification-modal';
-    modal.innerHTML = `
-        <div class="notification-modal-content">
-            <div class="notification-modal-header">
-                <h3><i class="fas fa-check-circle"></i> Feedback Submitted Successfully!</h3>
-                <button class="close-modal" onclick="this.closest('.notification-modal').remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="notification-modal-body">
-                <p class="success-message">${result.message}</p>
-                
-                <div class="notification-tabs">
-                    <button class="notification-tab-btn active" data-tab="whatsapp">
-                        <i class="fab fa-whatsapp"></i> WhatsApp
-                    </button>
-                    <button class="notification-tab-btn" data-tab="telegram">
-                        <i class="fab fa-telegram"></i> Telegram
-                    </button>
-                    <button class="notification-tab-btn" data-tab="email">
-                        <i class="fas fa-envelope"></i> Email
-                    </button>
-                </div>
-                
-                <div class="notification-preview active" id="whatsapp-preview">
-                    <h4>WhatsApp Message</h4>
-                    <pre class="message-preview">${result.whatsapp_message}</pre>
-                    <button class="btn btn-success" onclick="copyToClipboard('${escapeHtml(result.whatsapp_message)}', 'WhatsApp')">
-                        <i class="fas fa-copy"></i> Copy Message
-                    </button>
-                </div>
-                
-                <div class="notification-preview" id="telegram-preview">
-                    <h4>Telegram Message</h4>
-                    <pre class="message-preview">${result.telegram_message}</pre>
-                    <button class="btn btn-success" onclick="copyToClipboard('${escapeHtml(result.telegram_message)}', 'Telegram')">
-                        <i class="fas fa-copy"></i> Copy Message
-                    </button>
-                </div>
-                
-                <div class="notification-preview" id="email-preview">
-                    <h4>Email</h4>
-                    <p><strong>Subject:</strong> ${result.email_subject}</p>
-                    <pre class="message-preview">${result.email_body}</pre>
-                    <button class="btn btn-success" onclick="copyToClipboard('${escapeHtml(result.email_body)}', 'Email')">
-                        <i class="fas fa-copy"></i> Copy Content
-                    </button>
-                </div>
-                
-                <div class="notification-info">
-                    <i class="fas fa-info-circle"></i>
-                    <p>Team members have been notified automatically. Copy the message above to share in your group.</p>
-                </div>
-            </div>
-        </div>
+
+    const content = document.createElement('div');
+    content.className = 'notification-modal-content';
+
+    const header = document.createElement('div');
+    header.className = 'notification-modal-header';
+    const headerTitle = document.createElement('h3');
+    headerTitle.innerHTML = '<i class="fas fa-check-circle"></i> Feedback Submitted Successfully!';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'close-modal';
+    closeBtn.setAttribute('aria-label', 'Close modal');
+    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.addEventListener('click', () => modal.remove());
+    header.appendChild(headerTitle);
+    header.appendChild(closeBtn);
+
+    const body = document.createElement('div');
+    body.className = 'notification-modal-body';
+
+    const successMsg = document.createElement('p');
+    successMsg.className = 'success-message';
+    successMsg.textContent = result.message || 'Feedback submitted successfully.';
+    body.appendChild(successMsg);
+
+    const tabs = document.createElement('div');
+    tabs.className = 'notification-tabs';
+    tabs.innerHTML = `
+        <button class="notification-tab-btn active" data-tab="whatsapp">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+        </button>
+        <button class="notification-tab-btn" data-tab="telegram">
+            <i class="fab fa-telegram"></i> Telegram
+        </button>
+        <button class="notification-tab-btn" data-tab="email">
+            <i class="fas fa-envelope"></i> Email
+        </button>
     `;
-    
+    body.appendChild(tabs);
+
+    // WhatsApp preview
+    const waPreview = document.createElement('div');
+    waPreview.className = 'notification-preview active';
+    waPreview.id = 'whatsapp-preview';
+    waPreview.innerHTML = '<h4>WhatsApp Message</h4>';
+    const waPre = document.createElement('pre');
+    waPre.className = 'message-preview';
+    waPre.textContent = result.whatsapp_message || '';
+    const waBtn = document.createElement('button');
+    waBtn.className = 'btn btn-success';
+    waBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Message';
+    waBtn.addEventListener('click', () => copyToClipboard(result.whatsapp_message || '', 'WhatsApp'));
+    waPreview.appendChild(waPre);
+    waPreview.appendChild(waBtn);
+    body.appendChild(waPreview);
+
+    // Telegram preview
+    const tgPreview = document.createElement('div');
+    tgPreview.className = 'notification-preview';
+    tgPreview.id = 'telegram-preview';
+    tgPreview.innerHTML = '<h4>Telegram Message</h4>';
+    const tgPre = document.createElement('pre');
+    tgPre.className = 'message-preview';
+    tgPre.textContent = result.telegram_message || '';
+    const tgBtn = document.createElement('button');
+    tgBtn.className = 'btn btn-success';
+    tgBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Message';
+    tgBtn.addEventListener('click', () => copyToClipboard(result.telegram_message || '', 'Telegram'));
+    tgPreview.appendChild(tgPre);
+    tgPreview.appendChild(tgBtn);
+    body.appendChild(tgPreview);
+
+    // Email preview
+    const emPreview = document.createElement('div');
+    emPreview.className = 'notification-preview';
+    emPreview.id = 'email-preview';
+    emPreview.innerHTML = '<h4>Email</h4>';
+    const emSubj = document.createElement('p');
+    const emSubjStrong = document.createElement('strong');
+    emSubjStrong.textContent = 'Subject: ';
+    emSubj.appendChild(emSubjStrong);
+    emSubj.appendChild(document.createTextNode(result.email_subject || ''));
+    const emPre = document.createElement('pre');
+    emPre.className = 'message-preview';
+    emPre.textContent = result.email_body || '';
+    const emBtn = document.createElement('button');
+    emBtn.className = 'btn btn-success';
+    emBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Content';
+    emBtn.addEventListener('click', () => copyToClipboard(result.email_body || '', 'Email'));
+    emPreview.appendChild(emSubj);
+    emPreview.appendChild(emPre);
+    emPreview.appendChild(emBtn);
+    body.appendChild(emPreview);
+
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'notification-info';
+    infoDiv.innerHTML = '<i class="fas fa-info-circle"></i><p>Team members have been notified automatically. Copy the message above to share in your group.</p>';
+    body.appendChild(infoDiv);
+
+    content.appendChild(header);
+    content.appendChild(body);
+    modal.appendChild(content);
     document.body.appendChild(modal);
-    
-    // Setup tab switching
+
+    // Tab switching
     const tabButtons = modal.querySelectorAll('.notification-tab-btn');
     const previews = modal.querySelectorAll('.notification-preview');
-    
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             tabButtons.forEach(b => b.classList.remove('active'));
             previews.forEach(p => p.classList.remove('active'));
-            
             btn.classList.add('active');
-            document.getElementById(`${btn.dataset.tab}-preview`).classList.add('active');
+            modal.querySelector(`#${btn.dataset.tab}-preview`)?.classList.add('active');
         });
     });
 }
@@ -244,7 +319,13 @@ function copyToClipboard(text, platform) {
 
 // Escape HTML for safe insertion
 function escapeHtml(text) {
-    return text.replace(/'/g, "&#x27;").replace(/"/g, "&quot;");
+    if (text === null || text === undefined) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
 }
 
 // Load feedback statistics
@@ -345,11 +426,14 @@ function formatDate(dateString) {
 // Utility: Show alert
 function showAlert(message, type = 'info') {
     const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
-    alert.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-        <span>${message}</span>
-    `;
+    const safeType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
+    alert.className = `alert alert-${safeType}`;
+    const icon = document.createElement('i');
+    icon.className = `fas fa-${safeType === 'success' ? 'check-circle' : safeType === 'error' ? 'exclamation-circle' : 'info-circle'}`;
+    const span = document.createElement('span');
+    span.textContent = message;
+    alert.appendChild(icon);
+    alert.appendChild(span);
     
     document.body.appendChild(alert);
     
@@ -429,7 +513,7 @@ async function loadInstitutionalSchedules() {
         ? '/api'
         : (typeof window !== 'undefined' && window.location.origin.includes(':8000') ? '' : 'http://localhost:8000');
     
-    const token = window.api ? window.api.getToken() : localStorage.getItem('access_token');
+    const token = window.api ? window.api.getToken() : (localStorage.getItem('auth_token') || localStorage.getItem('access_token'));
     const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
 
     try {

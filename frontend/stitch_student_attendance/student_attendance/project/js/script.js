@@ -41,28 +41,39 @@
     return '<span class="tag critical">Critical</span>';
   }
 
+  function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+
   function renderSubjects(list){
     const container = document.getElementById('subjects-grid');
+    if (!container) return;
     container.innerHTML = list.map(s => `
       <div class="subject-card card">
         <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
           <div>
-            <div class="title" style="font-weight:700">${s.name}</div>
-            <div class="meta">${s.code}</div>
+            <div class="title" style="font-weight:700">${escapeHtml(s.name)}</div>
+            <div class="meta">${escapeHtml(s.code)}</div>
           </div>
           ${statusTag(s.percent)}
         </div>
 
         <div style="display:flex;align-items:flex-end;gap:8px;margin-top:12px">
-          <div class="percent">${s.percent}%</div>
+          <div class="percent">${Number(s.percent || 0)}%</div>
           <div class="meta" style="font-size:12px">attendance</div>
         </div>
 
-        <div class="progress" aria-hidden="true"><span style="width:${s.percent}%"></span></div>
+        <div class="progress" aria-hidden="true"><span style="width:${Number(s.percent || 0)}%"></span></div>
 
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
-          <div>${s.attended} Attended</div>
-          <div>Last: ${s.last}</div>
+          <div>${Number(s.attended || 0)} Attended</div>
+          <div>Last: ${escapeHtml(s.last || '')}</div>
         </div>
       </div>
     `).join('');
@@ -83,8 +94,9 @@
 
   function renderRecent(){
     const list = document.getElementById('recent-list');
+    if (!list) return;
     list.innerHTML = recentActivity.map(r => `
-      <li class="recent-item"><div>${r.text}</div><div class="muted">${r.time}</div></li>
+      <li class="recent-item"><div>${escapeHtml(r.text)}</div><div class="muted">${escapeHtml(r.time)}</div></li>
     `).join('');
   }
 

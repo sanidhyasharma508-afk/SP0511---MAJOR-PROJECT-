@@ -43,7 +43,7 @@
   };
 
   function getAuthHeaders(headers = {}) {
-    const token = localStorage.getItem('auth_token');
+    const token = window.api ? window.api.getToken() : (localStorage.getItem('auth_token') || localStorage.getItem('access_token'));
     return {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
@@ -92,10 +92,10 @@
 
     container.innerHTML = `
       <div class="club-hero">
-        <img src="${info.hero || 'https://images.unsplash.com/photo-1504198453319-5ce911bafcde?w=800&h=600&fit=crop'}" alt="${info.displayName}">
+        <img src="${(window.DOMUtils && window.DOMUtils.isSafeUrl(info.hero)) ? info.hero : 'https://images.unsplash.com/photo-1504198453319-5ce911bafcde?w=800&h=600&fit=crop'}" alt="${escapeHtml(info.displayName)}">
         <div>
-          <h2>${info.displayName}</h2>
-          <p style="margin:6px 0 0; color:var(--muted-color)">${info.description || ''}</p>
+          <h2>${escapeHtml(info.displayName)}</h2>
+          <p style="margin:6px 0 0; color:var(--muted-color)">${escapeHtml(info.description || '')}</p>
           <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
             <button id="club-back-btn" class="btn btn-outline">← Back to Clubs</button>
             ${clubId ? `<button id="modal-club-join-btn" class="btn btn-primary" data-club-id="${clubId}">Join Club</button>` : ''}
@@ -277,16 +277,26 @@
           el.innerHTML = '<p style="color:var(--muted-color); padding: 8px 0;">No activities scheduled yet.</p>';
           return;
         }
-        el.innerHTML = items.map(it => `
-          <div style="padding:10px 12px;border-radius:8px;background:var(--muted-bg);margin-bottom:8px;">
-            <strong>${it.title}</strong>
-            <div style="font-size:12px;color:var(--muted-color)">
-              ${new Date(it.start_date).toLocaleDateString()} ${it.start_date ? '• ' + new Date(it.start_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
-              ${it.location ? ' • ' + it.location : ''}
-            </div>
-            <div style="margin-top:6px;font-size:13px;">${it.description || ''}</div>
-          </div>
-        `).join('');
+        el.textContent = '';
+        items.forEach(it => {
+          const itemDiv = document.createElement('div');
+          itemDiv.style.cssText = 'padding:10px 12px;border-radius:8px;background:var(--muted-bg);margin-bottom:8px;';
+          const titleStrong = document.createElement('strong');
+          titleStrong.textContent = it.title || '';
+          const metaDiv = document.createElement('div');
+          metaDiv.style.cssText = 'font-size:12px;color:var(--muted-color)';
+          const datePart = it.start_date ? new Date(it.start_date).toLocaleDateString() : '';
+          const timePart = it.start_date ? ' • ' + new Date(it.start_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+          const locPart = it.location ? ' • ' + it.location : '';
+          metaDiv.textContent = `${datePart}${timePart}${locPart}`;
+          const descDiv = document.createElement('div');
+          descDiv.style.cssText = 'margin-top:6px;font-size:13px;';
+          descDiv.textContent = it.description || '';
+          itemDiv.appendChild(titleStrong);
+          itemDiv.appendChild(metaDiv);
+          itemDiv.appendChild(descDiv);
+          el.appendChild(itemDiv);
+        });
       } else {
         el.innerHTML = '<p style="color:var(--muted-color)">Unable to load activities.</p>';
       }
@@ -296,7 +306,7 @@
   }
 
   async function checkMembershipStatus(clubId, btn) {
-    const token = localStorage.getItem('auth_token');
+    const token = window.api ? window.api.getToken() : (localStorage.getItem('auth_token') || localStorage.getItem('access_token'));
     if (!token) return;
     const API_BASE = window.API_BASE_URL || '/api';
     try {
@@ -318,7 +328,7 @@
   }
 
   async function toggleJoinClub(clubId, btn) {
-    const token = localStorage.getItem('auth_token');
+    const token = window.api ? window.api.getToken() : (localStorage.getItem('auth_token') || localStorage.getItem('access_token'));
     if (!token) {
       showToast('Please log in to join clubs', 'error');
       return;
@@ -357,7 +367,7 @@
   }
 
   async function loadMyMemberships() {
-    const token = localStorage.getItem('auth_token');
+    const token = window.api ? window.api.getToken() : (localStorage.getItem('auth_token') || localStorage.getItem('access_token'));
     if (!token) return;
     const API_BASE = window.API_BASE_URL || '/api';
     try {
@@ -385,17 +395,29 @@
       // Update dashboard My Clubs card if present
       const myClubsPreview = document.querySelector('.my-clubs-card .club-preview');
       if (myClubsPreview && memberships.length > 0) {
-        myClubsPreview.innerHTML = memberships.map(m => `
-          <div class="club-item">
-            <div class="club-badge" style="background: linear-gradient(135deg, #5B7EFF 0%, #3B5FE8 100%);">
-              <i class="fas fa-users"></i>
-            </div>
-            <div class="club-details">
-              <p class="club-name">${m.club_name || 'Club #' + m.club_id}</p>
-              <p class="club-event">${m.role || 'Member'} • Joined ${new Date(m.joined_at).toLocaleDateString()}</p>
-            </div>
-          </div>
-        `).join('');
+        myClubsPreview.textContent = '';
+        memberships.forEach(m => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'club-item';
+          const badgeDiv = document.createElement('div');
+          badgeDiv.className = 'club-badge';
+          badgeDiv.style.cssText = 'background: linear-gradient(135deg, #5B7EFF 0%, #3B5FE8 100%);';
+          badgeDiv.innerHTML = '<i class="fas fa-users"></i>';
+          const detailsDiv = document.createElement('div');
+          detailsDiv.className = 'club-details';
+          const nameP = document.createElement('p');
+          nameP.className = 'club-name';
+          nameP.textContent = m.club_name || ('Club #' + m.club_id);
+          const eventP = document.createElement('p');
+          eventP.className = 'club-event';
+          const joinedStr = m.joined_at ? ` • Joined ${new Date(m.joined_at).toLocaleDateString()}` : '';
+          eventP.textContent = `${m.role || 'Member'}${joinedStr}`;
+          detailsDiv.appendChild(nameP);
+          detailsDiv.appendChild(eventP);
+          itemDiv.appendChild(badgeDiv);
+          itemDiv.appendChild(detailsDiv);
+          myClubsPreview.appendChild(itemDiv);
+        });
       }
     } catch (e) {
       console.debug('Failed to load memberships:', e);

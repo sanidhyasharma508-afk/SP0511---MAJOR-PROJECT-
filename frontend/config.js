@@ -14,6 +14,7 @@ const CONFIG = {
         LOGOUT: '/v1/auth/logout',
         PROFILE: '/v1/auth/profile',
         REGISTER: '/v1/auth/register',
+        REFRESH: '/v1/auth/refresh',
         STUDY_TASKS: '/v1/study-tasks',
         STUDENTS: '/students',
         ATTENDANCE: '/attendance',
@@ -42,6 +43,54 @@ const CONFIG = {
     DEBUG: true
 };
 
+/**
+ * Safe DOM and URL utility functions to prevent Cross-Site Scripting (XSS)
+ */
+const DOMUtils = {
+    /**
+     * Escape HTML special characters for safe insertion into markup
+     */
+    escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        const str = String(text);
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+    },
+
+    /**
+     * Validate whether a URL uses a safe scheme (http, https, or relative path)
+     * strictly disallowing javascript:, data:, and vbscript: URIs.
+     */
+    isSafeUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+        const trimmed = url.trim();
+        const lower = trimmed.toLowerCase();
+        if (lower.startsWith('javascript:') || lower.startsWith('data:') || lower.startsWith('vbscript:')) {
+            return false;
+        }
+        if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../') || trimmed.startsWith('#')) {
+            return true;
+        }
+        try {
+            const parsed = new URL(trimmed, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch (e) {
+            return false;
+        }
+    },
+
+    /**
+     * Return safe sanitized URL or a safe fallback
+     */
+    sanitizeUrl(url, fallback = '#') {
+        return this.isSafeUrl(url) ? url.trim() : fallback;
+    }
+};
+
 class APIClient {
     constructor(config = CONFIG) {
         this.config = config;
@@ -49,18 +98,35 @@ class APIClient {
     }
 
     getToken() {
-        return localStorage.getItem(this.config.AUTH.TOKEN_KEY);
+        if (typeof localStorage === 'undefined') return null;
+        return localStorage.getItem(this.config.AUTH.TOKEN_KEY) || localStorage.getItem('access_token');
     }
 
     setToken(token) {
+        if (typeof localStorage === 'undefined') return;
         localStorage.setItem(this.config.AUTH.TOKEN_KEY, token);
+        localStorage.setItem('access_token', token);
+    }
+
+    getRefreshToken() {
+        if (typeof localStorage === 'undefined') return null;
+        return localStorage.getItem(this.config.AUTH.REFRESH_TOKEN_KEY);
+    }
+
+    setRefreshToken(token) {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(this.config.AUTH.REFRESH_TOKEN_KEY, token);
     }
 
     hasValidToken() {
         const token = this.getToken();
         if (!token) return false;
+        if (typeof localStorage === 'undefined') return true;
         const expiry = localStorage.getItem(this.config.AUTH.TOKEN_EXPIRY_KEY);
         if (expiry && Date.now() > parseInt(expiry, 10)) {
+            if (this.getRefreshToken()) {
+                return true;
+            }
             this.clearToken();
             return false;
         }
@@ -68,12 +134,55 @@ class APIClient {
     }
 
     clearToken() {
-        localStorage.removeItem(this.config.AUTH.TOKEN_KEY);
-        localStorage.removeItem(this.config.AUTH.REFRESH_TOKEN_KEY);
-        localStorage.removeItem(this.config.AUTH.TOKEN_EXPIRY_KEY);
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(this.config.AUTH.TOKEN_KEY);
+            localStorage.removeItem('access_token');
+            localStorage.removeItem(this.config.AUTH.REFRESH_TOKEN_KEY);
+            localStorage.removeItem(this.config.AUTH.TOKEN_EXPIRY_KEY);
+        }
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.removeItem(this.config.AUTH.TOKEN_KEY);
+            sessionStorage.removeItem('access_token');
+            sessionStorage.removeItem(this.config.AUTH.REFRESH_TOKEN_KEY);
+            sessionStorage.removeItem(this.config.AUTH.TOKEN_EXPIRY_KEY);
+        }
     }
 
-    async request(method, endpoint, data = null, options = {}) {
+    /**
+     * Refresh expired access token using stored refresh token
+     */
+    async refreshToken() {
+        const refreshTok = this.getRefreshToken();
+        if (!refreshTok) return null;
+
+        const refreshUrl = `${this.baseURL}/${this.config.ROUTES.REFRESH.replace(/^\/+/, '')}`;
+        try {
+            const resp = await fetch(refreshUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh_token: refreshTok })
+            });
+
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.access_token) {
+                    this.setToken(data.access_token);
+                    if (data.expires_in) {
+                        localStorage.setItem(
+                            this.config.AUTH.TOKEN_EXPIRY_KEY,
+                            String(Date.now() + data.expires_in * 1000)
+                        );
+                    }
+                    return data.access_token;
+                }
+            }
+        } catch (e) {
+            console.debug('Token refresh request failed');
+        }
+        return null;
+    }
+
+    async request(method, endpoint, data = null, options = {}, isRetry = false) {
         const url = `${this.baseURL}/${endpoint.replace(/^\/+/, '')}`;
         const headers = {
             'Content-Type': 'application/json',
@@ -108,23 +217,38 @@ class APIClient {
             clearTimeout(timeoutId);
         }
 
+        // Handle 401 Unauthorized with automatic refresh token attempt
+        if (response.status === 401 && !isRetry && !endpoint.includes('login') && !endpoint.includes('register') && !endpoint.includes('refresh')) {
+            const newToken = await this.refreshToken();
+            if (newToken) {
+                return this.request(method, endpoint, data, options, true);
+            }
+
+            this.clearToken();
+            if (typeof window !== 'undefined' && window.AuthManager && typeof window.AuthManager.handleSessionExpired === 'function') {
+                window.AuthManager.handleSessionExpired();
+            }
+        }
+
         const responseData = response.status === 204
             ? null
             : await response.json().catch(() => null);
 
         if (!response.ok) {
-            const errorMsg = responseData?.detail || responseData?.message || `HTTP ${response.status}`;
+            let errorMsg = responseData?.detail || responseData?.message;
+            if (!errorMsg) {
+                if (response.status === 403) {
+                    errorMsg = 'Access denied: You do not have permission to access this resource.';
+                } else if (response.status === 401) {
+                    errorMsg = 'Authentication required. Please sign in.';
+                } else {
+                    errorMsg = `HTTP ${response.status}`;
+                }
+            }
+
             const formattedMsg = typeof errorMsg === 'string' 
                 ? errorMsg 
                 : (Array.isArray(errorMsg) ? errorMsg.map(e => e.msg || e).join(', ') : JSON.stringify(errorMsg));
-
-            // On 401 Unauthorized for protected endpoints (excluding login/register attempts)
-            if (response.status === 401 && !endpoint.includes('login') && !endpoint.includes('register')) {
-                this.clearToken();
-                if (typeof window !== 'undefined' && window.AuthManager && typeof window.AuthManager.handleSessionExpired === 'function') {
-                    window.AuthManager.handleSessionExpired();
-                }
-            }
 
             throw new Error(formattedMsg);
         }
@@ -152,7 +276,7 @@ class APIClient {
         if (response?.access_token) {
             this.setToken(response.access_token);
             if (response.refresh_token) {
-                localStorage.setItem(this.config.AUTH.REFRESH_TOKEN_KEY, response.refresh_token);
+                this.setRefreshToken(response.refresh_token);
             }
             if (response.expires_in) {
                 localStorage.setItem(
@@ -237,9 +361,10 @@ const api = new APIClient(CONFIG);
 
 if (typeof window !== 'undefined') {
     window.CONFIG = CONFIG;
+    window.DOMUtils = DOMUtils;
     window.api = api;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { CONFIG, APIClient, api };
+    module.exports = { CONFIG, DOMUtils, APIClient, api };
 }

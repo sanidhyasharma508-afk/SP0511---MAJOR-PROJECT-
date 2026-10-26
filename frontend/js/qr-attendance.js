@@ -13,7 +13,7 @@ let liveUpdateInterval = null;
 let qrVideoStream = null;
 
 function getAuthHeaders(extraHeaders = {}) {
-    const token = window.api ? window.api.getToken() : localStorage.getItem('access_token');
+    const token = window.api ? window.api.getToken() : (localStorage.getItem('auth_token') || localStorage.getItem('access_token'));
     const headers = { ...extraHeaders };
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -248,21 +248,36 @@ function updateStudentDashboard(data) {
 
 function updateRecentAttendanceList(attendanceList) {
     const listContainer = document.getElementById('student-recent-list');
+    if (!listContainer) return;
+    listContainer.textContent = '';
     
-    listContainer.innerHTML = attendanceList.map(record => `
-        <div class="attendance-item">
-            <div class="attendance-item-info">
-                <h4>${record.subject_name || 'Subject'}</h4>
-                <p>
-                    <i class="fas fa-clock"></i> 
-                    ${formatDateTime(record.marked_at)} • Faculty Name
-                </p>
-            </div>
-            <span class="attendance-badge ${record.is_late_entry ? 'warning' : 'success'}">
-                ${record.is_late_entry ? `Late (${record.late_by_minutes} min)` : 'Present'}
-            </span>
-        </div>
-    `).join('');
+    attendanceList.forEach(record => {
+        const item = document.createElement('div');
+        item.className = 'attendance-item';
+
+        const info = document.createElement('div');
+        info.className = 'attendance-item-info';
+
+        const h4 = document.createElement('h4');
+        h4.textContent = record.subject_name || 'Subject';
+
+        const p = document.createElement('p');
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-clock';
+        p.appendChild(icon);
+        p.appendChild(document.createTextNode(` ${formatDateTime(record.marked_at)} • Faculty`));
+
+        info.appendChild(h4);
+        info.appendChild(p);
+
+        const badge = document.createElement('span');
+        badge.className = `attendance-badge ${record.is_late_entry ? 'warning' : 'success'}`;
+        badge.textContent = record.is_late_entry ? `Late (${record.late_by_minutes} min)` : 'Present';
+
+        item.appendChild(info);
+        item.appendChild(badge);
+        listContainer.appendChild(item);
+    });
 }
 
 function formatDateTime(dateString) {
@@ -473,11 +488,24 @@ function showScanResult(message, type, details = null) {
     else if (type === 'warning') icon = '⚠';
     else icon = 'ℹ';
     
-    scanResult.innerHTML = `
-        <div class="scan-result-icon">${icon}</div>
-        <div class="scan-result-message">${message}</div>
-        ${details ? `<div class="scan-result-details">${details}</div>` : ''}
-    `;
+    scanResult.textContent = '';
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'scan-result-icon';
+    iconDiv.textContent = icon;
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'scan-result-message';
+    msgDiv.textContent = message || '';
+
+    scanResult.appendChild(iconDiv);
+    scanResult.appendChild(msgDiv);
+
+    if (details) {
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'scan-result-details';
+        detailsDiv.textContent = details;
+        scanResult.appendChild(detailsDiv);
+    }
 }
 
 function clearScanResult() {
@@ -665,19 +693,37 @@ async function loadAttendanceRecords(sessionId) {
             const records = await response.json();
             
             const tbody = document.getElementById('live-attendance-tbody');
-            tbody.innerHTML = records.map(record => `
-                <tr>
-                    <td>${record.roll_number}</td>
-                    <td>${record.student_name}</td>
-                    <td>${formatDateTime(record.marked_at)}</td>
-                    <td>${Math.round(record.distance_from_center)}m</td>
-                    <td>
-                        <span class="attendance-badge ${record.is_late_entry ? 'warning' : 'success'}">
-                            ${record.is_late_entry ? 'Late' : 'On Time'}
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
+            if (tbody) {
+                tbody.textContent = '';
+                records.forEach(record => {
+                    const tr = document.createElement('tr');
+
+                    const tdRoll = document.createElement('td');
+                    tdRoll.textContent = record.roll_number || '';
+
+                    const tdName = document.createElement('td');
+                    tdName.textContent = record.student_name || '';
+
+                    const tdTime = document.createElement('td');
+                    tdTime.textContent = formatDateTime(record.marked_at);
+
+                    const tdDist = document.createElement('td');
+                    tdDist.textContent = `${Math.round(record.distance_from_center || 0)}m`;
+
+                    const tdBadge = document.createElement('td');
+                    const badge = document.createElement('span');
+                    badge.className = `attendance-badge ${record.is_late_entry ? 'warning' : 'success'}`;
+                    badge.textContent = record.is_late_entry ? 'Late' : 'On Time';
+                    tdBadge.appendChild(badge);
+
+                    tr.appendChild(tdRoll);
+                    tr.appendChild(tdName);
+                    tr.appendChild(tdTime);
+                    tr.appendChild(tdDist);
+                    tr.appendChild(tdBadge);
+                    tbody.appendChild(tr);
+                });
+            }
         }
         
     } catch (error) {
@@ -724,15 +770,20 @@ async function refreshQRCode() {
 }
 
 function copySessionId() {
-    const sessionId = document.getElementById('session-id-display').textContent;
-    navigator.clipboard.writeText(sessionId).then(() => {
-        const btn = event.target.closest('.btn-copy');
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-check"></i>';
-        setTimeout(() => {
-            btn.innerHTML = originalHTML;
-        }, 2000);
-    });
+    const sessionDisplay = document.getElementById('session-id-display');
+    const sessionId = sessionDisplay ? sessionDisplay.textContent : '';
+    if (navigator.clipboard && sessionId) {
+        navigator.clipboard.writeText(sessionId).then(() => {
+            const btn = document.querySelector('.btn-copy');
+            if (btn) {
+                const originalContent = btn.textContent;
+                btn.textContent = '✓ Copied';
+                setTimeout(() => {
+                    btn.textContent = originalContent || 'Copy';
+                }, 2000);
+            }
+        }).catch(err => console.debug('Copy failed:', err));
+    }
 }
 
 async function downloadAttendance() {

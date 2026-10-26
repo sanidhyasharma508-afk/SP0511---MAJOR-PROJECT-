@@ -81,18 +81,34 @@
     }
 
     function renderList(roster) {
-      listEl.innerHTML = roster.map((s, idx) => `
-        <div class="attendance-row" data-idx="${idx}">
-          <label>
-            <input type="checkbox" class="present-checkbox" ${s.present ? 'checked' : ''} />
-            <div style="display:flex;flex-direction:column;"><strong>${s.name}</strong><small style="color:var(--muted-color)">${s.roll} • ${s.section || '-'}</small></div>
-          </label>
-        </div>
-      `).join('');
+      listEl.textContent = '';
+      roster.forEach((s, idx) => {
+        const row = document.createElement('div');
+        row.className = 'attendance-row';
+        row.dataset.idx = idx;
 
-      // wire checkboxes
-      listEl.querySelectorAll('.present-checkbox').forEach((cb, i) => {
-        cb.addEventListener('change', () => { /* visual only until save */ });
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'present-checkbox';
+        cb.checked = !!s.present;
+
+        const infoDiv = document.createElement('div');
+        infoDiv.style.cssText = 'display:flex;flex-direction:column;';
+        const strong = document.createElement('strong');
+        strong.textContent = s.name || s.student_name || '';
+        const small = document.createElement('small');
+        small.style.cssText = 'color:var(--muted-color)';
+        const rollStr = s.roll || s.roll_number || '';
+        const secStr = s.section || '-';
+        small.textContent = `${rollStr} • ${secStr}`;
+
+        infoDiv.appendChild(strong);
+        infoDiv.appendChild(small);
+        label.appendChild(cb);
+        label.appendChild(infoDiv);
+        row.appendChild(label);
+        listEl.appendChild(row);
       });
     }
 
@@ -125,8 +141,11 @@
       if (clubId) {
         try {
           const payload = { attendance_date: new Date(date).toISOString(), roster };
+          const token = window.api ? window.api.getToken() : (localStorage.getItem('auth_token') || localStorage.getItem('access_token'));
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
           const resp = await fetch(`${API_BASE}/clubs/${clubId}/attendance`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            method: 'POST', headers, body: JSON.stringify(payload)
           });
           if (resp.ok) { alert('Attendance saved to server for ' + date); return; }
         } catch (e) { console.warn('Backend save failed, falling back to localStorage'); }

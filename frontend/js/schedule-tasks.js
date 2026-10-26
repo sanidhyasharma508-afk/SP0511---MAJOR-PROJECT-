@@ -4,10 +4,13 @@
   let timerInterval = null;
 
   function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    if (text === null || text === undefined) return '';
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
   }
 
   function formatRemaining(sec) {
@@ -43,21 +46,61 @@
     const div = document.createElement('div');
     div.className = `task-item ${task.is_completed ? 'is-completed' : ''}`;
     div.dataset.id = task.id;
-    div.innerHTML = `
-      <input type="checkbox" class="task-complete" ${task.is_completed ? 'checked' : ''} aria-label="Mark task complete" />
-      <div class="task-meta" style="flex:1; margin: 0 12px;">
-        <p class="task-title" style="${task.is_completed ? 'text-decoration: line-through; opacity: 0.6;' : 'font-weight: 600;'}">${escapeHtml(task.title)}</p>
-        <p class="task-desc" style="font-size: 12px; color: #888; margin-top: 2px;">${escapeHtml(task.description || '')}</p>
-      </div>
-      <div class="task-controls" style="display:flex; align-items:center; gap:8px;">
-        <div class="task-timer" data-remaining="${task.remaining_seconds || 0}" style="font-family:monospace; font-size:12px; color: #5B7EFF;">${formatRemaining(task.remaining_seconds)}</div>
-        <div class="task-badge">${task.remaining_seconds > 0 && !task.is_completed ? '⏱️' : ''}</div>
-        <button type="button" class="btn-task-delete" title="Delete task" aria-label="Delete task" style="background:none; border:none; color:#999; font-size:18px; cursor:pointer; line-height:1; padding:2px 6px; border-radius:4px;">&times;</button>
-      </div>
-    `;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'task-complete';
+    checkbox.checked = !!task.is_completed;
+    checkbox.setAttribute('aria-label', 'Mark task complete');
+
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'task-meta';
+    metaDiv.style.cssText = 'flex:1; margin: 0 12px;';
+
+    const titleEl = document.createElement('p');
+    titleEl.className = 'task-title';
+    titleEl.style.cssText = task.is_completed ? 'text-decoration: line-through; opacity: 0.6;' : 'font-weight: 600;';
+    titleEl.textContent = task.title || '';
+
+    const descEl = document.createElement('p');
+    descEl.className = 'task-desc';
+    descEl.style.cssText = 'font-size: 12px; color: #888; margin-top: 2px;';
+    descEl.textContent = task.description || '';
+
+    metaDiv.appendChild(titleEl);
+    metaDiv.appendChild(descEl);
+
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'task-controls';
+    controlsDiv.style.cssText = 'display:flex; align-items:center; gap:8px;';
+
+    const timerDiv = document.createElement('div');
+    timerDiv.className = 'task-timer';
+    timerDiv.dataset.remaining = task.remaining_seconds || 0;
+    timerDiv.style.cssText = 'font-family:monospace; font-size:12px; color: #5B7EFF;';
+    timerDiv.textContent = formatRemaining(task.remaining_seconds);
+
+    const badgeDiv = document.createElement('div');
+    badgeDiv.className = 'task-badge';
+    badgeDiv.textContent = task.remaining_seconds > 0 && !task.is_completed ? '⏱️' : '';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'btn-task-delete';
+    deleteBtn.title = 'Delete task';
+    deleteBtn.setAttribute('aria-label', 'Delete task');
+    deleteBtn.style.cssText = 'background:none; border:none; color:#999; font-size:18px; cursor:pointer; line-height:1; padding:2px 6px; border-radius:4px;';
+    deleteBtn.textContent = '×';
+
+    controlsDiv.appendChild(timerDiv);
+    controlsDiv.appendChild(badgeDiv);
+    controlsDiv.appendChild(deleteBtn);
+
+    div.appendChild(checkbox);
+    div.appendChild(metaDiv);
+    div.appendChild(controlsDiv);
 
     // Toggle completion listener
-    const checkbox = div.querySelector('.task-complete');
     checkbox.addEventListener('change', async () => {
       const isChecked = checkbox.checked;
       task.is_completed = isChecked;
