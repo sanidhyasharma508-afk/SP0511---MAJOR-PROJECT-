@@ -1,0 +1,30 @@
+# Environment files containing secrets
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+!.env.template
+
+# Python compiled bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Runtime and local log files
+logs/*.log
+*.log
+
+# Databases created locally
+*.db
+*.sqlite
+*.sqlite3
+
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db

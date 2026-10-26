@@ -27,7 +27,7 @@ from backend.routes.events import router as events_router
 from backend.routes.qr_attendance import router as qr_attendance_router
 from backend.routes.study_task import router as study_task_router
 from backend.core.event_handlers import register_agents
-from backend.core.config import settings
+from backend.core.config import settings, validate_production_settings
 from backend.core.logging import setup_logging, get_logger, RequestLoggingMiddleware
 from backend.core.background_tasks import task_queue, scheduler
 from backend.core.caching import cache_manager
@@ -89,6 +89,7 @@ app.include_router(study_task_router, prefix="/study-tasks")
 @app.on_event("startup")
 async def startup_event():
     """Initialize agents, background tasks, and Phase 5 components"""
+    validate_production_settings()
     logger.log_event("startup_event", level="INFO", environment=settings.ENV, debug=settings.DEBUG)
 
     # Auto-seed database if empty

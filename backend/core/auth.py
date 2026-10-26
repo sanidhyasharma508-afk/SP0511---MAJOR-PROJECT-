@@ -134,7 +134,9 @@ def create_access_token(
     if email:
         payload["email"] = email
 
-    encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    secret_key = settings.SECRET_KEY or SECRET_KEY
+    algorithm = settings.ALGORITHM or ALGORITHM
+    encoded_jwt = jwt.encode(payload, secret_key, algorithm=algorithm)
     return encoded_jwt
 
 
@@ -151,7 +153,9 @@ def create_refresh_token(user_id: int, username: str, role: str) -> str:
         "type": "refresh",
     }
 
-    encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    secret_key = settings.SECRET_KEY or SECRET_KEY
+    algorithm = settings.ALGORITHM or ALGORITHM
+    encoded_jwt = jwt.encode(payload, secret_key, algorithm=algorithm)
     return encoded_jwt
 
 
@@ -178,7 +182,9 @@ def create_tokens(
 def decode_token(token: str) -> Optional[TokenData]:
     """Decode and validate JWT token"""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        secret_key = settings.SECRET_KEY or SECRET_KEY
+        algorithm = settings.ALGORITHM or ALGORITHM
+        payload = jwt.decode(token, secret_key, algorithms=[algorithm])
         username: str = payload.get("sub")
         user_id: int = payload.get("user_id")
         role: str = payload.get("role")

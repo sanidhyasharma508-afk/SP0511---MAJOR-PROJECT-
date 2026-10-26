@@ -1,11 +1,56 @@
 import os
 from enum import Enum
-from typing import Optional
+from pathlib import Path
+from typing import Optional, List, Set, Any
 from pydantic_settings import BaseSettings
 from pydantic import Field
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Known insecure secret keys that must never be permitted in production
+INSECURE_SECRET_KEYS: Set[str] = {
+    "your-secret-key-change-in-production",
+    "your-super-secret-key-change-this-in-production",
+    "your-secret-key-here",
+    "your-secret-key",
+    "your-super-secret-key",
+    "your-long-random-production-key-here",
+    "your-long-random-production-key",
+    "secret",
+    "secretkey",
+    "changeme",
+    "password",
+    "default",
+    "dev-secret-key",
+    "dev-secret-key-not-for-production",
+    "dev-insecure-secret-key-never-use-in-production-campus-automation",
+}
+
+DEV_DEFAULT_SECRET_KEY = "dev-insecure-secret-key-never-use-in-production-campus-automation"
+
+DEV_DEFAULT_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+]
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+DOTENV_PATH = BASE_DIR / ".env"
+BACKEND_DOTENV_PATH = BASE_DIR / "backend" / ".env"
+
+_env_files = []
+if DOTENV_PATH.is_file():
+    _env_files.append(str(DOTENV_PATH))
+if BACKEND_DOTENV_PATH.is_file():
+    _env_files.append(str(BACKEND_DOTENV_PATH))
+if not _env_files:
+    _env_files.append(".env")
 
 
 class Environment(str, Enum):
@@ -19,7 +64,12 @@ class Environment(str, Enum):
 class Settings(BaseSettings):
     """Application settings from environment variables"""
 
-    model_config = {"env_file": ".env", "case_sensitive": False}
+    model_config = {
+        "env_file": _env_files,
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False,
+        "extra": "ignore",
+    }
 
     # Environment
     ENVIRONMENT: Environment = Field(default=Environment.DEVELOPMENT, alias="ENV")
@@ -36,16 +86,18 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = Field(default=5, env="DB_POOL_SIZE")
     DB_MAX_OVERFLOW: int = Field(default=10, env="DB_MAX_OVERFLOW")
 
-    # Authentication
-    SECRET_KEY: str = Field(default="your-secret-key-change-in-production", env="SECRET_KEY")
+    # Authentication - No insecure default in production
+    SECRET_KEY: Optional[str] = Field(default=None, env="SECRET_KEY")
     ALGORITHM: str = Field(default="HS256", env="ALGORITHM")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
 
-    # CORS
-    ALLOWED_ORIGINS: str = Field(default="*", env="ALLOWED_ORIGINS")
-    ALLOWED_METHODS: str = Field(default="*", env="ALLOWED_METHODS")
-    ALLOWED_HEADERS: str = Field(default="*", env="ALLOWED_HEADERS")
+    # CORS - Explicit frontend origins
+    ALLOWED_ORIGINS: Optional[str] = Field(default=None, env="ALLOWED_ORIGINS")
+    ALLOWED_METHODS: str = Field(default="GET,POST,PUT,DELETE,PATCH,OPTIONS", env="ALLOWED_METHODS")
+    ALLOWED_HEADERS: str = Field(
+        default="Content-Type,Authorization,Accept,Origin,X-Requested-With", env="ALLOWED_HEADERS"
+    )
 
     # Logging
     LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
@@ -83,6 +135,15 @@ class Settings(BaseSettings):
     ENABLE_METRICS: bool = Field(default=True, env="ENABLE_METRICS")
     METRICS_PORT: int = Field(default=9090, env="METRICS_PORT")
 
+    def model_post_init(self, __context: Any) -> None:
+        """Validate settings and establish environment defaults"""
+        if self.is_development or self.is_testing:
+            if not self.SECRET_KEY:
+                self.SECRET_KEY = DEV_DEFAULT_SECRET_KEY
+                logger.info("Using development default SECRET_KEY. Set SECRET_KEY in .env for production.")
+        elif self.is_production:
+            validate_production_settings(self)
+
     @property
     def ENV(self) -> str:
         """Get environment name"""
@@ -90,24 +151,28 @@ class Settings(BaseSettings):
 
     @property
     def CORS_ORIGINS(self) -> list:
-        """Get CORS origins as list"""
-        if self.ALLOWED_ORIGINS == "*":
-            return ["*"]
-        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]
+        """Get CORS origins as list. In development defaults to local dev servers; in production requires explicit list."""
+        if self.ALLOWED_ORIGINS:
+            if self.ALLOWED_ORIGINS.strip() == "*":
+                return ["*"]
+            return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+        if self.is_production:
+            return []
+        return list(DEV_DEFAULT_ORIGINS)
 
     @property
     def CORS_METHODS(self) -> list:
         """Get CORS methods as list"""
         if self.ALLOWED_METHODS == "*":
             return ["*"]
-        return [m.strip() for m in self.ALLOWED_METHODS.split(",")]
+        return [m.strip() for m in self.ALLOWED_METHODS.split(",") if m.strip()]
 
     @property
     def CORS_HEADERS(self) -> list:
         """Get CORS headers as list"""
         if self.ALLOWED_HEADERS == "*":
             return ["*"]
-        return [h.strip() for h in self.ALLOWED_HEADERS.split(",")]
+        return [h.strip() for h in self.ALLOWED_HEADERS.split(",") if h.strip()]
 
     @property
     def is_production(self) -> bool:
@@ -129,12 +194,60 @@ class Settings(BaseSettings):
         if self.is_testing:
             return "sqlite:///:memory:"
         if self.DATABASE_URL.startswith("sqlite:///./"):
-            from pathlib import Path
-            base_dir = Path(__file__).resolve().parent.parent.parent
-            rel_name = self.DATABASE_URL[len("sqlite:///./"):]
-            abs_db_path = (base_dir / rel_name).resolve().as_posix()
+            rel_name = self.DATABASE_URL[len("sqlite:///./") :]
+            abs_db_path = (BASE_DIR / rel_name).resolve().as_posix()
             return f"sqlite:///{abs_db_path}"
         return self.DATABASE_URL
+
+
+def validate_production_settings(cfg: Optional[Settings] = None) -> bool:
+    """Validate settings for production. Raises ValueError if configuration is insecure."""
+    target = cfg or settings
+    if not target.is_production:
+        return True
+
+    errors = []
+
+    # 1. JWT SECRET_KEY validation
+    secret = target.SECRET_KEY
+    if not secret or not str(secret).strip():
+        errors.append("SECRET_KEY environment variable is required in production")
+    else:
+        cleaned_secret = str(secret).strip()
+        if cleaned_secret.lower() in {k.lower() for k in INSECURE_SECRET_KEYS}:
+            errors.append("SECRET_KEY cannot use a known insecure default or placeholder in production")
+        elif len(cleaned_secret) < 32:
+            errors.append("SECRET_KEY must be at least 32 characters long in production")
+
+    # 2. DEBUG mode validation
+    if target.DEBUG:
+        errors.append("DEBUG must be False in production")
+
+    # 3. CORS validation: no wildcards with credentials
+    if not target.ALLOWED_ORIGINS or not target.ALLOWED_ORIGINS.strip():
+        errors.append(
+            "ALLOWED_ORIGINS environment variable is required and must list explicit frontend origins in production"
+        )
+    elif target.ALLOWED_ORIGINS.strip() == "*":
+        errors.append("ALLOWED_ORIGINS cannot be '*' in production when credentials are enabled")
+    else:
+        origins = target.CORS_ORIGINS
+        if "*" in origins:
+            errors.append("ALLOWED_ORIGINS cannot contain wildcard '*' in production when credentials are enabled")
+        if not origins:
+            errors.append("ALLOWED_ORIGINS must contain at least one valid frontend origin in production")
+
+    if target.DATABASE_URL.startswith("sqlite"):
+        logger.warning(
+            "Production note: SQLite is configured. For high-concurrency production, PostgreSQL is recommended."
+        )
+
+    if errors:
+        for err in errors:
+            logger.error(f"Production configuration error: {err}")
+        raise ValueError(f"Production configuration errors: {'; '.join(errors)}")
+
+    return True
 
 
 # Load settings
@@ -142,6 +255,11 @@ try:
     settings = Settings()
     logger.info(f"Settings loaded. Environment: {settings.ENVIRONMENT}")
 except Exception as e:
+    # If production configuration is invalid, do not silently catch and proceed with insecure defaults
+    env_str = os.getenv("ENV", os.getenv("ENVIRONMENT", "")).lower()
+    if env_str == "production":
+        logger.critical(f"Fatal production configuration error: {str(e)}")
+        raise
     logger.warning(f"Error loading settings from .env: {str(e)}")
     settings = Settings()
 
@@ -164,25 +282,3 @@ def get_database_echo() -> bool:
 def get_debug_mode() -> bool:
     """Get debug mode"""
     return settings.DEBUG and not settings.is_production
-
-
-def validate_production_settings():
-    """Validate settings for production"""
-    errors = []
-
-    if settings.is_production:
-        if settings.SECRET_KEY == "your-secret-key-change-in-production":
-            errors.append("SECRET_KEY must be changed in production")
-        if settings.DEBUG:
-            errors.append("DEBUG must be False in production")
-        if settings.DATABASE_URL.startswith("sqlite"):
-            errors.append("SQLite cannot be used in production")
-        if not settings.ALLOWED_ORIGINS or settings.ALLOWED_ORIGINS == "*":
-            errors.append("ALLOWED_ORIGINS must be restricted in production")
-
-    if errors:
-        for error in errors:
-            logger.error(f"Production configuration error: {error}")
-        raise ValueError(f"Production configuration errors: {', '.join(errors)}")
-
-    return True
