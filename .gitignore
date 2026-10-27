@@ -12,6 +12,13 @@ __pycache__/
 *$py.class
 .pytest_cache/
 
+# Virtual environments
+.venv/
+venv/
+file.venv/
+env/
+ENV/
+
 # Runtime and local log files
 logs/*.log
 *.log
