@@ -203,7 +203,12 @@ def seed_default_users(db: Session):
 
 
 def seed_database():
-    """Seed the database with rich campus data"""
+    """Seed the database with rich campus data (Development only)"""
+    from backend.core.config import settings
+    if settings.is_production:
+        print("[SEED NOTICE] Production mode detected. Automatic database seeding skipped.")
+        return
+
     ensure_schema()
     db: Session = SessionLocal()
 

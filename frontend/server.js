@@ -8,8 +8,13 @@ const app = express();
 const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
 
 // Middleware
+const defaultOrigins = ['http://localhost:3000', 'http://localhost:8000', 'http://127.0.0.1:3000'];
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+    : defaultOrigins;
+
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:8000', 'http://127.0.0.1:3000'],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -95,7 +100,7 @@ app.get('/timetable', (req, res) => {
 
 // Health check
 app.get('/health', (req, res) => {
-    res.json({ status: 'Marvel Frontend Server Running', port: 3000 });
+    res.json({ status: 'Marvel Frontend Server Running', port: PORT });
 });
 
 // Error handling middleware

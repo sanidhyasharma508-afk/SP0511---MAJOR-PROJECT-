@@ -16,6 +16,7 @@ if str(REPO_ROOT) not in sys.path:
 
 
 import argparse
+import getpass
 import os
 import sys
 from backend.database import SessionLocal, engine, Base
@@ -60,7 +61,7 @@ def main():
 
     username = args.username or input("Enter admin username: ").strip()
     email = args.email or input("Enter admin email: ").strip()
-    password = args.password or input("Enter admin password: ").strip()
+    password = args.password or getpass.getpass("Enter admin password: ").strip()
 
     if not username or not email or not password:
         print("[ERROR] Username, email, and password are all required.")

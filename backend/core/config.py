@@ -76,64 +76,64 @@ class Settings(BaseSettings):
     DEBUG: bool = Field(default=True)
 
     # Server
-    HOST: str = Field(default="127.0.0.1", env="HOST")
-    PORT: int = Field(default=8000, env="PORT")
-    API_PREFIX: str = Field(default="/api/v1", env="API_PREFIX")
+    HOST: str = Field(default="127.0.0.1")
+    PORT: int = Field(default=8000)
+    API_PREFIX: str = Field(default="/api/v1")
 
     # Database
-    DATABASE_URL: str = Field(default="sqlite:///./campus_automation.db", env="DATABASE_URL")
-    DB_ECHO: bool = Field(default=False, env="DB_ECHO")
-    DB_POOL_SIZE: int = Field(default=5, env="DB_POOL_SIZE")
-    DB_MAX_OVERFLOW: int = Field(default=10, env="DB_MAX_OVERFLOW")
+    DATABASE_URL: str = Field(default="sqlite:///./campus_automation.db")
+    DB_ECHO: bool = Field(default=False)
+    DB_POOL_SIZE: int = Field(default=5)
+    DB_MAX_OVERFLOW: int = Field(default=10)
 
     # Authentication - No insecure default in production
-    SECRET_KEY: Optional[str] = Field(default=None, env="SECRET_KEY")
-    ALGORITHM: str = Field(default="HS256", env="ALGORITHM")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
-    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
+    SECRET_KEY: Optional[str] = Field(default=None)
+    ALGORITHM: str = Field(default="HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30)
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7)
 
     # CORS - Explicit frontend origins
-    ALLOWED_ORIGINS: Optional[str] = Field(default=None, env="ALLOWED_ORIGINS")
-    ALLOWED_METHODS: str = Field(default="GET,POST,PUT,DELETE,PATCH,OPTIONS", env="ALLOWED_METHODS")
+    ALLOWED_ORIGINS: Optional[str] = Field(default=None)
+    ALLOWED_METHODS: str = Field(default="GET,POST,PUT,DELETE,PATCH,OPTIONS")
     ALLOWED_HEADERS: str = Field(
-        default="Content-Type,Authorization,Accept,Origin,X-Requested-With", env="ALLOWED_HEADERS"
+        default="Content-Type,Authorization,Accept,Origin,X-Requested-With"
     )
 
     # Logging
-    LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
-    LOG_FILE: str = Field(default="logs/app.log", env="LOG_FILE")
+    LOG_LEVEL: str = Field(default="INFO")
+    LOG_FILE: str = Field(default="logs/app.log")
     LOG_FORMAT: str = Field(
-        default="%(asctime)s - %(name)s - %(levelname)s - %(message)s", env="LOG_FORMAT"
+        default="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
     # Caching (Redis)
-    REDIS_URL: Optional[str] = Field(default=None, env="REDIS_URL")
-    CACHE_TTL: int = Field(default=300, env="CACHE_TTL")  # seconds
+    REDIS_URL: Optional[str] = Field(default=None)
+    CACHE_TTL: int = Field(default=300)  # seconds
 
     # Background jobs
-    CELERY_BROKER_URL: Optional[str] = Field(default=None, env="CELERY_BROKER_URL")
-    CELERY_RESULT_BACKEND: Optional[str] = Field(default=None, env="CELERY_RESULT_BACKEND")
+    CELERY_BROKER_URL: Optional[str] = Field(default=None)
+    CELERY_RESULT_BACKEND: Optional[str] = Field(default=None)
 
     # Email (for notifications)
-    SMTP_SERVER: Optional[str] = Field(default=None, env="SMTP_SERVER")
-    SMTP_PORT: int = Field(default=587, env="SMTP_PORT")
-    SMTP_USERNAME: Optional[str] = Field(default=None, env="SMTP_USERNAME")
-    SMTP_PASSWORD: Optional[str] = Field(default=None, env="SMTP_PASSWORD")
-    SENDER_EMAIL: Optional[str] = Field(default=None, env="SENDER_EMAIL")
+    SMTP_SERVER: Optional[str] = Field(default=None)
+    SMTP_PORT: int = Field(default=587)
+    SMTP_USERNAME: Optional[str] = Field(default=None)
+    SMTP_PASSWORD: Optional[str] = Field(default=None)
+    SENDER_EMAIL: Optional[str] = Field(default=None)
 
     # Feature flags
-    ENABLE_CACHING: bool = Field(default=False, env="ENABLE_CACHING")
-    ENABLE_BACKGROUND_TASKS: bool = Field(default=False, env="ENABLE_BACKGROUND_TASKS")
-    ENABLE_EMAIL_NOTIFICATIONS: bool = Field(default=False, env="ENABLE_EMAIL_NOTIFICATIONS")
+    ENABLE_CACHING: bool = Field(default=False)
+    ENABLE_BACKGROUND_TASKS: bool = Field(default=False)
+    ENABLE_EMAIL_NOTIFICATIONS: bool = Field(default=False)
 
     # Performance
-    MAX_POOL_SIZE: int = Field(default=10, env="MAX_POOL_SIZE")
-    WORKER_THREADS: int = Field(default=4, env="WORKER_THREADS")
-    REQUEST_TIMEOUT: int = Field(default=30, env="REQUEST_TIMEOUT")
+    MAX_POOL_SIZE: int = Field(default=10)
+    WORKER_THREADS: int = Field(default=4)
+    REQUEST_TIMEOUT: int = Field(default=30)
 
     # Monitoring
-    ENABLE_METRICS: bool = Field(default=True, env="ENABLE_METRICS")
-    METRICS_PORT: int = Field(default=9090, env="METRICS_PORT")
+    ENABLE_METRICS: bool = Field(default=True)
+    METRICS_PORT: int = Field(default=9090)
 
     def model_post_init(self, __context: Any) -> None:
         """Validate settings and establish environment defaults"""
@@ -255,13 +255,8 @@ try:
     settings = Settings()
     logger.info(f"Settings loaded. Environment: {settings.ENVIRONMENT}")
 except Exception as e:
-    # If production configuration is invalid, do not silently catch and proceed with insecure defaults
-    env_str = os.getenv("ENV", os.getenv("ENVIRONMENT", "")).lower()
-    if env_str == "production":
-        logger.critical(f"Fatal production configuration error: {str(e)}")
-        raise
-    logger.warning(f"Error loading settings from .env: {str(e)}")
-    settings = Settings()
+    logger.critical(f"Fatal configuration error: {str(e)}")
+    raise
 
 
 # Helper functions for environment-specific configuration

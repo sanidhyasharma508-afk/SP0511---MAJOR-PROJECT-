@@ -24,7 +24,7 @@ Before setting up the project, ensure you have the following installed:
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Start Guide (Development)
 
 ### 1. Clone the Repository
 
@@ -75,12 +75,7 @@ Copy-Item .env.example .env
 cp .env.example .env
 ```
 
-> **Note on Security:** For local development, safe default values are provided. For production deployment, set `ENV=production` and generate a cryptographically strong `SECRET_KEY` (minimum 32 characters) using:
-> ```bash
-> python -c "import secrets; print(secrets.token_hex(32))"
-> ```
-
-### 4. Database Initialization & Seeding
+### 4. Database Initialization & Seeding (Development Only)
 
 Initialize database tables and seed test accounts and sample campus data:
 
@@ -100,7 +95,7 @@ uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 - **Alternative API Docs (ReDoc):** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 - **Health Check:** [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
 
-### 6. Frontend Setup & Startup
+### 6. Frontend Gateway & Client Startup
 
 In a separate terminal:
 
@@ -114,17 +109,99 @@ npm start
 
 ---
 
+## 🏭 Production Deployment Guide
+
+When deploying the Campus Automation System to a production or staging server, adhere to the following configuration guidelines to ensure strict fail-closed security.
+
+### 1. Production Environment Variables
+
+Create a dedicated `.env` file containing explicit production values:
+
+```ini
+# Environment mode: MUST be set to production
+ENV=production
+
+# Application Debugging: Guaranteed False in production
+DEBUG=False
+
+# Cryptographic Secret Key (HS256)
+# Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+# Must be at least 32 characters long. All placeholder secrets are rejected.
+SECRET_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+# CORS Configuration
+# Must explicitly list frontend origins. Wildcard '*' is rejected in production.
+ALLOWED_ORIGINS=https://campus.yourinstitution.edu,https://admin.yourinstitution.edu
+
+# Database Connection URL
+# For production scale and concurrency, PostgreSQL is strongly recommended:
+DATABASE_URL=postgresql://dbuser:StrongPassword@db-host:5432/campus_automation
+
+# Gateway Proxy Configuration (for Express frontend gateway)
+PORT=3000
+BACKEND_URL=http://127.0.0.1:8000
+```
+
+### 2. Provisioning Initial Administrator Accounts
+
+In production, automatic development seeding (`seed_data.py` and `seed_default_users`) is **completely disabled**. The application will **never** create default demo credentials (`admin123`, `staff123`, `student123`).
+
+To provision initial administrator accounts safely without echoing passwords to terminal logs or command history:
+
+#### Interactive Provisioning (Masked Password Prompt):
+```bash
+python backend/scripts/create_admin.py --username sysadmin --email sysadmin@institution.edu
+# Prompts securely: Enter admin password: (hidden)
+```
+
+#### Automated / CI Provisioning via Environment Variables:
+```bash
+ADMIN_USERNAME=sysadmin ADMIN_EMAIL=sysadmin@institution.edu ADMIN_PASSWORD=StrongSecretPassword123! python backend/scripts/create_admin.py
+```
+
+- Enforces minimum 8-character password length.
+- Hashes password using bcrypt.
+- Detects and rejects duplicate usernames or emails.
+
+### 3. Database Architecture & Engine Considerations
+
+- **SQLite (Default / Local / Single-Worker):**
+  - Stored in `campus_automation.db` with foreign key enforcement (`PRAGMA foreign_keys=ON`).
+  - Relative paths (`sqlite:///./campus_automation.db`) are automatically resolved to absolute paths relative to the repository root.
+  - **Limitation:** SQLite uses database-level file locks on writes. It is **not** suitable for multi-worker ASGI processes (e.g., `gunicorn -w 4`) or multi-instance load-balanced containers due to `sqlite3.OperationalError: database is locked`.
+- **PostgreSQL (Recommended for Production):**
+  - Set `DATABASE_URL=postgresql://user:password@host:port/database_name`.
+  - Supports high concurrency, connection pooling, and multi-instance scaling.
+  - Legacy `postgres://` connection strings are automatically normalized to `postgresql://`.
+- **Schema Migrations:**
+  - `backend/seed_data.py` provides `ensure_schema()` which creates tables and performs non-destructive column/index migrations automatically upon startup.
+
+### 4. Running Production ASGI Server (Gunicorn + Uvicorn Workers)
+
+For Linux / containerized production environments:
+
+```bash
+gunicorn backend.main:app \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:8000 \
+    --access-logfile logs/access.log \
+    --error-logfile logs/error.log
+```
+
+---
+
 ## 🧪 Running Automated Tests
 
 ### Backend Test Suite (Pytest)
 
-Run all 145 backend security, API, and authorization tests:
+Run all 177 backend security, API, authorization, and production-readiness tests:
 
 ```bash
-# Run tests with summary
+# Run full suite
 python -m pytest tests/ -v
 
-# Run tests in quiet mode
+# Run with concise output
 python -m pytest tests/ -q
 ```
 
@@ -139,9 +216,9 @@ npm test
 
 ---
 
-## 👥 Default Development & Test Accounts
+## 👥 Default Development & Test Accounts (Development Mode Only)
 
-When running in development or testing mode, `backend/seed_data.py` provisions the following development accounts:
+When running strictly in development or testing mode (`ENV=development`), `backend/seed_data.py` provisions initial development accounts for testing:
 
 | Role | Username | Password | Linked Student / Identity | Scope & Permissions |
 | :--- | :--- | :--- | :--- | :--- |
@@ -150,21 +227,22 @@ When running in development or testing mode, `backend/seed_data.py` provisions t
 | **Faculty / Staff** | `staff2` | `staff123` | Second Faculty (ID: 4) | Scoped to own sessions and subjects |
 | **Student** | `student1` | `student123` | Alex Johnson (`21BCS101`, ID: 1) | Student dashboard, mark own QR attendance, study tasks, submit complaints, view schedule |
 
+> ⚠️ **Notice:** These accounts are only seeded in development. Production environments require provisioning via `create_admin.py`.
+
 ---
 
 ## 🛡️ Security Architecture & Hardening Highlights
 
-1. **Role-Based Access Control (RBAC):** Backend routes verify user role and linked entity ownership via FastAPI dependencies (`get_current_user`, `require_role`).
-2. **Anti-Impersonation Student Isolation:** Students can only read and mutate their own attendance, risk scores, study tasks, and complaints. Attempts to supply mismatched `student_id` or `roll_number` result in `403 Forbidden`.
-3. **Cryptographic QR Attendance Hardening:**
+1. **Production Configuration Validation:**
+   - Startup fails closed if `SECRET_KEY` is missing, short (<32 chars), or matches known placeholder strings.
+   - Startup fails closed if `ALLOWED_ORIGINS` contains wildcard `*` while credentials are enabled.
+   - `DEBUG` mode is strictly forced to `False` in production.
+2. **Role-Based Access Control (RBAC):** Backend routes verify user role and linked entity ownership via FastAPI dependencies (`get_current_user`, `require_role`).
+3. **Anti-Impersonation Student Isolation:** Students can only read and mutate their own attendance, risk scores, study tasks, and complaints. Attempts to supply mismatched `student_id` or `roll_number` result in `403 Forbidden`.
+4. **Cryptographic QR Attendance Hardening:**
    - Every QR code generates a session-specific cryptographic hash tied to a geofence and expiration window.
-   - Placeholder verification values (`hash_placeholder`, `manual_entry`, `demo_scan`) and empty hashes are rejected.
+   - Placeholder verification values (`hash_placeholder`, `manual_entry`, `demo_scan`) and empty hashes are strictly rejected.
    - Duplicate attendance scans are rejected at both application and database constraint levels.
-4. **JWT Security & Token Invalidation:**
-   - Strict algorithm (`HS256`) and signature validation.
-   - Secret key complexity enforcement (minimum 32 characters in production).
-   - In-memory and persistent token blacklist for immediate logout invalidation.
-   - CORS origin enforcement prevents wildcard origins with credentials in production.
 5. **Frontend XSS Prevention:**
    - Input sanitization via `DOMUtils.escapeHtml` across all dynamic views (dashboard analytics, schedules, announcements, club rosters).
    - Safe URL sanitization prevents `javascript:` URI injection.
@@ -189,9 +267,11 @@ When running in development or testing mode, `backend/seed_data.py` provisions t
 │   ├── js/                 # Vanilla JavaScript client modules (auth, dashboard, qr)
 │   ├── styles/             # Application stylesheets
 │   ├── test/               # Node.js frontend tests
-│   ├── index.html          # Single-page application entrypoint
+│   ├── index.html          # Single-Page Application entrypoint
 │   └── server.js           # Express.js frontend gateway & proxy
-├── tests/                  # Pytest test suite (145 tests covering all domains)
+├── tests/                  # Pytest test suite (177 tests covering all domains)
+│   ├── test_production_readiness.py  # Production configuration & deployment tests
+│   └── ...
 ├── .env.example            # Environment configuration template
 ├── pyproject.toml          # Project metadata & test configuration
 ├── pytest.ini              # Pytest settings

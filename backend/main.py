@@ -27,7 +27,7 @@ from backend.routes.events import router as events_router
 from backend.routes.qr_attendance import router as qr_attendance_router
 from backend.routes.study_task import router as study_task_router
 from backend.core.event_handlers import register_agents
-from backend.core.config import settings, validate_production_settings
+from backend.core.config import settings, validate_production_settings, get_debug_mode
 from backend.core.logging import setup_logging, get_logger, RequestLoggingMiddleware
 from backend.core.background_tasks import task_queue, scheduler
 from backend.core.caching import cache_manager
@@ -47,7 +47,7 @@ app = FastAPI(
     title=f"Campus Automation | Phase 5 ({settings.ENV})",
     description="Multi-agent backend with security, analytics, AI, and scaling",
     version="5.0.0",
-    debug=settings.DEBUG,
+    debug=get_debug_mode(),
 )
 
 # Add request logging middleware (Phase 5)
@@ -90,20 +90,23 @@ app.include_router(study_task_router, prefix="/study-tasks")
 async def startup_event():
     """Initialize agents, background tasks, and Phase 5 components"""
     validate_production_settings()
-    logger.log_event("startup_event", level="INFO", environment=settings.ENV, debug=settings.DEBUG)
+    logger.log_event("startup_event", level="INFO", environment=settings.ENV, debug=get_debug_mode())
 
-    # Auto-seed database if empty
+    # Ensure schema and auto-seed database if empty (Development only)
     try:
         from backend.seed_data import ensure_schema, seed_database, seed_default_users
-        from backend.database import SessionLocal
-        from backend.models.student import Student
         ensure_schema()
-        db = SessionLocal()
-        seed_default_users(db)
-        if db.query(Student).count() == 0:
-            logger.log_event("auto_seeding_database", level="INFO")
-            seed_database()
-        db.close()
+        if settings.is_production:
+            logger.log_event("production_startup", level="INFO", message="Skipping mock data seeding in production environment")
+        else:
+            from backend.database import SessionLocal
+            from backend.models.student import Student
+            db = SessionLocal()
+            seed_default_users(db)
+            if db.query(Student).count() == 0:
+                logger.log_event("auto_seeding_database", level="INFO")
+                seed_database()
+            db.close()
     except Exception as e:
         logger.log_event("auto_seeding_error", level="WARNING", error=str(e))
 

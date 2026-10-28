@@ -38,7 +38,7 @@
     const saveBtn = root.querySelector('#club-save-att');
     const addBtn = root.querySelector('#add-student-btn');
 
-    const API_BASE = window.API_BASE_URL || 'http://localhost:8000';
+    const API_BASE = window.API_BASE_URL || window.CONFIG?.API?.BASE_URL || (window.location.port === '3000' ? '/api' : 'http://localhost:8000');
 
     function attendanceKey(date) { return `clubAttendance__${clubName}__${date}`; }
 
