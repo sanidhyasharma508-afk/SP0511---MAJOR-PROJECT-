@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from backend.schemas.agent import AgentRequest, AgentResponse
+from backend.core.auth import TokenData
+from backend.core.rbac import get_current_user
 from typing import Any
 
 router = APIRouter(prefix="/agents", tags=["Agents"])
@@ -20,8 +22,11 @@ def list_agents():
 
 
 @router.post("/execute", response_model=AgentResponse)
-def execute_agent(request: AgentRequest):
-    """Execute a specific agent with given task"""
+def execute_agent(
+    request: AgentRequest,
+    current_user: TokenData = Depends(get_current_user),
+):
+    """Execute a specific agent with given task (Authenticated users)"""
     if request.agent_name not in AGENTS:
         raise HTTPException(status_code=404, detail=f"Agent '{request.agent_name}' not found")
 
@@ -32,6 +37,7 @@ def execute_agent(request: AgentRequest):
             "task": request.task,
             "parameters": request.parameters,
             "processed": True,
+            "executed_by": current_user.sub,
         }
 
         return AgentResponse(agent_name=request.agent_name, status="success", result=result)

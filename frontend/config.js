@@ -152,34 +152,44 @@ class APIClient {
      * Refresh expired access token using stored refresh token
      */
     async refreshToken() {
+        if (this._refreshPromise) {
+            return this._refreshPromise;
+        }
+
         const refreshTok = this.getRefreshToken();
         if (!refreshTok) return null;
 
-        const refreshUrl = `${this.baseURL}/${this.config.ROUTES.REFRESH.replace(/^\/+/, '')}`;
-        try {
-            const resp = await fetch(refreshUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refresh_token: refreshTok })
-            });
+        this._refreshPromise = (async () => {
+            const refreshUrl = `${this.baseURL}/${this.config.ROUTES.REFRESH.replace(/^\/+/, '')}`;
+            try {
+                const resp = await fetch(refreshUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh_token: refreshTok })
+                });
 
-            if (resp.ok) {
-                const data = await resp.json();
-                if (data.access_token) {
-                    this.setToken(data.access_token);
-                    if (data.expires_in) {
-                        localStorage.setItem(
-                            this.config.AUTH.TOKEN_EXPIRY_KEY,
-                            String(Date.now() + data.expires_in * 1000)
-                        );
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.access_token) {
+                        this.setToken(data.access_token);
+                        if (data.expires_in) {
+                            localStorage.setItem(
+                                this.config.AUTH.TOKEN_EXPIRY_KEY,
+                                String(Date.now() + data.expires_in * 1000)
+                            );
+                        }
+                        return data.access_token;
                     }
-                    return data.access_token;
                 }
+            } catch (e) {
+                console.debug('Token refresh request failed');
+            } finally {
+                this._refreshPromise = null;
             }
-        } catch (e) {
-            console.debug('Token refresh request failed');
-        }
-        return null;
+            return null;
+        })();
+
+        return this._refreshPromise;
     }
 
     async request(method, endpoint, data = null, options = {}, isRetry = false) {
@@ -294,9 +304,13 @@ class APIClient {
 
     async logout() {
         const token = this.getToken();
+        const refreshToken = this.getRefreshToken();
         try {
-            if (token) {
-                return await this.post(this.config.ROUTES.LOGOUT, { token });
+            if (token || refreshToken) {
+                return await this.post(this.config.ROUTES.LOGOUT, {
+                    token: token || undefined,
+                    refresh_token: refreshToken || undefined
+                });
             }
         } finally {
             this.clearToken();

@@ -128,6 +128,65 @@ describe('Frontend Authentication: Token Storage & Lifecycle', () => {
         assert.equal(isValid, false);
         assert.equal(client.getToken(), null, 'Expired token without refresh token must be cleared');
     });
+
+    it('logout should submit both access and refresh tokens to backend and purge local storage', async () => {
+        client.setToken('active-access-token');
+        client.setRefreshToken('active-refresh-token');
+
+        let postPayload = null;
+        let postEndpoint = null;
+        client.post = async (endpoint, data) => {
+            postEndpoint = endpoint;
+            postPayload = data;
+            return { message: 'Logged out successfully' };
+        };
+
+        await client.logout();
+
+        assert.equal(postEndpoint, CONFIG.ROUTES.LOGOUT);
+        assert.deepEqual(postPayload, {
+            token: 'active-access-token',
+            refresh_token: 'active-refresh-token'
+        });
+        assert.equal(client.getToken(), null);
+        assert.equal(client.getRefreshToken(), null);
+    });
+
+    it('refreshToken should deduplicate concurrent refresh invocations', async () => {
+        client.setRefreshToken('valid-refresh-token');
+
+        let fetchCalls = 0;
+        const originalFetch = global.fetch;
+        global.fetch = async () => {
+            fetchCalls++;
+            // Simulate network delay
+            await new Promise((res) => setTimeout(res, 20));
+            return {
+                ok: true,
+                json: async () => ({
+                    access_token: 'new-minted-token',
+                    expires_in: 3600
+                })
+            };
+        };
+
+        try {
+            // Trigger 3 concurrent refresh calls
+            const [token1, token2, token3] = await Promise.all([
+                client.refreshToken(),
+                client.refreshToken(),
+                client.refreshToken()
+            ]);
+
+            assert.equal(fetchCalls, 1, 'Only one network refresh call should be made');
+            assert.equal(token1, 'new-minted-token');
+            assert.equal(token2, 'new-minted-token');
+            assert.equal(token3, 'new-minted-token');
+            assert.equal(client.getToken(), 'new-minted-token');
+        } finally {
+            global.fetch = originalFetch;
+        }
+    });
 });
 
 describe('Frontend Source Code Verification: Remediation of Verified XSS Sinks', () => {

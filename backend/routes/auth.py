@@ -100,6 +100,7 @@ class LogoutRequest(BaseModel):
     """Logout request"""
 
     token: Optional[str] = None
+    refresh_token: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -435,7 +436,7 @@ def logout(
     raw_credentials: Optional[object] = Depends(security),
 ):
     """
-    Logout user by blacklisting the provided access token
+    Logout user by blacklisting the provided access token and refresh token
     """
     token_to_blacklist = None
     if request and request.token:
@@ -445,6 +446,10 @@ def logout(
 
     if token_to_blacklist:
         blacklist_token(token_to_blacklist)
+
+    # Blacklist refresh token if provided
+    if request and request.refresh_token:
+        blacklist_token(request.refresh_token)
 
     logger.log_event(
         "logout_successful",
