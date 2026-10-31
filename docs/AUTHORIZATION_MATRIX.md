@@ -1,4 +1,63 @@
-# 178-ENDPOINT AUTHORIZATION MATRIX
+# 178-ENDPOINT AUTHORIZATION MATRIX & RECONCILIATION
+
+## Executive Summary & Discrepancy Reconciliation
+
+During Task 16B audit reconciliation, runtime reflection on the FastAPI application (`app.routes`) verified exactly **178 registered HTTP (method, path) endpoints**.
+
+The previous Task 16 documentation table reported an initial count of 158 endpoints. Runtime enumeration revealed the exact reasons for the +20 route difference:
+
+1. **`dashboard.py` (+6 endpoints)**: The dashboard router was omitted entirely from the earlier table breakdown.
+2. **`study_task.py` (+10 endpoints)**: Handlers in `study_task.py` are mounted under 3 router prefixes for backwards compatibility (`/api/v1/study-tasks`, `/v1/study-tasks`, `/study-tasks`), producing 24 total route registrations rather than 14.
+3. **`risk.py` (+3 endpoints)**: Contains 3 distinct APIRouters (`/risk-logs`, `/risk`, `/academic-risk`), totaling 13 route registrations rather than 10.
+4. **`auth.py` (+2 endpoints)**: Contains dual routes/aliases (`/api/v1/auth/me` and `/api/v1/auth/admin/create-user`), totaling 10 registrations rather than 8.
+5. **`events.py` (-1 endpoint)**: Contains 23 distinct endpoints rather than 24.
+
+**Net reconciliation**: $158 + 6 + 10 + 3 + 2 - 1 = 178$ endpoints.
+
+Across the application, these 178 registered routes correspond to **159 unique endpoint handler functions** (due to multi-prefix compatibility mountings).
+
+---
+
+## Route Classification Totals
+
+| Classification | Endpoint Count | Description & Policy |
+|---|---|---|
+| **Public by design** | 38 | Open endpoints (login, registration, OpenAPI docs, health checks, public event/club listings, active schedules). No token required. |
+| **Authenticated user** | 25 | Accessible to any valid bearer token regardless of role (change password, AI queries, club joins/activities, feedback). |
+| **Student self-owned** | 44 | Restricted to student owners matching `student_id` or `current_user.id`, with authorized bypass for elevated staff/faculty/admin roles. |
+| **Faculty-authorized** | 56 | Restricted to `faculty`, `staff`, or `admin` roles (QR generation, risk logs, grade/schedule overrides, student academic inspection). |
+| **Administrator-only** | 15 | Strict `admin`-only role enforcement (hard deletions of students/complaints/schedules, admin user provisioning). |
+| **Total** | **178** | Complete endpoint surface of the MARVEL FastAPI backend. |
+
+---
+
+## Module-by-Module Route Inventory
+
+| Router Module | Route Count | Primary Path Prefixes | Authorization Levels Present |
+|---|---|---|---|
+| `clubs` | 25 | `/clubs` | Public, Authenticated, Student Self, Faculty |
+| `study_task` | 24 | `/api/v1/study-tasks`, `/v1/study-tasks`, `/study-tasks` | Authenticated, Student Self |
+| `events` | 23 | `/events` | Public, Authenticated, Student Self, Faculty |
+| `risk` | 13 | `/risk-logs`, `/risk`, `/academic-risk` | Authenticated, Faculty, Admin |
+| `ai` | 13 | `/ai` | Public, Authenticated, Student Self, Faculty |
+| `qr_attendance` | 11 | `/qr-attendance` | Student Self, Faculty |
+| `auth` | 10 | `/api/v1/auth` | Public, Authenticated, Student Self, Admin |
+| `schedule_feedback` | 10 | `/schedule-management` | Authenticated, Faculty |
+| `attendance` | 7 | `/attendance` | Student Self, Faculty, Admin |
+| `complaint` | 7 | `/complaints` | Student Self, Faculty, Admin |
+| `schedule` | 7 | `/schedules` | Public, Student Self, Faculty, Admin |
+| `analytics` | 7 | `/analytics` | Authenticated, Student Self, Faculty |
+| `dashboard` | 6 | `/dashboard` | Student Self, Faculty |
+| `students` | 5 | `/students` | Student Self, Faculty, Admin |
+| `fastapi.applications` | 4 | `/openapi.json`, `/docs`, `/docs/oauth2-redirect`, `/redoc` | Public |
+| `agents` | 3 | `/agents` | Public, Authenticated (Role Scoped) |
+| `backend.main` | 2 | `/`, `/health/full` | Public |
+| `health` | 1 | `/health` | Public |
+| **Total** | **178** | | |
+
+---
+
+## Detailed 178-Endpoint Matrix
 
 | # | Method | Path | Router | Classification | Auth Req | Role | Ownership Scope | Sensitive Data | Test Coverage | Status |
 |---|---|---|---|---|---|---|---|---|---|---|

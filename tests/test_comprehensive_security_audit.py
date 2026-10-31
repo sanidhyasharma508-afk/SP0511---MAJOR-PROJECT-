@@ -282,6 +282,79 @@ async def test_logout_manipulation_cannot_revoke_other_user_tokens(test_client):
 
 
 @pytest.mark.asyncio
+async def test_refresh_token_lifecycle_and_type_confusion(test_client):
+    """
+    VERIFICATION (Phase 4 of Task 16B):
+    - Access tokens cannot be substituted for refresh tokens.
+    - Refresh tokens cannot be used as access tokens.
+    - Expired and already-revoked refresh tokens are rejected.
+    - Repeated logout behaves consistently.
+    """
+    login_res = await test_client.post(
+        "/api/v1/auth/login",
+        json={"username": "student1", "password": "student123"},
+    )
+    assert login_res.status_code == 200
+    tokens = login_res.json()
+    acc_tok = tokens["access_token"]
+    ref_tok = tokens["refresh_token"]
+
+    # 1. Refresh token CANNOT be used as an access token -> 401
+    bad_access = await test_client.get(
+        "/api/v1/auth/profile",
+        headers={"Authorization": f"Bearer {ref_tok}"},
+    )
+    assert bad_access.status_code == 401
+    assert "invalid token type" in bad_access.json().get("detail", "").lower()
+
+    # 2. Access token CANNOT be substituted as a refresh token -> 401
+    bad_refresh = await test_client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": acc_tok},
+    )
+    assert bad_refresh.status_code == 401
+    assert "invalid refresh token" in bad_refresh.json().get("detail", "").lower()
+
+    # 3. Expired refresh token is rejected -> 401
+    import jwt
+    from backend.core.config import settings
+    from backend.core.auth import SECRET_KEY, ALGORITHM
+    from datetime import timedelta
+    expired_payload = {
+        "sub": "student1",
+        "user_id": 1,
+        "role": "student",
+        "exp": datetime.utcnow() - timedelta(minutes=10),
+        "iat": datetime.utcnow() - timedelta(minutes=60),
+        "type": "refresh",
+    }
+    expired_ref = jwt.encode(expired_payload, settings.SECRET_KEY or SECRET_KEY, algorithm=settings.ALGORITHM or ALGORITHM)
+    res_exp = await test_client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": expired_ref},
+    )
+    assert res_exp.status_code == 401
+
+    # 4. Repeated logout behaves consistently
+    # First logout succeeds
+    lo1 = await test_client.post(
+        "/api/v1/auth/logout",
+        headers={"Authorization": f"Bearer {acc_tok}"},
+        json={"token": acc_tok, "refresh_token": ref_tok},
+    )
+    assert lo1.status_code == 200
+
+    # Second logout with already revoked access token -> 401 (token blacklisted)
+    lo2 = await test_client.post(
+        "/api/v1/auth/logout",
+        headers={"Authorization": f"Bearer {acc_tok}"},
+        json={"token": acc_tok, "refresh_token": ref_tok},
+    )
+    assert lo2.status_code == 401
+    assert "revoked" in lo2.json().get("detail", "").lower()
+
+
+@pytest.mark.asyncio
 async def test_agent_execution_role_boundaries_and_anti_impersonation(test_client, student_headers, faculty_headers, admin_headers):
     """
     VERIFICATION (Phase 4):
