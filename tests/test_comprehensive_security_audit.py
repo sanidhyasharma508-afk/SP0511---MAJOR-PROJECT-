@@ -224,3 +224,262 @@ async def test_student_blocked_from_privileged_endpoints(test_client, student_he
         },
     )
     assert r5.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_logout_manipulation_cannot_revoke_other_user_tokens(test_client):
+    """
+    VERIFICATION (Phase 3 Item 8):
+    A refresh token or access token belonging to another user cannot be revoked
+    through a manipulated logout request.
+    """
+    # 1. Login user A (student1)
+    res_a = await test_client.post(
+        "/api/v1/auth/login",
+        json={"username": "student1", "password": "student123"},
+    )
+    assert res_a.status_code == 200
+    toks_a = res_a.json()
+    headers_a = {"Authorization": f"Bearer {toks_a['access_token']}"}
+
+    # 2. Login user B (staff1)
+    res_b = await test_client.post(
+        "/api/v1/auth/login",
+        json={"username": "staff1", "password": "staff123"},
+    )
+    assert res_b.status_code == 200
+    toks_b = res_b.json()
+    headers_b = {"Authorization": f"Bearer {toks_b['access_token']}"}
+
+    # 3. User A attempts to revoke User B's refresh token via manipulated logout
+    manipulated_logout = await test_client.post(
+        "/api/v1/auth/logout",
+        headers=headers_a,
+        json={"refresh_token": toks_b["refresh_token"]},
+    )
+    assert manipulated_logout.status_code == 403
+    assert "another user" in manipulated_logout.json().get("detail", "").lower()
+
+    # 4. User A attempts to revoke User B's access token via manipulated logout
+    manipulated_logout_acc = await test_client.post(
+        "/api/v1/auth/logout",
+        headers=headers_a,
+        json={"token": toks_b["access_token"]},
+    )
+    assert manipulated_logout_acc.status_code == 403
+    assert "another user" in manipulated_logout_acc.json().get("detail", "").lower()
+
+    # 5. Verify User B's tokens remain completely valid and usable
+    b_profile = await test_client.get("/api/v1/auth/profile", headers=headers_b)
+    assert b_profile.status_code == 200
+
+    b_refreshed = await test_client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": toks_b["refresh_token"]},
+    )
+    assert b_refreshed.status_code == 200
+    assert "access_token" in b_refreshed.json()
+
+
+@pytest.mark.asyncio
+async def test_agent_execution_role_boundaries_and_anti_impersonation(test_client, student_headers, faculty_headers, admin_headers):
+    """
+    VERIFICATION (Phase 4):
+    - Students cannot execute privileged agents ('admission', 'grades').
+    - Faculty and Admin can execute appropriate privileged agents.
+    - Students cannot impersonate other students via execution parameters.
+    """
+    # 1. Student blocked from executing 'grades' agent -> 403
+    resp_student_grades = await test_client.post(
+        "/agents/execute",
+        headers=student_headers,
+        json={"agent_name": "grades", "task": "modify course grades"},
+    )
+    assert resp_student_grades.status_code == 403
+    assert "not authorized" in resp_student_grades.json().get("detail", "").lower()
+
+    # 2. Student blocked from executing 'admission' agent -> 403
+    resp_student_admin = await test_client.post(
+        "/agents/execute",
+        headers=student_headers,
+        json={"agent_name": "admission", "task": "process applicant"},
+    )
+    assert resp_student_admin.status_code == 403
+    assert "not authorized" in resp_student_admin.json().get("detail", "").lower()
+
+    # 3. Faculty permitted to execute 'grades' agent -> 200
+    resp_fac_grades = await test_client.post(
+        "/agents/execute",
+        headers=faculty_headers,
+        json={"agent_name": "grades", "task": "calculate class averages"},
+    )
+    assert resp_fac_grades.status_code == 200
+    assert resp_fac_grades.json()["status"] == "success"
+
+    # 4. Admin permitted to execute 'admission' agent -> 200
+    resp_adm = await test_client.post(
+        "/agents/execute",
+        headers=admin_headers,
+        json={"agent_name": "admission", "task": "verify applicant rosters"},
+    )
+    assert resp_adm.status_code == 200
+    assert resp_adm.json()["status"] == "success"
+
+    # 5. Student cannot supply another student's ID in parameters -> 403
+    resp_spoof = await test_client.post(
+        "/agents/execute",
+        headers=student_headers,
+        json={
+            "agent_name": "attendance",
+            "task": "fetch report",
+            "parameters": {"student_id": 9999},
+        },
+    )
+    assert resp_spoof.status_code == 403
+    assert "another student" in resp_spoof.json().get("detail", "").lower()
+
+    # 6. Student can supply their own student ID in parameters -> 200
+    resp_own = await test_client.post(
+        "/agents/execute",
+        headers=student_headers,
+        json={
+            "agent_name": "attendance",
+            "task": "fetch report",
+            "parameters": {"student_id": 1},
+        },
+    )
+    assert resp_own.status_code == 200
+    assert resp_own.json()["status"] == "success"
+
+
+@pytest.mark.asyncio
+async def test_qr_attendance_full_lifecycle_and_guarantees(test_client, faculty_headers, student_headers):
+    """
+    VERIFICATION (Phase 5):
+    Complete QR attendance lifecycle:
+    - Session generation by faculty.
+    - Time-bound QR payload and cryptographic hash binding.
+    - Student scan validation within geofence.
+    - Duplicate attendance prevention.
+    - Cross-student impersonation rejection.
+    - Student cannot generate QR session.
+    """
+    now = datetime.utcnow()
+
+    # 1. Student attempting to generate QR session is rejected (403)
+    gen_payload = {
+        "subject_code": "CS301",
+        "subject_name": "Database Systems",
+        "branch": "Computer Science",
+        "semester": "5",
+        "lecture_date": now.isoformat(),
+        "lecture_start_time": now.isoformat(),
+        "lecture_duration_minutes": 60,
+        "center_latitude": 28.6139,
+        "center_longitude": 77.2090,
+        "geo_fence_radius_meters": 100.0,
+        "qr_validity_minutes": 15,
+        "require_device_verification": False,
+    }
+    student_attempt = await test_client.post(
+        "/qr-attendance/faculty/generate-qr",
+        headers=student_headers,
+        json=gen_payload,
+    )
+    assert student_attempt.status_code == 403
+
+    # 2. Faculty creates authentic QR session -> 201 Created
+    fac_session = await test_client.post(
+        "/qr-attendance/faculty/generate-qr",
+        headers=faculty_headers,
+        json=gen_payload,
+    )
+    assert fac_session.status_code == 201
+    session_info = fac_session.json()
+    session_id = session_info["session_id"]
+    qr_hash = session_info["qr_code_hash"]
+
+    # 3. Student scans with invalid/tampered hash -> rejected
+    scan_tampered = {
+        "session_id": session_id,
+        "qr_code_hash": "tampered_fake_hash_1234567890",
+        "location": {"latitude": 28.6139, "longitude": 77.2090, "accuracy": 5.0},
+    }
+    resp_tampered = await test_client.post(
+        "/qr-attendance/student/scan-qr",
+        headers=student_headers,
+        json=scan_tampered,
+    )
+    assert resp_tampered.status_code == 200
+    assert resp_tampered.json()["success"] is False
+    assert resp_tampered.json()["attendance_marked"] is False
+
+    # 4. Student scans with placeholder hash -> rejected
+    scan_placeholder = {
+        "session_id": session_id,
+        "qr_code_hash": "hash_placeholder",
+        "location": {"latitude": 28.6139, "longitude": 77.2090, "accuracy": 5.0},
+    }
+    resp_placeholder = await test_client.post(
+        "/qr-attendance/student/scan-qr",
+        headers=student_headers,
+        json=scan_placeholder,
+    )
+    assert resp_placeholder.status_code == 200
+    assert resp_placeholder.json()["success"] is False
+
+    # 5. Student scans attempting to impersonate another student ID -> 403
+    scan_spoof = {
+        "session_id": session_id,
+        "qr_code_hash": qr_hash,
+        "student_id": "9999",
+        "location": {"latitude": 28.6139, "longitude": 77.2090, "accuracy": 5.0},
+    }
+    resp_spoof = await test_client.post(
+        "/qr-attendance/student/scan-qr",
+        headers=student_headers,
+        json=scan_spoof,
+    )
+    assert resp_spoof.status_code == 403
+    assert "mismatch" in resp_spoof.json().get("detail", "").lower()
+
+    # 6. Student scans outside geofence -> rejected
+    scan_outside = {
+        "session_id": session_id,
+        "qr_code_hash": qr_hash,
+        "location": {"latitude": 29.0000, "longitude": 78.0000, "accuracy": 5.0},
+    }
+    resp_outside = await test_client.post(
+        "/qr-attendance/student/scan-qr",
+        headers=student_headers,
+        json=scan_outside,
+    )
+    assert resp_outside.status_code == 200
+    assert resp_outside.json()["success"] is False
+    assert resp_outside.json()["is_within_geofence"] is False
+
+    # 7. Student scans authentically within geofence -> Success
+    scan_valid = {
+        "session_id": session_id,
+        "qr_code_hash": qr_hash,
+        "location": {"latitude": 28.6139, "longitude": 77.2090, "accuracy": 5.0},
+    }
+    resp_valid = await test_client.post(
+        "/qr-attendance/student/scan-qr",
+        headers=student_headers,
+        json=scan_valid,
+    )
+    assert resp_valid.status_code == 200
+    data_valid = resp_valid.json()
+    assert data_valid["success"] is True
+    assert data_valid["attendance_marked"] is True
+
+    # 8. Duplicate scan for the same session -> rejected (duplicate prevented)
+    resp_dup = await test_client.post(
+        "/qr-attendance/student/scan-qr",
+        headers=student_headers,
+        json=scan_valid,
+    )
+    assert resp_dup.status_code == 200
+    assert resp_dup.json()["success"] is False
+    assert "already marked" in resp_dup.json()["message"].lower()

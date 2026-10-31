@@ -187,6 +187,64 @@ describe('Frontend Authentication: Token Storage & Lifecycle', () => {
             global.fetch = originalFetch;
         }
     });
+
+    it('failed refresh clears authentication state and stored tokens', async () => {
+        client.setToken('old-expired-token');
+        client.setRefreshToken('invalid-refresh-token');
+
+        const originalFetch = global.fetch;
+        global.fetch = async (url) => {
+            if (url.includes('refresh')) {
+                return {
+                    ok: false,
+                    status: 401,
+                    json: async () => ({ detail: 'Token has been revoked' })
+                };
+            }
+            return {
+                ok: false,
+                status: 401,
+                json: async () => ({ detail: 'Not authenticated' })
+            };
+        };
+
+        try {
+            await assert.rejects(
+                () => client.get('/protected-resource'),
+                /Not authenticated/
+            );
+            assert.equal(client.getToken(), null, 'Tokens must be purged when refresh fails');
+            assert.equal(client.getRefreshToken(), null, 'Refresh token must be purged when refresh fails');
+        } finally {
+            global.fetch = originalFetch;
+        }
+    });
+
+    it('a 403 Forbidden error must not clear tokens or log out the user', async () => {
+        client.setToken('valid-user-token');
+        client.setRefreshToken('valid-refresh-token');
+
+        const originalFetch = global.fetch;
+        global.fetch = async () => {
+            return {
+                ok: false,
+                status: 403,
+                json: async () => ({ detail: 'Forbidden: Access denied' })
+            };
+        };
+
+        try {
+            await assert.rejects(
+                () => client.get('/admin-resource'),
+                /Access denied/
+            );
+            // Tokens must remain intact after a 403
+            assert.equal(client.getToken(), 'valid-user-token', '403 must not discard valid access token');
+            assert.equal(client.getRefreshToken(), 'valid-refresh-token', '403 must not discard valid refresh token');
+        } finally {
+            global.fetch = originalFetch;
+        }
+    });
 });
 
 describe('Frontend Source Code Verification: Remediation of Verified XSS Sinks', () => {

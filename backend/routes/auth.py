@@ -436,20 +436,38 @@ def logout(
     raw_credentials: Optional[object] = Depends(security),
 ):
     """
-    Logout user by blacklisting the provided access token and refresh token
+    Logout user by blacklisting the provided access token and refresh token.
+    Enforces that a user cannot revoke tokens belonging to another user.
     """
+    # 1. Validate ownership of access token if explicitly provided
     token_to_blacklist = None
     if request and request.token:
+        decoded_tok = decode_token(request.token)
+        if decoded_tok and decoded_tok.user_id != current_user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot revoke token belonging to another user",
+            )
         token_to_blacklist = request.token
     elif raw_credentials and hasattr(raw_credentials, "credentials"):
         token_to_blacklist = raw_credentials.credentials
 
+    # 2. Validate ownership of refresh token if provided
+    refresh_to_blacklist = None
+    if request and request.refresh_token:
+        decoded_refresh = decode_token(request.refresh_token)
+        if decoded_refresh and decoded_refresh.user_id != current_user.user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot revoke refresh token belonging to another user",
+            )
+        refresh_to_blacklist = request.refresh_token
+
+    # 3. Apply revocations only after all validation checks have succeeded
     if token_to_blacklist:
         blacklist_token(token_to_blacklist)
-
-    # Blacklist refresh token if provided
-    if request and request.refresh_token:
-        blacklist_token(request.refresh_token)
+    if refresh_to_blacklist:
+        blacklist_token(refresh_to_blacklist)
 
     logger.log_event(
         "logout_successful",
