@@ -1,35 +1,40 @@
 # TASK 17 & 17B: COMPREHENSIVE DATABASE SECURITY, DATA INTEGRITY & MULTI-COLLEGE ARCHITECTURE AUDIT REPORT
 
-**Audit Date**: November 1, 2026
-**Auditor**: Antigravity Database Architecture & Security Specialist
 **Repository**: `C:\Users\ruetk\OneDrive\Desktop\Campus-Automation-System\MARVEL-main`
 **Branch**: `main`
-**Commit**: `9d7bf38f21eb0b1d55454a1cd49e8b2ec65f27be`
-**Audit Scope**: Read-Only Architecture, Relational Integrity, Concurrency, Security, Compatibility, Multi-Tenancy & Test Evidence
+**Main Remote**: `https://github.com/sanidhyasharma508-afk/SP0511---MAJOR-PROJECT-.git`
+**Parent Remote**: `https://github.com/ruetkhandelwal29-collab/campus_automation_system.git`
+**Audit Target**: Database Security, Relational Integrity, Concurrency, SQLite/PostgreSQL Compatibility, Migration & Backup Readiness, and Multi-College Platform Readiness
+**Audit Type**: Read-Only Source Code & Database Metadata Audit
+**Verified ORM Model Count**: 22 Models (22 Tables)
+**Verified Missing Foreign Keys**: 18 Missing Enforced Foreign Keys
+**Total Evaluated Findings**: 16 Findings (4 Critical, 4 High, 5 Medium, 3 Low/Informational)
 
 ---
 
 ## 1. Executive Summary
 
-A comprehensive, model-by-model architectural and security audit of the Campus Automation System (MARVEL) database tier was conducted. The application targets **SQLite** (`campus_automation.db` file-based in development/production and in-memory `sqlite://` for automated tests) via **SQLAlchemy 2.0+** ORM.
+This comprehensive audit evaluated the database architecture, relational schema, data integrity, transactional concurrency, SQLite-to-PostgreSQL portability, backup/recovery procedures, and multi-tenant readiness of the Campus Automation System (MARVEL).
 
 ### Verdict on Multi-College Platform Readiness
-**VERDICT: NOT READY FOR MULTI-COLLEGE DEPLOYMENT (FATAL CONSTRAINT & ISOLATION GAPS)**
-The existing database schema is strictly single-tenant:
-1. **Zero Tenant Isolation**: No `College` or `Institution` model exists. No `college_id` or equivalent tenant identifier column exists in any of the 22 tables.
-2. **Fatal Database Constraint Collision**: [`backend/models/student.py:10`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/student.py#L10) defines `roll_no = Column(String, unique=True, nullable=False)`. If multiple colleges share the database, two colleges cannot enroll students with the same roll number (e.g. `21BCS101` or `2024CS001`). Attempting to do so triggers an unrecoverable `sqlite3.IntegrityError: UNIQUE constraint failed: students.roll_no`. Similarly, [`backend/models/club.py:11`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L11) enforces global uniqueness on `Club.name`, preventing two institutions from both hosting a "Coding Club".
-3. **Pervasive Cross-Tenant Data Access**: Faculty, staff, and administrative queries filter records by department string or role, never by institution. Any faculty user can view student rosters, attendance logs, and academic risk profiles across all institutions.
+**VERDICT: NOT READY FOR MULTI-TENANT PRODUCTION**
+The current database architecture operates strictly as a single-institution application. There is **zero tenant isolation**: no `colleges` or `institutions` table exists, no `college_id` foreign key is present on any of the 22 domain models, and global unique constraints on `Student.roll_no` and `Club.name` will cause fatal key collisions if multiple colleges attempt to onboard into a shared database. Furthermore, database queries lack institutional scoping, which would result in immediate cross-tenant data leakage in a multi-college deployment.
 
 ### Verdict on PostgreSQL Compatibility
-**VERDICT: PARTIALLY COMPATIBLE (NOT PRODUCTION-READY FOR POSTGRESQL)**
-While queries use SQLAlchemy ORM, production startup and migrations rely on procedural `PRAGMA table_info(...)` queries inside [`backend/seed_data.py::ensure_schema()`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/seed_data.py#L42-L132), which fail immediately under PostgreSQL (`SyntaxError: syntax error at or near "PRAGMA"`). Furthermore, [`requirements.txt:9`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/requirements.txt#L9) explicitly excludes `psycopg2-binary` on Windows platforms (`platform_system != "Windows"`).
+**VERDICT: PARTIALLY IMPLEMENTED (UNSUPPORTED IN PRODUCTION)**
+While SQLAlchemy ORM abstraction is utilized and PostgreSQL connection string documentation exists in `.env.example`, the system **cannot run on PostgreSQL** without code changes:
+1. Hardcoded SQLite `PRAGMA table_info(...)` queries in [`backend/seed_data.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/seed_data.py#L42) execute unconditionally during `backend/main.py::startup_event()`, triggering `psycopg2.errors.SyntaxError: syntax error at or near "PRAGMA"` and immediately crashing the server on startup.
+2. In [`requirements.txt`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/requirements.txt#L9), `psycopg2-binary>=2.9.9; platform_system != "Windows"` explicitly excludes the PostgreSQL driver on Windows platforms.
+3. Connection pool configuration parameters (`DB_POOL_SIZE`, `DB_MAX_OVERFLOW`) defined in [`backend/core/config.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/core/config.py#L86) are never passed to `create_engine()` in [`backend/database.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/database.py#L29).
 
 ### Summary of Audit Metrics
-- **Total ORM Models Inspected**: Exactly **22 SQLAlchemy models** (across 11 source files in `backend/models/`).
-- **Total Database-Level Foreign Keys**: **13 enforced foreign keys**.
-- **Total Missing Foreign Keys**: **18 unconstrained relationships** across core entities.
-- **Total Bidirectional ORM Relationships**: **9 relationships**.
-- **Audit Findings**: 4 Critical, 4 High, 5 Medium, 3 Low/Informational (16 total).
+* **Total Discovered Models**: 22 SQLAlchemy ORM models across 8 source files.
+* **Total Database Tables**: 22 tables registered in `Base.metadata.tables`.
+* **Verified Enforced Foreign Keys**: 11 database foreign key constraints.
+* **Verified Missing Foreign Keys**: 18 cross-entity relational links lacking database-enforced foreign keys.
+* **Concurrency Vulnerabilities**: 3 confirmed application-level race conditions (Event capacity TOCTOU, Club member counter drift, General attendance duplicate writes).
+* **Automated Database Test Coverage**: 100% of the 188 automated tests execute against ephemeral SQLite in-memory databases (`sqlite://`); 0 automated tests exist for foreign keys, orphan cascades, concurrent writes, or PostgreSQL.
+* **Legacy Databases Tracked by Git**: 2 SQLite database files (`database.db` and `test.db`) containing plaintext credentials and student personal data.
 
 ---
 
@@ -39,61 +44,272 @@ The table below documents every SQLAlchemy ORM model discovered through direct P
 
 | # | Python Class Name | Database Table Name | Source File | Primary Key | All Columns & Types | Enforced Foreign Keys | ORM Relationships | Unique Constraints & Indexes | Nullable Fields | Sensitive Fields | Ownership Relationship |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | `User` | `users` | `backend/models/user.py` | `id` (INTEGER) | `id` (INTEGER), `username` (VARCHAR 50), `email` (VARCHAR 100), `hashed_password` (VARCHAR 255), `full_name` (VARCHAR 100), `avatar` (TEXT), `role` (VARCHAR 20), `is_active` (BOOLEAN), `linked_student_id` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME), `last_login` (DATETIME) | `linked_student_id` $\to$ `students.id` | `student` $\to$ `Student` (backref `user_account`), `study_tasks` $\to$ `StudyTask` | `ix_users_username` (UQ), `ix_users_email` (UQ), `ix_users_id` (IDX) | `full_name`, `avatar`, `linked_student_id`, `last_login` | `hashed_password`, `email`, `full_name`, `avatar`, `last_login` | Authenticated account; optionally owns `Student` via `linked_student_id`. |
-| 2 | `Student` | `students` | `backend/models/student.py` | `id` (INTEGER) | `id` (INTEGER), `name` (VARCHAR), `roll_no` (VARCHAR), `department` (VARCHAR), `semester` (INTEGER), `section` (VARCHAR) | None | `user_account` $\to$ `User` | `roll_no` (UQ), `ix_students_id` (IDX) | `semester`, `section` | Student PII (`name`, `roll_no`, `department`, `section`) | Primary academic identity. |
-| 3 | `Attendance` | `attendance` | `backend/models/attendance.py` | `id` (INTEGER) | `id` (INTEGER), `student_id` (INTEGER), `subject_code` (VARCHAR 50), `faculty_id` (VARCHAR 50), `session_name` (VARCHAR 100), `date` (DATETIME), `status` (VARCHAR), `remarks` (VARCHAR), `created_at` (DATETIME), `updated_at` (DATETIME) | `student_id` $\to$ `students.id` | None | `ix_attendance_id` (IDX), `ix_attendance_subject_code` (IDX), `ix_attendance_faculty_id` (IDX) | `subject_code`, `faculty_id`, `session_name`, `remarks`, `created_at`, `updated_at` | Student attendance records | Owned by `Student` via `student_id`. |
-| 4 | `Complaint` | `complaints` | `backend/models/complaint.py` | `id` (INTEGER) | `id` (INTEGER), `student_id` (INTEGER), `title` (VARCHAR), `description` (TEXT), `category` (VARCHAR), `status` (VARCHAR), `priority` (VARCHAR), `resolution_notes` (TEXT), `assigned_to` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME) | `student_id` $\to$ `students.id` | `history` $\to$ `ComplaintHistory` (cascade delete, orphan) | `ix_complaints_id` (IDX) | `resolution_notes`, `assigned_to`, `created_at`, `updated_at` | Student grievances, disciplinary records | Owned by `Student` via `student_id`. |
-| 5 | `ComplaintHistory` | `complaint_history` | `backend/models/complaint.py` | `id` (INTEGER) | `id` (INTEGER), `complaint_id` (INTEGER), `changed_by_user_id` (INTEGER), `changed_by_name` (VARCHAR 100), `old_status` (VARCHAR 50), `new_status` (VARCHAR 50), `remarks` (TEXT), `created_at` (DATETIME) | `complaint_id` $\to$ `complaints.id` (ON DELETE CASCADE) | `complaint` $\to$ `Complaint` | `ix_complaint_history_id` (IDX), `ix_complaint_history_complaint_id` (IDX) | `changed_by_user_id`, `changed_by_name`, `old_status`, `remarks`, `created_at` | Investigation remarks, staff actions | Owned by `Complaint` via `complaint_id`. |
-| 6 | `Schedule` | `schedules` | `backend/models/schedule.py` | `id` (INTEGER) | `id` (INTEGER), `title` (VARCHAR), `description` (TEXT), `event_type` (VARCHAR), `start_date` (DATETIME), `end_date` (DATETIME), `location` (VARCHAR), `audience` (VARCHAR), `is_active` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME) | None | None | `ix_schedules_id` (IDX) | `description`, `location`, `audience`, `is_active`, `created_at`, `updated_at` | Institutional schedule data | Institutional ownership. |
-| 7 | `ScheduleFeedback` | `schedule_feedback` | `backend/models/schedule_feedback.py` | `id` (INTEGER) | `id` (INTEGER), `name` (VARCHAR 100), `roll_number` (VARCHAR 50), `issue_type` (VARCHAR 100), `preferred_timing` (VARCHAR 200), `additional_comments` (TEXT), `status` (VARCHAR 50), `created_at` (DATETIME), `resolved_at` (DATETIME) | None | None | `ix_schedule_feedback_id` (IDX) | `preferred_timing`, `additional_comments`, `status`, `created_at`, `resolved_at` | Student grievances on schedules | Loose student ownership by `roll_number`. |
-| 8 | `Announcement` | `announcements` | `backend/models/schedule_feedback.py` | `id` (INTEGER) | `id` (INTEGER), `title` (VARCHAR 200), `content` (TEXT), `author` (VARCHAR 100), `priority` (VARCHAR 20), `target_audience` (VARCHAR 100), `is_active` (INTEGER), `created_at` (DATETIME), `expires_at` (DATETIME) | None | None | `ix_announcements_id` (IDX) | `priority`, `target_audience`, `is_active`, `created_at`, `expires_at` | Campus public notices | Faculty author (by string name). |
-| 9 | `Event` | `events` | `backend/models/events.py` | `id` (INTEGER) | `id` (INTEGER), `name` (VARCHAR 200), `description` (TEXT), `category` (VARCHAR Enum), `banner_image` (VARCHAR 500), `thumbnail_image` (VARCHAR 500), `gallery_images` (TEXT), `registration_start_date` (DATETIME), `registration_end_date` (DATETIME), `event_start_date` (DATETIME), `event_end_date` (DATETIME), `venue` (VARCHAR 300), `max_participants` (INTEGER), `current_participants` (INTEGER), `entry_fee` (FLOAT), `organizer_name` (VARCHAR 200), `organizer_email` (VARCHAR 200), `organizer_phone` (VARCHAR 20), `status` (VARCHAR Enum), `requires_approval` (BOOLEAN), `team_event` (BOOLEAN), `min_team_size` (INTEGER), `max_team_size` (INTEGER), `rules` (TEXT), `eligibility_criteria` (TEXT), `prizes` (TEXT), `created_at` (DATETIME), `updated_at` (DATETIME), `created_by` (INTEGER) | None | `registrations` $\to$ `EventRegistration`, `leaderboard` $\to$ `EventLeaderboard`, `announcements` $\to$ `EventAnnouncement` | `ix_events_id` (IDX), `ix_events_name` (IDX), `ix_events_category` (IDX) | `banner_image`, `thumbnail_image`, `gallery_images`, `venue`, `max_participants`, `current_participants`, `entry_fee`, `organizer_phone`, `status`, `requires_approval`, `team_event`, `min_team_size`, `max_team_size`, `rules`, `eligibility_criteria`, `prizes`, `created_at`, `updated_at`, `created_by` | Financial fees, organizer contacts | Event organizer (`created_by`). |
-| 10 | `EventRegistration` | `event_registrations` | `backend/models/events.py` | `id` (INTEGER) | `id` (INTEGER), `event_id` (INTEGER), `student_id` (VARCHAR 50), `student_name` (VARCHAR 200), `student_email` (VARCHAR 200), `student_phone` (VARCHAR 20), `branch` (VARCHAR 100), `year` (VARCHAR 20), `roll_number` (VARCHAR 50), `team_name` (VARCHAR 200), `team_members` (TEXT), `team_leader` (BOOLEAN), `registration_date` (DATETIME), `status` (VARCHAR Enum), `payment_status` (VARCHAR 50), `transaction_id` (VARCHAR 100), `previous_experience` (TEXT), `expectations` (TEXT), `special_requirements` (TEXT), `emergency_contact` (VARCHAR 20), `approved_by` (INTEGER), `approval_date` (DATETIME), `rejection_reason` (TEXT), `created_at` (DATETIME), `updated_at` (DATETIME) | `event_id` $\to$ `events.id` (ON DELETE CASCADE) | `event` $\to$ `Event` | `uq_event_student_reg` (`event_id`, `student_id`), `ix_event_registrations_id` (IDX), `ix_event_registrations_student_id` (IDX) | `branch`, `year`, `roll_number`, `team_name`, `team_members`, `team_leader`, `registration_date`, `status`, `payment_status`, `transaction_id`, `previous_experience`, `expectations`, `special_requirements`, `emergency_contact`, `approved_by`, `approval_date`, `rejection_reason`, `created_at`, `updated_at` | Student phone, emergency contact, transaction ID | Owned by `Event` and `Student` (`student_id`). |
-| 11 | `EventLeaderboard` | `event_leaderboard` | `backend/models/events.py` | `id` (INTEGER) | `id` (INTEGER), `event_id` (INTEGER), `participant_id` (VARCHAR 50), `participant_name` (VARCHAR 200), `participant_type` (VARCHAR 20), `score` (FLOAT), `rank` (INTEGER), `points` (INTEGER), `matches_played` (INTEGER), `matches_won` (INTEGER), `matches_lost` (INTEGER), `matches_draw` (INTEGER), `statistics` (TEXT), `position` (VARCHAR 50), `prize_won` (VARCHAR 200), `certificate_url` (VARCHAR 500), `last_updated` (DATETIME), `created_at` (DATETIME) | `event_id` $\to$ `events.id` (ON DELETE CASCADE) | `event` $\to$ `Event` | `ix_event_leaderboard_id` (IDX) | `score`, `rank`, `points`, `matches_played`, `matches_won`, `matches_lost`, `matches_draw`, `statistics`, `position`, `prize_won`, `certificate_url`, `last_updated`, `created_at` | Participant scores, ranks, awards | Owned by `Event` (`event_id`). |
-| 12 | `EventAnnouncement` | `event_announcements` | `backend/models/events.py` | `id` (INTEGER) | `id` (INTEGER), `event_id` (INTEGER), `title` (VARCHAR 300), `message` (TEXT), `announcement_type` (VARCHAR 50), `target_audience` (VARCHAR 100), `is_pinned` (BOOLEAN), `is_active` (BOOLEAN), `publish_date` (DATETIME), `expiry_date` (DATETIME), `image_url` (VARCHAR 500), `attachment_url` (VARCHAR 500), `link_url` (VARCHAR 500), `link_text` (VARCHAR 100), `created_by` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME) | `event_id` $\to$ `events.id` (ON DELETE CASCADE) | `event` $\to$ `Event` | `ix_event_announcements_id` (IDX) | `event_id`, `announcement_type`, `target_audience`, `is_pinned`, `is_active`, `publish_date`, `expiry_date`, `image_url`, `attachment_url`, `link_url`, `link_text`, `created_by`, `created_at`, `updated_at` | Internal event updates | Owned by `Event` (`event_id`). |
-| 13 | `Club` | `clubs` | `backend/models/club.py` | `id` (INTEGER) | `id` (INTEGER), `name` (VARCHAR), `description` (TEXT), `category` (VARCHAR), `detailed_description` (TEXT), `mission_statement` (TEXT), `vision_statement` (TEXT), `logo_url` (VARCHAR 500), `banner_image` (VARCHAR 500), `cover_image` (VARCHAR 500), `gallery_images` (TEXT), `social_media_links` (TEXT), `advisor` (VARCHAR), `advisor_email` (VARCHAR 200), `president` (VARCHAR), `president_email` (VARCHAR 200), `contact_email` (VARCHAR 200), `contact_phone` (VARCHAR 20), `member_count` (INTEGER), `total_events` (INTEGER), `founding_year` (INTEGER), `is_active` (BOOLEAN), `accepting_members` (BOOLEAN), `membership_fee` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME), `created_by` (INTEGER) | None | `activities` $\to$ `ClubActivity`, `members` $\to$ `ClubMember` | `name` (UQ), `ix_clubs_id` (IDX) | `description`, `detailed_description`, `mission_statement`, `vision_statement`, `logo_url`, `banner_image`, `cover_image`, `gallery_images`, `social_media_links`, `advisor_email`, `president`, `president_email`, `contact_email`, `contact_phone`, `member_count`, `total_events`, `founding_year`, `is_active`, `accepting_members`, `membership_fee`, `created_at`, `updated_at`, `created_by` | Financial fees, contact emails/phones | Club leadership / Advisor. |
-| 14 | `ClubActivity` | `club_activities` | `backend/models/club.py` | `id` (INTEGER) | `id` (INTEGER), `club_id` (INTEGER), `title` (VARCHAR), `description` (TEXT), `activity_type` (VARCHAR), `start_date` (DATETIME), `end_date` (DATETIME), `location` (VARCHAR), `expected_participants` (INTEGER), `actual_participants` (INTEGER), `status` (VARCHAR), `remarks` (TEXT), `created_at` (DATETIME), `updated_at` (DATETIME) | `club_id` $\to$ `clubs.id` | `club` $\to$ `Club` | `ix_club_activities_id` (IDX) | `description`, `end_date`, `location`, `expected_participants`, `actual_participants`, `status`, `remarks`, `created_at`, `updated_at` | Activity schedules, budgets | Owned by `Club` (`club_id`). |
-| 15 | `ClubMember` | `club_members` | `backend/models/club.py` | `id` (INTEGER) | `id` (INTEGER), `club_id` (INTEGER), `student_id` (INTEGER), `position` (VARCHAR), `join_date` (DATETIME), `is_active` (BOOLEAN) | `club_id` $\to$ `clubs.id`, `student_id` $\to$ `students.id` | `club` $\to$ `Club` | `uq_club_student_member` (`club_id`, `student_id`), `ix_club_members_id` (IDX) | `position`, `join_date`, `is_active` | Student club membership roster | Owned by `Club` and `Student`. |
-| 16 | `ClubAttendance` | `club_attendance` | `backend/models/club.py` | `id` (INTEGER) | `id` (INTEGER), `club_id` (INTEGER), `student_name` (VARCHAR), `roll_number` (VARCHAR), `section` (VARCHAR), `status` (VARCHAR), `attendance_date` (DATETIME), `created_at` (DATETIME) | `club_id` $\to$ `clubs.id` | None | `ix_club_attendance_id` (IDX) | `roll_number`, `section`, `created_at` | Student club participation | Owned by `Club` (`club_id`). |
-| 17 | `QRAttendanceSession` | `qr_attendance_sessions` | `backend/models/qr_attendance.py` | `id` (INTEGER) | `id` (INTEGER), `session_id` (VARCHAR 100), `faculty_id` (VARCHAR 50), `faculty_name` (VARCHAR 200), `faculty_email` (VARCHAR 200), `subject_code` (VARCHAR 50), `subject_name` (VARCHAR 200), `branch` (VARCHAR 100), `semester` (VARCHAR 20), `section` (VARCHAR 50), `lecture_date` (DATETIME), `lecture_start_time` (DATETIME), `lecture_end_time` (DATETIME), `lecture_duration_minutes` (INTEGER), `qr_code_data` (TEXT), `qr_code_hash` (VARCHAR 256), `qr_generated_at` (DATETIME), `qr_expires_at` (DATETIME), `qr_validity_minutes` (INTEGER), `center_latitude` (FLOAT), `center_longitude` (FLOAT), `geo_fence_radius_meters` (FLOAT), `location_name` (VARCHAR 300), `is_active` (BOOLEAN), `is_expired` (BOOLEAN), `is_cancelled` (BOOLEAN), `total_students_expected` (INTEGER), `total_students_present` (INTEGER), `total_students_absent` (INTEGER), `total_late_entries` (INTEGER), `max_scan_attempts_per_student` (INTEGER), `allow_screenshot_scan` (BOOLEAN), `require_device_verification` (BOOLEAN), `created_at` (DATETIME), `closed_at` (DATETIME), `notes` (TEXT) | None | `attendance_records` $\to$ `QRAttendanceRecord` (cascade delete, orphan) | `ix_qr_attendance_sessions_session_id` (UQ), `ix_qr_attendance_sessions_id` (IDX), `ix_qr_attendance_sessions_faculty_id` (IDX) | `faculty_email`, `section`, `lecture_end_time`, `lecture_duration_minutes`, `qr_generated_at`, `qr_validity_minutes`, `geo_fence_radius_meters`, `location_name`, `is_active`, `is_expired`, `is_cancelled`, `total_students_expected`, `total_students_present`, `total_students_absent`, `total_late_entries`, `max_scan_attempts_per_student`, `allow_screenshot_scan`, `require_device_verification`, `created_at`, `closed_at`, `notes` | QR secrets, SHA-256 hash, faculty GPS coordinates | Owned by Faculty (`faculty_id`). |
-| 18 | `QRAttendanceRecord` | `qr_attendance_records` | `backend/models/qr_attendance.py` | `id` (INTEGER) | `id` (INTEGER), `session_id` (INTEGER), `student_id` (VARCHAR 50), `roll_number` (VARCHAR 50), `student_name` (VARCHAR 200), `student_email` (VARCHAR 200), `branch` (VARCHAR 100), `semester` (VARCHAR 20), `section` (VARCHAR 50), `marked_at` (DATETIME), `attendance_status` (VARCHAR 20), `is_late_entry` (BOOLEAN), `late_by_minutes` (INTEGER), `student_latitude` (FLOAT), `student_longitude` (FLOAT), `distance_from_center` (FLOAT), `is_within_geofence` (BOOLEAN), `location_accuracy` (FLOAT), `device_id` (VARCHAR 200), `device_model` (VARCHAR 200), `device_os` (VARCHAR 100), `browser` (VARCHAR 200), `ip_address` (VARCHAR 50), `user_agent` (TEXT), `scan_attempt_number` (INTEGER), `is_screenshot_scan` (BOOLEAN), `is_duplicate_device` (BOOLEAN), `is_proxy_suspected` (BOOLEAN), `qr_validation_passed` (BOOLEAN), `location_validation_passed` (BOOLEAN), `device_validation_passed` (BOOLEAN), `time_validation_passed` (BOOLEAN), `scan_duration_ms` (INTEGER), `remarks` (TEXT), `validation_errors` (TEXT), `created_at` (DATETIME), `updated_at` (DATETIME) | `session_id` $\to$ `qr_attendance_sessions.id` (ON DELETE CASCADE) | `session` $\to$ `QRAttendanceSession` | `uq_session_roll` (`session_id`, `roll_number`), `ix_qr_attendance_records_id` (IDX), `ix_qr_attendance_records_student_id` (IDX), `ix_qr_attendance_records_roll_number` (IDX) | `student_email`, `section`, `marked_at`, `attendance_status`, `is_late_entry`, `late_by_minutes`, `is_within_geofence`, `location_accuracy`, `device_id`, `device_model`, `device_os`, `browser`, `ip_address`, `user_agent`, `scan_attempt_number`, `is_screenshot_scan`, `is_duplicate_device`, `is_proxy_suspected`, `qr_validation_passed`, `location_validation_passed`, `device_validation_passed`, `time_validation_passed`, `scan_duration_ms`, `remarks`, `validation_errors`, `created_at`, `updated_at` | Precise student GPS latitude/longitude, client IP, device fingerprint | Owned by `QRAttendanceSession` and `Student`. |
-| 19 | `QRAttendanceLog` | `qr_attendance_logs` | `backend/models/qr_attendance.py` | `id` (INTEGER) | `id` (INTEGER), `session_id` (INTEGER), `student_id` (VARCHAR 50), `attempt_time` (DATETIME), `attempt_status` (VARCHAR 50), `failure_reason` (VARCHAR 500), `latitude` (FLOAT), `longitude` (FLOAT), `distance_from_center` (FLOAT), `device_id` (VARCHAR 200), `ip_address` (VARCHAR 50), `qr_valid` (BOOLEAN), `location_valid` (BOOLEAN), `device_valid` (BOOLEAN), `time_valid` (BOOLEAN), `error_message` (TEXT), `created_at` (DATETIME) | None | None | `ix_qr_attendance_logs_id` (IDX), `ix_qr_attendance_logs_session_id` (IDX), `ix_qr_attendance_logs_student_id` (IDX) | `attempt_time`, `failure_reason`, `latitude`, `longitude`, `distance_from_center`, `device_id`, `ip_address`, `qr_valid`, `location_valid`, `device_valid`, `time_valid`, `error_message`, `created_at` | Failed attempt reasons, scan GPS coordinates, IP | Audit trail entity. |
-| 20 | `DeviceFingerprint` | `device_fingerprints` | `backend/models/qr_attendance.py` | `id` (INTEGER) | `id` (INTEGER), `device_id` (VARCHAR 200), `student_id` (VARCHAR 50), `student_name` (VARCHAR 200), `device_model` (VARCHAR 200), `device_os` (VARCHAR 100), `browser` (VARCHAR 200), `screen_resolution` (VARCHAR 50), `first_registered` (DATETIME), `last_used` (DATETIME), `total_scans` (INTEGER), `is_active` (BOOLEAN), `is_blocked` (BOOLEAN), `block_reason` (TEXT), `created_at` (DATETIME), `updated_at` (DATETIME) | None | None | `ix_device_fingerprints_device_id` (UQ), `ix_device_fingerprints_id` (IDX), `ix_device_fingerprints_student_id` (IDX) | `device_model`, `device_os`, `browser`, `screen_resolution`, `first_registered`, `last_used`, `total_scans`, `is_active`, `is_blocked`, `block_reason`, `created_at`, `updated_at` | Hardware device ID, browser, resolution, block reason | Owned by `Student` (`student_id`). |
-| 21 | `RiskLog` | `risk_logs` | `backend/models/risk.py` | `id` (INTEGER) | `id` (INTEGER), `student_id` (INTEGER), `risk_type` (VARCHAR), `severity` (VARCHAR), `description` (TEXT), `action_taken` (TEXT), `resolved` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME) | None | None | `ix_risk_logs_id` (IDX) | `student_id`, `severity`, `action_taken`, `resolved`, `created_at`, `updated_at` | Disciplinary, behavioral, academic risk profiles | Owned by `Student` (`student_id`). |
-| 22 | `StudyTask` | `study_tasks` | `backend/models/study_task.py` | `id` (INTEGER) | `id` (INTEGER), `user_id` (INTEGER), `title` (VARCHAR 200), `description` (TEXT), `duration_minutes` (INTEGER), `remaining_seconds` (INTEGER), `is_completed` (BOOLEAN), `due_date` (DATETIME), `created_at` (DATETIME), `updated_at` (DATETIME) | `user_id` $\to$ `users.id` (ON DELETE CASCADE) | `user` $\to$ `User` (backref `study_tasks`) | `ix_study_tasks_id` (IDX), `ix_study_tasks_user_id` (IDX) | `description`, `due_date` | Student daily study tasks | Owned by `User` (`user_id`). |
+| 1 | `User` | `users` | [`backend/models/user.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/user.py) | `id` (INTEGER) | `id` (INTEGER), `username` (VARCHAR 50), `email` (VARCHAR 100), `hashed_password` (VARCHAR 255), `full_name` (VARCHAR 100), `avatar` (TEXT), `role` (VARCHAR 20), `is_active` (BOOLEAN), `linked_student_id` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME), `last_login` (DATETIME) | `linked_student_id` -> `students.id` | `student` -> `Student` (backref `user_account`), `study_tasks` -> `StudyTask` | `ix_users_username` (UQ), `ix_users_email` (UQ), `ix_users_id` (IDX) | `full_name`, `avatar`, `linked_student_id`, `last_login` | `hashed_password`, `email`, `full_name`, `avatar`, `last_login` | Authenticated account; optionally owns `Student` via `linked_student_id`. |
+| 2 | `Student` | `students` | [`backend/models/student.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/student.py) | `id` (INTEGER) | `id` (INTEGER), `name` (VARCHAR), `roll_no` (VARCHAR), `department` (VARCHAR), `semester` (INTEGER), `section` (VARCHAR) | None | `user_account` -> `User` | `roll_no` (UQ), `ix_students_id` (IDX) | `semester`, `section` | Student PII (`name`, `roll_no`, `department`, `section`) | Primary academic identity. |
+| 3 | `Attendance` | `attendance` | [`backend/models/attendance.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/attendance.py) | `id` (INTEGER) | `id` (INTEGER), `student_id` (INTEGER), `subject_code` (VARCHAR 50), `faculty_id` (VARCHAR 50), `session_name` (VARCHAR 100), `date` (DATETIME), `status` (VARCHAR), `remarks` (VARCHAR), `created_at` (DATETIME), `updated_at` (DATETIME) | `student_id` -> `students.id` | None | `ix_attendance_id` (IDX), `ix_attendance_subject_code` (IDX), `ix_attendance_faculty_id` (IDX) | `subject_code`, `faculty_id`, `session_name`, `remarks`, `created_at`, `updated_at` | Student attendance records | Owned by `Student` via `student_id`. |
+| 4 | `Complaint` | `complaints` | [`backend/models/complaint.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/complaint.py) | `id` (INTEGER) | `id` (INTEGER), `student_id` (INTEGER), `title` (VARCHAR), `description` (TEXT), `category` (VARCHAR), `status` (VARCHAR), `priority` (VARCHAR), `resolution_notes` (TEXT), `assigned_to` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME) | `student_id` -> `students.id` | `history` -> `ComplaintHistory` (cascade delete, orphan) | `ix_complaints_id` (IDX) | `resolution_notes`, `assigned_to`, `created_at`, `updated_at` | Student grievances, disciplinary records | Owned by `Student` via `student_id`. |
+| 5 | `ComplaintHistory` | `complaint_history` | [`backend/models/complaint.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/complaint.py) | `id` (INTEGER) | `id` (INTEGER), `complaint_id` (INTEGER), `changed_by_user_id` (INTEGER), `changed_by_name` (VARCHAR 100), `old_status` (VARCHAR 50), `new_status` (VARCHAR 50), `remarks` (TEXT), `created_at` (DATETIME) | `complaint_id` -> `complaints.id` (ON DELETE CASCADE) | `complaint` -> `Complaint` | `ix_complaint_history_id` (IDX), `ix_complaint_history_complaint_id` (IDX) | `changed_by_user_id`, `changed_by_name`, `old_status`, `remarks`, `created_at` | Investigation remarks, staff actions | Owned by `Complaint` via `complaint_id`. |
+| 6 | `Schedule` | `schedules` | [`backend/models/schedule.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/schedule.py) | `id` (INTEGER) | `id` (INTEGER), `title` (VARCHAR), `description` (TEXT), `event_type` (VARCHAR), `start_date` (DATETIME), `end_date` (DATETIME), `location` (VARCHAR), `audience` (VARCHAR), `is_active` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME) | None | None | `ix_schedules_id` (IDX) | `description`, `location`, `audience`, `is_active`, `created_at`, `updated_at` | Institutional schedule data | Institutional ownership. |
+| 7 | `ScheduleFeedback` | `schedule_feedback` | [`backend/models/schedule_feedback.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/schedule_feedback.py) | `id` (INTEGER) | `id` (INTEGER), `name` (VARCHAR 100), `roll_number` (VARCHAR 50), `issue_type` (VARCHAR 100), `preferred_timing` (VARCHAR 200), `additional_comments` (TEXT), `status` (VARCHAR 50), `created_at` (DATETIME), `resolved_at` (DATETIME) | None | None | `ix_schedule_feedback_id` (IDX) | `preferred_timing`, `additional_comments`, `status`, `created_at`, `resolved_at` | Student grievances on schedules | Loose student ownership by `roll_number`. |
+| 8 | `Announcement` | `announcements` | [`backend/models/schedule_feedback.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/schedule_feedback.py) | `id` (INTEGER) | `id` (INTEGER), `title` (VARCHAR 200), `content` (TEXT), `author` (VARCHAR 100), `priority` (VARCHAR 20), `target_audience` (VARCHAR 100), `is_active` (INTEGER), `created_at` (DATETIME), `expires_at` (DATETIME) | None | None | `ix_announcements_id` (IDX) | `priority`, `target_audience`, `is_active`, `created_at`, `expires_at` | Public/Campus notices | Institutional ownership by author string. |
+| 9 | `Event` | `events` | [`backend/models/events.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py) | `id` (INTEGER) | `id` (INTEGER), `title` (VARCHAR 200), `description` (TEXT), `event_type` (VARCHAR 50), `category` (VARCHAR 50), `start_date` (DATETIME), `end_date` (DATETIME), `registration_deadline` (DATETIME), `location` (VARCHAR 200), `venue` (VARCHAR 200), `organizer` (VARCHAR 100), `max_participants` (INTEGER), `current_participants` (INTEGER), `is_active` (BOOLEAN), `is_published` (BOOLEAN), `created_by` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME) | None | `registrations` -> `EventRegistration`, `announcements` -> `EventAnnouncement`, `leaderboards` -> `EventLeaderboard` | `ix_events_id` (IDX) | `description`, `registration_deadline`, `location`, `venue`, `organizer`, `max_participants`, `created_by`, `created_at`, `updated_at` | Event scheduling & participant data | Created by `User` via `created_by`. |
+| 10 | `EventRegistration` | `event_registrations` | [`backend/models/events.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py) | `id` (INTEGER) | `id` (INTEGER), `event_id` (INTEGER), `student_id` (VARCHAR 50), `student_name` (VARCHAR 100), `email` (VARCHAR 100), `phone` (VARCHAR 20), `department` (VARCHAR 50), `year_of_study` (INTEGER), `registration_date` (DATETIME), `status` (VARCHAR 20), `approval_status` (VARCHAR 20), `approved_by` (INTEGER), `approval_date` (DATETIME), `rejection_reason` (TEXT), `attendance_marked` (BOOLEAN), `attended` (BOOLEAN), `certificate_issued` (BOOLEAN), `certificate_url` (VARCHAR 500) | `event_id` -> `events.id` (ON DELETE CASCADE) | `event` -> `Event` | `ix_event_registrations_id` (IDX), `ix_event_registrations_event_id` (IDX), `ix_event_registrations_student_id` (IDX) | `phone`, `department`, `year_of_study`, `approval_status`, `approved_by`, `approval_date`, `rejection_reason`, `certificate_url` | Participant PII (`student_name`, `email`, `phone`) | Owned by `Event` via `event_id`. |
+| 11 | `EventLeaderboard` | `event_leaderboards` | [`backend/models/events.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py) | `id` (INTEGER) | `id` (INTEGER), `event_id` (INTEGER), `participant_id` (VARCHAR 50), `participant_name` (VARCHAR 100), `score` (FLOAT), `rank` (INTEGER), `badges` (TEXT), `created_at` (DATETIME), `updated_at` (DATETIME) | `event_id` -> `events.id` (ON DELETE CASCADE) | `event` -> `Event` | `ix_event_leaderboards_id` (IDX), `ix_event_leaderboards_event_id` (IDX) | `rank`, `badges`, `created_at`, `updated_at` | Competitive student rankings | Owned by `Event` via `event_id`. |
+| 12 | `EventAnnouncement` | `event_announcements` | [`backend/models/events.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py) | `id` (INTEGER) | `id` (INTEGER), `event_id` (INTEGER), `title` (VARCHAR 200), `content` (TEXT), `created_by` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME) | `event_id` -> `events.id` (ON DELETE CASCADE) | `event` -> `Event` | `ix_event_announcements_id` (IDX), `ix_event_announcements_event_id` (IDX) | `created_by`, `created_at`, `updated_at` | Event-specific notifications | Owned by `Event` via `event_id`. |
+| 13 | `Club` | `clubs` | [`backend/models/club.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py) | `id` (INTEGER) | `id` (INTEGER), `name` (VARCHAR), `code` (VARCHAR), `description` (TEXT), `category` (VARCHAR), `advisor` (VARCHAR), `president` (VARCHAR), `room_no` (VARCHAR), `meeting_schedule` (VARCHAR), `is_active` (BOOLEAN), `member_count` (INTEGER), `max_members` (INTEGER), `created_by` (INTEGER), `created_at` (DATETIME), `updated_at` (DATETIME) | None | `members` -> `ClubMember`, `activities` -> `ClubActivity` | `name` (UQ), `code` (UQ), `ix_clubs_id` (IDX) | `description`, `category`, `advisor`, `president`, `room_no`, `meeting_schedule`, `max_members`, `created_by`, `created_at`, `updated_at` | Student leadership & organization info | Managed by creator `User` via `created_by`. |
+| 14 | `ClubActivity` | `club_activities` | [`backend/models/club.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py) | `id` (INTEGER) | `id` (INTEGER), `club_id` (INTEGER), `title` (VARCHAR), `description` (TEXT), `activity_type` (VARCHAR), `date` (DATETIME), `venue` (VARCHAR), `points_awarded` (INTEGER), `created_at` (DATETIME) | `club_id` -> `clubs.id` | `club` -> `Club` | `ix_club_activities_id` (IDX) | `description`, `activity_type`, `venue`, `points_awarded`, `created_at` | Activity schedules & participation | Owned by `Club` via `club_id`. |
+| 15 | `ClubMember` | `club_members` | [`backend/models/club.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py) | `id` (INTEGER) | `id` (INTEGER), `club_id` (INTEGER), `student_id` (INTEGER), `role` (VARCHAR), `joined_at` (DATETIME), `is_active` (BOOLEAN) | `club_id` -> `clubs.id`, `student_id` -> `students.id` | `club` -> `Club`, `student` -> `Student` | `ix_club_members_id` (IDX) | `role`, `joined_at`, `is_active` | Club roster & student involvement | Composite ownership (`Club` and `Student`). |
+| 16 | `ClubAttendance` | `club_attendance` | [`backend/models/club.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py) | `id` (INTEGER) | `id` (INTEGER), `club_id` (INTEGER), `activity_id` (INTEGER), `student_name` (VARCHAR), `roll_number` (VARCHAR), `status` (VARCHAR), `timestamp` (DATETIME) | `club_id` -> `clubs.id`, `activity_id` -> `club_activities.id` | None | `ix_club_attendance_id` (IDX) | `activity_id`, `status`, `timestamp` | Student club participation | Loose ownership (`Club` and `Activity`). |
+| 17 | `QRAttendanceSession` | `qr_attendance_sessions` | [`backend/models/qr_attendance.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py) | `id` (INTEGER) | `id` (INTEGER), `session_code` (VARCHAR 20), `faculty_id` (VARCHAR 50), `subject_code` (VARCHAR 50), `session_name` (VARCHAR 100), `latitude` (FLOAT), `longitude` (FLOAT), `radius_meters` (FLOAT), `device_fingerprint` (VARCHAR 255), `qr_secret` (VARCHAR 64), `created_at` (DATETIME), `expires_at` (DATETIME), `is_active` (BOOLEAN) | None | `records` -> `QRAttendanceRecord`, `logs` -> `QRAttendanceLog` | `ix_qr_attendance_sessions_session_code` (UQ), `ix_qr_attendance_sessions_id` (IDX) | `session_name`, `latitude`, `longitude`, `device_fingerprint` | Faculty GPS location (`latitude`, `longitude`), `qr_secret` | Managed by faculty `User` via `faculty_id`. |
+| 18 | `QRAttendanceRecord` | `qr_attendance_records` | [`backend/models/qr_attendance.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py) | `id` (INTEGER) | `id` (INTEGER), `session_id` (INTEGER), `student_id` (VARCHAR 50), `student_name` (VARCHAR 100), `roll_number` (VARCHAR 50), `device_fingerprint` (VARCHAR 255), `device_info` (TEXT), `latitude` (FLOAT), `longitude` (FLOAT), `distance_meters` (FLOAT), `verification_method` (VARCHAR 20), `confidence_score` (FLOAT), `status` (VARCHAR 20), `marked_at` (DATETIME) | `session_id` -> `qr_attendance_sessions.id` | `session` -> `QRAttendanceSession` | `uq_session_roll` (UQ `session_id, roll_number`), `ix_qr_attendance_records_id` (IDX), `ix_qr_attendance_records_session_id` (IDX), `ix_qr_attendance_records_roll_number` (IDX) | `student_name`, `device_fingerprint`, `device_info`, `latitude`, `longitude`, `distance_meters`, `verification_method`, `confidence_score` | Student GPS location (`latitude`, `longitude`), `device_fingerprint`, `device_info` | Owned by `QRAttendanceSession` via `session_id`. |
+| 19 | `QRAttendanceLog` | `qr_attendance_logs` | [`backend/models/qr_attendance.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py) | `id` (INTEGER) | `id` (INTEGER), `session_id` (INTEGER), `event_type` (VARCHAR 50), `severity` (VARCHAR 20), `message` (TEXT), `event_metadata` (TEXT), `timestamp` (DATETIME) | `session_id` -> `qr_attendance_sessions.id` | `session` -> `QRAttendanceSession` | `ix_qr_attendance_logs_id` (IDX), `ix_qr_attendance_logs_session_id` (IDX) | `event_metadata`, `timestamp` | Security anomaly telemetry | Owned by `QRAttendanceSession` via `session_id`. |
+| 20 | `DeviceFingerprint` | `device_fingerprints` | [`backend/models/qr_attendance.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py) | `id` (INTEGER) | `id` (INTEGER), `fingerprint_hash` (VARCHAR 64), `hardware_params` (TEXT), `last_used_student_id` (VARCHAR 50), `last_used_ip` (VARCHAR 45), `trust_score` (FLOAT), `risk_factors` (TEXT), `is_trusted` (BOOLEAN), `is_blacklisted` (BOOLEAN), `first_seen` (DATETIME), `last_seen` (DATETIME), `use_count` (INTEGER) | None | None | `ix_device_fingerprints_fingerprint_hash` (UQ), `ix_device_fingerprints_id` (IDX) | `hardware_params`, `last_used_student_id`, `last_used_ip`, `risk_factors`, `first_seen`, `last_seen` | Client hardware telemetry & IP addresses | Anti-fraud hardware registry. |
+| 21 | `RiskLog` | `risk_logs` | [`backend/models/risk.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/risk.py) | `id` (INTEGER) | `id` (INTEGER), `student_id` (INTEGER), `risk_level` (VARCHAR), `factors` (TEXT), `created_at` (DATETIME) | None | None | `ix_risk_logs_id` (IDX), `ix_risk_logs_student_id` (IDX) | `factors`, `created_at` | Confidential academic & behavioral risk evaluations | Evaluated for `Student` via `student_id`. |
+| 22 | `StudyTask` | `study_tasks` | [`backend/models/study_task.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/study_task.py) | `id` (INTEGER) | `id` (INTEGER), `user_id` (INTEGER), `title` (VARCHAR 255), `subject` (VARCHAR 100), `due_date` (DATETIME), `duration_minutes` (INTEGER), `priority` (VARCHAR 20), `completed` (BOOLEAN), `created_at` (DATETIME), `updated_at` (DATETIME) | `user_id` -> `users.id` | `user` -> `User` | `ix_study_tasks_id` (IDX), `ix_study_tasks_user_id` (IDX) | `subject`, `due_date`, `created_at`, `updated_at` | Student study tasks & habits | Owned by authenticated `User` via `user_id`. |
 
 ---
 
 ## 3. Exact Inventory of 18 Missing Database Foreign Keys
 
-The table below provides exact technical evidence for all 18 unconstrained relational pathways across the 22 models.
+The table below catalogs every missing database-level foreign key, distinguishing **Confirmed Structural Defects** (where relational targets exist and lack of constraints allows orphan records or type mismatches) from **Design Recommendations & Denormalized Audits** (where strings or integers are stored for historical immutability or decoupled auditing).
 
-| # | Source Model | Source Column | Expected Target Model & Column | Existing DB FK? | Code Evidence (File & Line) | Current App-Level Validation | Orphan Record Scenario | Relational Risk Level |
-|---|---|---|---|:---:|---|---|---|:---:|
-| 1 | `QRAttendanceRecord` | `student_id` | `Student.id` | **NO** | [`backend/models/qr_attendance.py:140`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L140) (`String(50)`) | Checked in `backend/routes/qr_attendance.py:500-514` against `Student.id` or `Student.roll_no`. | When a `Student` is deleted, all their QR attendance rows persist permanently with no cascade. | **HIGH** |
-| 2 | `QRAttendanceRecord` | `roll_number` | `Student.roll_no` | **NO** | [`backend/models/qr_attendance.py:141`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L141) (`String(50)`) | Checked in `backend/routes/qr_attendance.py:529-538` (`roll_number == student.roll_no`). | If student roll number is updated, existing QR attendance records become desynchronized. | **MEDIUM** |
-| 3 | `QRAttendanceLog` | `session_id` | `QRAttendanceSession.id` | **NO** | [`backend/models/qr_attendance.py:221`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L221) (`Integer`) | Populated from active `session.id` in `backend/routes/qr_attendance.py:738`. | Deleting a QR session leaves scan attempt audit logs dangling with invalid session IDs. | **MEDIUM** |
-| 4 | `QRAttendanceLog` | `student_id` | `Student.id` | **NO** | [`backend/models/qr_attendance.py:222`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L222) (`String(50)`) | Populated from `str(student.id)` during log creation. | Student account removal leaves orphaned scan logs. | **LOW** |
-| 5 | `DeviceFingerprint` | `student_id` | `Student.id` | **NO** | [`backend/models/qr_attendance.py:262`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L262) (`String(50)`) | Populated from `str(student.id)` in `update_device_fingerprint`. | Deleting a student leaves their hardware device locked to a non-existent student ID. | **HIGH** |
-| 6 | `QRAttendanceSession` | `faculty_id` | `User.id` | **NO** | [`backend/models/qr_attendance.py:24`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L24) (`String(50)`) | Set to `str(current_user.user_id)` in `backend/routes/qr_attendance.py:65`. | Deleting a faculty member leaves QR sessions pointing to an invalid user. | **HIGH** |
-| 7 | `Attendance` | `faculty_id` | `User.id` | **NO** | [`backend/models/attendance.py:13`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/attendance.py#L13) (`String(50)`) | Set to `str(current_user.user_id)` in `backend/routes/attendance.py:61`. | Historical attendance audit trails point to non-existent faculty IDs upon account deletion. | **MEDIUM** |
-| 8 | `Complaint` | `assigned_to` | `User.id` | **NO** | [`backend/models/complaint.py:18`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/complaint.py#L18) (`Integer`) | Passed in update payload; optional check against staff role. | When staff user is deleted, complaints remain assigned to a ghost user ID. | **HIGH** |
-| 9 | `ComplaintHistory` | `changed_by_user_id` | `User.id` | **NO** | [`backend/models/complaint.py:30`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/complaint.py#L30) (`Integer`) | Set to `current_user.user_id` in `backend/routes/complaint.py:102`. | Audit trail loses integrity if the modifying user is purged. | **MEDIUM** |
-| 10 | `EventRegistration` | `student_id` | `Student.id` | **NO** | [`backend/models/events.py:134`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L134) (`String(50)`) | Verified in `backend/routes/events.py:300-318` against `current_user`. | Student deletion leaves registrations in `event_registrations`, causing capacity counts to diverge. | **HIGH** |
-| 11 | `EventRegistration` | `approved_by` | `User.id` | **NO** | [`backend/models/events.py:160`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L160) (`Integer`) | Set during approval in `backend/routes/events.py`. | Approval audit points to deleted administrator. | **LOW** |
-| 12 | `Event` | `created_by` | `User.id` | **NO** | [`backend/models/events.py:90`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L90) (`Integer`) | Set to `current_user.user_id` in `backend/routes/events.py:101`. | Deleting event creator leaves `created_by` dangling. | **MEDIUM** |
-| 13 | `EventAnnouncement` | `created_by` | `User.id` | **NO** | [`backend/models/events.py:255`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L255) (`Integer`) | Set during creation in `backend/routes/events.py:683`. | Announcements persist with dangling creator IDs. | **LOW** |
-| 14 | `Club` | `created_by` | `User.id` | **NO** | [`backend/models/club.py:48`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L48) (`Integer`) | Set in `backend/routes/clubs.py:44`. | Deleting advisor leaves club with invalid creator reference. | **MEDIUM** |
-| 15 | `ClubAttendance` | `student_name` / `roll_number` | `Student.id` | **NO** | [`backend/models/club.py:99-100`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L99-L100) (`String`) | **None.** Accepted directly as strings in `backend/routes/clubs.py:698`. | Completely detached attendance. Fictitious student names can be submitted with zero DB verification. | **HIGH** |
-| 16 | `RiskLog` | `student_id` | `Student.id` | **NO** | [`backend/models/risk.py:10`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/risk.py#L10) (`Integer`) | Queries verify `Student` existence if provided (`backend/routes/risk.py:161`). | Student deletion leaves sensitive academic/behavioral risk records orphaned in the database. | **HIGH** |
-| 17 | `ScheduleFeedback` | `roll_number` | `Student.roll_no` | **NO** | [`backend/models/schedule_feedback.py:20`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/schedule_feedback.py#L20) (`String(50)`) | **None.** Read directly from input payload without verifying student existence. | Feedback records can be submitted with non-existent roll numbers, untethered to enrolled students. | **MEDIUM** |
-| 18 | `Announcement` | `author` | `User.id` / `User.username` | **NO** | [`backend/models/schedule_feedback.py:38`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/schedule_feedback.py#L38) (`String(100)`) | **None.** Plain string accepted directly from schema. | No relational integrity between author and user account; impossible to audit or cascade. | **LOW** |
+| # | Source Model | Column | Expected Target | Existing FK? | Source File & Line | Application Validation | Potential Integrity Risk | Classification |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `QRAttendanceRecord` | `student_id` | `Student.id` | **NO** | [`backend/models/qr_attendance.py:100`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L100) (`String(50)`) | Checked against `Student` in [`backend/routes/qr_attendance.py:702`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/qr_attendance.py#L702) | Type mismatch (`String(50)` vs `Integer`). Deleting a student leaves orphaned attendance records; SQL joins require type casting. | **Confirmed Defect** |
+| 2 | `QRAttendanceRecord` | `roll_number` | `Student.roll_no` | **NO** | [`backend/models/qr_attendance.py:102`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L102) (`String(50)`) | Derived from authenticated student record. | If student's `roll_no` is edited, past QR records point to the obsolete roll number. | **Design Recommendation** (Denormalized) |
+| 3 | `QRAttendanceRecord` | `device_fingerprint` | `DeviceFingerprint.fingerprint_hash` | **NO** | [`backend/models/qr_attendance.py:103`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L103) (`String(255)`) | Lookup/upsert in [`backend/routes/qr_attendance.py:734`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/qr_attendance.py#L734). | Purging or blacklisting fingerprints leaves orphaned records untethered to audit history. | **Design Recommendation** |
+| 4 | `DeviceFingerprint` | `last_used_student_id` | `Student.id` | **NO** | [`backend/models/qr_attendance.py:159`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L159) (`String(50)`) | String passed from request context. | Fingerprint hardware records reference deleted students indefinitely. | **Design Recommendation** (Audit) |
+| 5 | `QRAttendanceSession` | `faculty_id` | `User.id` | **NO** | [`backend/models/qr_attendance.py:24`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L24) (`String(50)`) | Set to `str(current_user.user_id)` in [`backend/routes/qr_attendance.py:65`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/qr_attendance.py#L65). | Deleting faculty leaves active or historical sessions pointing to a ghost user. | **Confirmed Defect** |
+| 6 | `Attendance` | `faculty_id` | `User.id` | **NO** | [`backend/models/attendance.py:13`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/attendance.py#L13) (`String(50)`) | Set to `str(current_user.user_id)` in [`backend/routes/attendance.py:61`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/attendance.py#L61). | Type mismatch (`String(50)` vs `Integer`). Audit trail points to non-existent faculty upon deletion. | **Confirmed Defect** |
+| 7 | `Complaint` | `assigned_to` | `User.id` | **NO** | [`backend/models/complaint.py:18`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/complaint.py#L18) (`Integer`) | Handled via update schema; role check in routes. | If staff user is deleted, complaints remain assigned to a ghost user ID. | **Confirmed Defect** |
+| 8 | `ComplaintHistory` | `changed_by_user_id` | `User.id` | **NO** | [`backend/models/complaint.py:30`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/complaint.py#L30) (`Integer`) | Set to `current_user.user_id` in [`backend/routes/complaint.py:102`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/complaint.py#L102). | Modifying staff deletion leaves dangling ID in audit history. | **Design Recommendation** (Audit) |
+| 9 | `EventRegistration` | `student_id` | `Student.id` | **NO** | [`backend/models/events.py:134`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L134) (`String(50)`) | Resolved against `current_user` in [`backend/routes/events.py:300-318`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/events.py#L300-L318). | Type mismatch (`String(50)` vs `Integer`). Deleting a student leaves orphan registration rows, causing seat counter drift. | **Confirmed Defect** |
+| 10 | `EventRegistration` | `approved_by` | `User.id` | **NO** | [`backend/models/events.py:160`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L160) (`Integer`) | Set during staff approval in [`backend/routes/events.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/events.py). | Approval audit trail points to deleted administrator. | **Design Recommendation** (Audit) |
+| 11 | `Event` | `created_by` | `User.id` | **NO** | [`backend/models/events.py:90`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L90) (`Integer`) | Set to `current_user.user_id` in [`backend/routes/events.py:101`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/events.py#L101). | Deleting creator leaves `events.created_by` dangling with no `ON DELETE SET NULL` cascade. | **Confirmed Defect** |
+| 12 | `EventAnnouncement` | `created_by` | `User.id` | **NO** | [`backend/models/events.py:255`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L255) (`Integer`) | Set during creation in [`backend/routes/events.py:683`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/events.py#L683). | Creator deletion leaves orphan ID in announcements. | **Design Recommendation** (Audit) |
+| 13 | `Club` | `created_by` | `User.id` | **NO** | [`backend/models/club.py:48`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L48) (`Integer`) | Set in [`backend/routes/clubs.py:44`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/clubs.py#L44). | Deleting advisor user leaves club record with invalid creator ID. | **Confirmed Defect** |
+| 14 | `ClubAttendance` | `roll_number` | `Student.roll_no` | **NO** | [`backend/models/club.py:100`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L100) (`String`) | **None.** Accepted directly as string in [`backend/routes/clubs.py:698`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/clubs.py#L698). | Completely detached attendance. Non-existent student roll numbers can be submitted with zero DB validation. | **Confirmed Defect** |
+| 15 | `ClubAttendance` | `student_name` | `Student.name` | **NO** | [`backend/models/club.py:99`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L99) (`String`) | **None.** Accepted directly as string in [`backend/routes/clubs.py:698`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/clubs.py#L698). | Fabricated student names stored with zero integrity. | **Design Recommendation** (Denormalized) |
+| 16 | `RiskLog` | `student_id` | `Student.id` | **NO** | [`backend/models/risk.py:10`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/risk.py#L10) (`Integer`) | Evaluated dynamically in [`backend/routes/risk.py:161`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/risk.py#L161). | Student deletion leaves sensitive academic risk records orphaned indefinitely. | **Confirmed Defect** |
+| 17 | `ScheduleFeedback` | `roll_number` | `Student.roll_no` | **NO** | [`backend/models/schedule_feedback.py:20`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/schedule_feedback.py#L20) (`String(50)`) | **None.** Accepted from input payload without verifying student existence. | Spurious feedback can be injected referencing non-existent students. | **Confirmed Defect** |
+| 18 | `Announcement` | `author` | `User.username` | **NO** | [`backend/models/schedule_feedback.py:38`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/schedule_feedback.py#L38) (`String(100)`) | **None.** Accepted directly from payload as string. | No relational integrity between author and user account; impossible to audit or cascade. | **Design Recommendation** |
 
 ---
 
-## 4. Concurrency Vulnerabilities & Race Conditions
+## 4. Findings with Source-Code Evidence (16 Findings)
 
-### 1. TOCTOU Race Condition on Event Capacity
+The 16 findings are detailed below, categorized to distinguish **Security & Multi-Tenant Vulnerabilities** from **Operational & Reliability Risks** and **Deployability & Maintainability Deficiencies**.
+
+### Category A: Security & Multi-Tenancy Vulnerabilities
+
+#### Finding 1 (CRITICAL): Zero Tenant Isolation & Global Unique Key Collision
+* **Severity**: **CRITICAL**
+* **Category**: Security / Multi-Tenant Isolation
+* **Affected Files & Models**:
+  - [`backend/models/student.py:10`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/student.py#L10) (`Student.roll_no = Column(String, unique=True)`)
+  - [`backend/models/club.py:11`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L11) (`Club.name = Column(String, unique=True)`)
+  - All 22 models across `backend/models/`
+* **Evidence**: Direct code inspection confirms that zero models contain a `college_id` or `institution_id` column. There is no `colleges` table in the database schema.
+* **Actual Impact**:
+  1. Multiple colleges cannot use the system simultaneously. If College A has a student with roll number `2024CS001`, College B cannot onboard a student with the same roll number due to `UNIQUE constraint failed: students.roll_no`.
+  2. Queries in routes (e.g., `GET /students/`, `GET /schedules/`, `GET /events/`) fetch all rows without tenant filtering, resulting in complete cross-institution data leakage.
+* **Status**: **Confirmed Defect**
+* **Recommended Future Remediation**: Provision a `colleges` table. Add `college_id = Column(Integer, ForeignKey("colleges.id", ondelete="CASCADE"), nullable=False, index=True)` across all 22 domain models. Replace global unique constraints with composite `UniqueConstraint("college_id", "roll_no")` and `UniqueConstraint("college_id", "name")`. Add tenant-filtering middleware.
+
+#### Finding 7 (HIGH): Unencrypted Geolocation and Device PII at Rest
+* **Severity**: **HIGH**
+* **Category**: Security / Data Privacy
+* **Affected Files & Models**:
+  - [`backend/models/qr_attendance.py:104-107, 155-168`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L104-L107) (`QRAttendanceRecord.latitude`, `longitude`, `device_fingerprint`, `device_info`)
+* **Evidence**:
+  ```python
+  latitude = Column(Float, nullable=True)
+  longitude = Column(Float, nullable=True)
+  device_fingerprint = Column(String(255), nullable=True)
+  device_info = Column(Text, nullable=True)
+  ```
+* **Actual Impact**: Exact physical GPS coordinates of students and faculty, along with persistent hardware fingerprints and client IP addresses, are stored as plaintext floats and strings. A database breach or unauthorized staff read exposes sensitive location telemetry.
+* **Status**: **Confirmed Design Gap**
+* **Recommended Future Remediation**: Apply AES-256 field-level encryption for latitude/longitude coordinates at rest, or store coordinates as coarse geohashes; truncate IP addresses.
+
+#### Finding 13 (MEDIUM): Tracked Legacy SQLite Files with Plaintext Credentials in Git History
+* **Severity**: **MEDIUM**
+* **Category**: Security Hygiene / Repository Secrets
+* **Affected Files**:
+  - `SP0511---MAJOR-PROJECT--master/campusautomation_QR_attendence/database.db` (20,480 bytes)
+  - `SP0511---MAJOR-PROJECT--master/test.db` (221,184 bytes)
+* **Evidence**: Inspection reveals `database.db` contains a `users` table with 2 active rows storing unhashed plaintext passwords: `('teacher', 'T101', '1234')` and `('student', 'S201', '1234')`. `test.db` contains 18 tables with sample student PII and schedule feedback.
+* **Actual Impact**: Any user who clones the repository obtains sample credentials and historical test records.
+* **Status**: **Confirmed Defect**
+* **Recommended Future Remediation**: Remove both `.db` files from Git tracking via `git rm --cached`, add `*.db` and `*.sqlite3` to `.gitignore`, and scrub repository history using `git-filter-repo` if these credentials were ever deployed.
+
+---
+
+### Category B: Operational & Concurrency Risks
+
+#### Finding 3 (CRITICAL): Event Capacity TOCTOU Concurrency Race Condition
+* **Severity**: **CRITICAL**
+* **Category**: Reliability / Concurrency
+* **Affected File & Function**: [`backend/routes/events.py:336-405`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/events.py#L336-L405) in `register_for_event()`
+* **Evidence**:
+  ```python
+  # 1. Non-atomic capacity check in application memory
+  if event.is_full():
+      raise HTTPException(status_code=400, detail="Event has reached maximum capacity")
+  ...
+  # 2. Insert registration and increment denormalized counter
+  new_registration = EventRegistration(**reg_dict)
+  db.add(new_registration)
+  event.current_participants += 1
+  db.commit()
+  ```
+* **Actual Impact**: When an event has 1 remaining seat (`current_participants = max_participants - 1`), two simultaneous requests both evaluate `event.is_full() == False`, insert registrations, and increment the counter to `max_participants + 1`. This leads to room over-subscription and physical capacity violations.
+* **Status**: **Confirmed Race Condition**
+* **Recommended Future Remediation**: Execute an atomic conditional SQL update: `UPDATE events SET current_participants = current_participants + 1 WHERE id = :id AND current_participants < max_participants`, verifying `rowcount == 1`, or acquire a pessimistic row lock via `db.query(Event).with_for_update().filter_by(id=event_id).first()`. Add a database `CHECK (current_participants <= max_participants)` constraint.
+
+#### Finding 5 (HIGH): 18 Missing Database Foreign Keys Across Core Entities
+* **Severity**: **HIGH**
+* **Category**: Referential Integrity
+* **Affected Files**: All 8 model files in `backend/models/`
+* **Evidence**: Documented in Section 3 table. Examples include `qr_attendance_records.student_id`, `event_registrations.student_id`, and `risk_logs.student_id`.
+* **Actual Impact**:
+  1. Deletion of students or staff users leaves dangling orphan records across attendance, risk logs, complaints, and event registrations.
+  2. Columns representing identical entities have mismatched types (`student_id` is `String(50)` in `qr_attendance_records` but `Integer` in `students`), preventing index-optimized relational joins.
+* **Status**: **Confirmed Defect**
+* **Recommended Future Remediation**: Normalize column types to `Integer` and define explicit `ForeignKey("students.id", ondelete="CASCADE")` and `ForeignKey("users.id")` constraints.
+
+#### Finding 6 (HIGH): Missing Database Unique Constraints on Attendance and Clubs
+* **Severity**: **HIGH**
+* **Category**: Data Integrity / Concurrency
+* **Affected Files & Models**:
+  - [`backend/models/attendance.py:7`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/attendance.py#L7) (`Attendance`)
+  - [`backend/models/club.py:94`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L94) (`ClubAttendance`)
+* **Evidence**: [`backend/routes/attendance.py:43-68`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/attendance.py#L43-L68) checks for existing attendance in application memory before writing. Because no database-level unique constraint exists on `(student_id, date, subject_code)`, concurrent requests both evaluate `existing == None` and insert duplicate attendance rows.
+* **Actual Impact**: Corrupted attendance records, inflated attendance percentages, and conflicting status entries for the same student on the same day.
+* **Status**: **Confirmed Race Condition**
+* **Recommended Future Remediation**: Add `UniqueConstraint("student_id", "date", "subject_code", name="uq_student_attendance_date")` to `attendance`.
+
+#### Finding 9 (MEDIUM): Denormalized Counter Drift in Clubs and Events
+* **Severity**: **MEDIUM**
+* **Category**: Data Integrity / Concurrency
+* **Affected Files & Functions**:
+  - [`backend/routes/clubs.py:448-454`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/clubs.py#L448-L454) (`join_club`)
+  - [`backend/routes/clubs.py:485-492`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/clubs.py#L485-L492) (`leave_club`)
+* **Evidence**: `join_club()` counts active members in the DB and adds 1 (`count() + 1`), while `leave_club()` decrements the in-memory counter directly (`member_count - 1`). Concurrent joins and leaves interleave, causing `clubs.member_count` to permanently diverge from `COUNT(club_members.id)`.
+* **Actual Impact**: Discrepancies between displayed membership counts and actual roster size.
+* **Status**: **Confirmed Defect**
+* **Recommended Future Remediation**: Derive counters dynamically via `COUNT()` queries, or update counters via atomic SQL expressions (`member_count = member_count + 1`).
+
+#### Finding 10 (MEDIUM): Non-Atomic Writes & Inconsistent Route-Level Rollbacks
+* **Severity**: **MEDIUM**
+* **Category**: Transaction Hygiene
+* **Affected Files & Functions**:
+  - [`backend/routes/complaint.py:80-109`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/complaint.py#L80-L109) (`create_complaint`)
+  - Routes in `backend/routes/attendance.py`, `auth.py`, `students.py`
+* **Evidence**:
+  1. `create_complaint()` executes two separate commits: first `db.commit()` for `Complaint`, then `db.commit()` for `ComplaintHistory`. If the second write fails, the complaint exists permanently without an initial history log.
+  2. While `backend/routes/clubs.py` contains 14 explicit `try...except IntegrityError: db.rollback()` blocks, routes in `attendance.py`, `auth.py`, and `students.py` lack explicit route-level rollbacks, relying solely on FastAPI's `get_db()` teardown after an unhandled 500 error.
+* **Actual Impact**: Partial database writes on transient errors; unhandled 500 crashes instead of clean 400/409 responses.
+* **Status**: **Confirmed Defect**
+* **Recommended Future Remediation**: Enclose multi-entity writes in a single transaction before committing. Add uniform `IntegrityError` handlers across all mutating endpoints.
+
+---
+
+### Category C: Deployability & Maintainability Deficiencies
+
+#### Finding 2 (CRITICAL): Complete Absence of Database Migration Framework
+* **Severity**: **CRITICAL**
+* **Category**: Deployability & Maintainability
+* **Affected Files**: Repository root, [`backend/seed_data.py:36-132`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/seed_data.py#L36-L132)
+* **Evidence**: Zero Alembic configuration files exist (`alembic.ini` is missing, `alembic/` directory is missing, `alembic` is omitted from `requirements.txt`). Schema evolution is performed via procedural `ALTER TABLE` statements inside `seed_data.py::ensure_schema()`.
+* **Actual Impact**: Schema migrations cannot be version-controlled, rolled back, or audited. Upgrading a staging or production database requires manual or procedural scripts prone to silent failures.
+* **Status**: **Confirmed Defect**
+* **Recommended Future Remediation**: Initialize Alembic (`alembic init alembic`), generate an initial baseline migration from `Base.metadata`, and remove procedural DDL from `seed_data.py`.
+
+#### Finding 4 (CRITICAL): PostgreSQL Incompatibility via SQLite PRAGMAs & Missing Drivers
+* **Severity**: **CRITICAL**
+* **Category**: Platform Portability & Deployability
+* **Affected Files**:
+  - [`backend/seed_data.py:42,53,74,106,120`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/seed_data.py#L42)
+  - [`requirements.txt:9`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/requirements.txt#L9)
+  - [`backend/database.py:29-33`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/database.py#L29-L33)
+* **Evidence**:
+  1. `conn.execute(text("PRAGMA table_info(students)"))` executes unconditionally at startup. Under PostgreSQL, this raises a fatal `SyntaxError`.
+  2. `psycopg2-binary>=2.9.9; platform_system != "Windows"` prevents installation of the PostgreSQL driver on Windows developer machines.
+* **Actual Impact**: Immediate crash on application startup when pointed to a PostgreSQL database.
+* **Status**: **Confirmed Defect**
+* **Recommended Future Remediation**: Remove SQLite PRAGMAs. Update `requirements.txt` to install `psycopg[binary]>=3.1.18` unconditionally across all operating systems.
+
+#### Finding 8 (HIGH): Absence of Automated Database Backup and Recovery
+* **Severity**: **HIGH**
+* **Category**: Disaster Recovery & Operations
+* **Affected Files**: Repository root
+* **Evidence**: Comprehensive search reveals zero backup scripts, scheduled tasks, dump utilities, or disaster recovery runbooks.
+* **Actual Impact**: In the event of disk corruption, ransomware, or accidental deletion, all campus attendance, academic risk, and user records will be permanently lost with zero recovery path.
+* **Status**: **Confirmed Defect**
+* **Recommended Future Remediation**: Author automated backup scripts (`backup_db.py`) supporting point-in-time snapshots for SQLite and `pg_dump` for PostgreSQL, with automated verification of dump file integrity.
+
+#### Finding 11 (MEDIUM): Configured Connection Pool Settings Ignored by Engine
+* **Severity**: **MEDIUM**
+* **Category**: Scalability & Configuration
+* **Affected Files**:
+  - [`backend/core/config.py:86-87`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/core/config.py#L86-L87)
+  - [`backend/database.py:29-33`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/database.py#L29-L33)
+* **Evidence**: `Settings.DB_POOL_SIZE` and `Settings.DB_MAX_OVERFLOW` are configured in Pydantic settings, but `backend/database.py` does not pass `pool_size` or `max_overflow` to `create_engine()`. Furthermore, `pool_pre_ping=True` is omitted.
+* **Actual Impact**: Under PostgreSQL, default pool limits apply, and connections dropped by firewalls will cause unhandled operational errors on subsequent requests.
+* **Status**: **Confirmed Defect**
+* **Recommended Future Remediation**: Wire `pool_size=settings.DB_POOL_SIZE`, `max_overflow=settings.DB_MAX_OVERFLOW`, and `pool_pre_ping=True` into `create_engine()`.
+
+#### Finding 12 (MEDIUM): Inconsistent Boolean and Enum Column Types
+* **Severity**: **MEDIUM**
+* **Category**: Schema Portability
+* **Affected Files**:
+  - [`backend/models/schedule.py:24`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/schedule.py#L24) (`is_active = Column(Integer, default=1)`)
+  - [`backend/models/events.py:46`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L46) (`is_active = Column(Boolean, default=True)`)
+  - [`backend/models/complaint.py:14`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/complaint.py#L14) (`status = Column(String)`)
+* **Evidence**: Active flags in `schedules` use `Integer` (0/1), while `events` and `users` use `Boolean` (`True`/`False`). Status fields in `complaints` and `event_registrations` use unconstrained strings rather than SQLAlchemy `Enum` types.
+* **Actual Impact**: Type inconsistencies across models; invalid status values can be inserted if application schemas fail to validate them.
+* **Status**: **Confirmed Design Gap**
+* **Recommended Future Remediation**: Standardize all boolean fields on `Boolean(create_constraint=True)` and convert status fields to SQLAlchemy `Enum`.
+
+#### Finding 14 (LOW): Missing B-Tree Indexes on Frequently Filtered Foreign Keys
+* **Severity**: **LOW**
+* **Category**: Query Performance
+* **Affected Files**:
+  - [`backend/models/complaint.py:18`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/complaint.py#L18) (`complaints.assigned_to`)
+  - [`backend/models/club.py:48`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L48) (`clubs.created_by`)
+* **Evidence**: Columns used in filtering and foreign key joins lack explicit `index=True` declarations.
+* **Actual Impact**: Sequential table scans on large tables when filtering complaints by assigned staff or clubs by creator.
+* **Status**: **Confirmed Performance Gap**
+* **Recommended Future Remediation**: Add `index=True` to all foreign key and filtering columns.
+
+#### Finding 15 (LOW): Unbounded Varchar Lengths Across SQLite Models
+* **Severity**: **LOW**
+* **Category**: Schema Portability
+* **Affected Files**:
+  - [`backend/models/student.py:8-13`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/student.py#L8-L13) (`Column(String)`)
+  - [`backend/models/complaint.py:12-16`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/complaint.py#L12-L16) (`Column(String)`)
+* **Evidence**: Multiple models declare `Column(String)` without specifying lengths. While SQLite permits length-less strings, PostgreSQL treats them as unbounded `TEXT`, bypassing standard relational length constraints.
+* **Actual Impact**: Database permits arbitrarily large payloads if Pydantic validation is bypassed.
+* **Status**: **Confirmed Portability Gap**
+* **Recommended Future Remediation**: Specify explicit column lengths (e.g., `String(100)`).
+
+#### Finding 16 (LOW): Ephemeral SQLite In-Memory Testing Masking Production Dialects
+* **Severity**: **LOW**
+* **Category**: Quality Assurance
+* **Affected Files**: [`tests/conftest.py:15-19`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/conftest.py#L15-L19)
+* **Evidence**: Test suite sets `SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"` or `sqlite:///./test.db`. All 188 automated tests execute against in-memory SQLite.
+* **Actual Impact**: Tests pass 188/188, yet fail to catch PostgreSQL syntax errors, sequence locks, or connection pooling issues.
+* **Status**: **Confirmed QA Limitation**
+* **Recommended Future Remediation**: Configure a secondary CI test job that executes the test suite against a containerized PostgreSQL instance.
+
+---
+
+## 5. Concurrency and Transaction Analysis
+
+### 1. Detailed Inspection of Route Implementations
+
+#### A. Event Registration Capacity Check (TOCTOU Vulnerability)
 * **Location**: [`backend/routes/events.py:336-405`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/events.py#L336-L405) in `register_for_event()`
 * **Mechanism**:
   ```python
@@ -107,17 +323,17 @@ The table below provides exact technical evidence for all 18 unconstrained relat
   event.current_participants += 1
   db.commit()
   ```
-* **Failure Scenario**:
-  Suppose `event.max_participants = 100` and `event.current_participants = 99`. One seat remains.
-  Two students (Student A and Student B) issue simultaneous `POST /events/registrations` calls.
-  1. Request A executes `SELECT ... FROM events WHERE id = 1` $\to$ `current_participants = 99`. `event.is_full()` evaluates to `False`.
-  2. Request B executes `SELECT ... FROM events WHERE id = 1` $\to$ `current_participants = 99`. `event.is_full()` evaluates to `False`.
+* **Failure Scenario (Last Available Seat Race)**:
+  Suppose `event.max_participants = 100` and `event.current_participants = 99`. Exactly one seat remains.
+  Two students (Student A and Student B) issue simultaneous `POST /events/registrations` requests.
+  1. Request A executes `SELECT ... FROM events WHERE id = 1` -> `current_participants = 99`. `event.is_full()` evaluates to `False`.
+  2. Request B executes `SELECT ... FROM events WHERE id = 1` -> `current_participants = 99`. `event.is_full()` evaluates to `False`.
   3. Request A inserts registration row, sets `event.current_participants = 100`, and executes `db.commit()`.
   4. Request B inserts registration row, sets `event.current_participants = 101`, and executes `db.commit()`.
-  - **Result**: The event is now **over-subscribed** (101 participants for a 100-seat capacity).
-* **Missing Database Constraint**: No `CHECK (current_participants <= max_participants)` constraint exists in [`backend/models/events.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L42). No row-level lock (`with_for_update()`) is acquired during the check.
+  - **Result**: The event is **over-subscribed** (101 participants registered for a 100-seat capacity).
+* **Missing Database Constraint**: No `CHECK (current_participants <= max_participants)` constraint exists in [`backend/models/events.py:42`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/events.py#L42). No row-level lock (`with_for_update()`) is acquired.
 
-### 2. Denormalized Counter Drift in Club Memberships
+#### B. Club Membership Counter Drift
 * **Location**: [`backend/routes/clubs.py:448-454`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/clubs.py#L448-L454) (`join_club`) and [`backend/routes/clubs.py:485-492`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/clubs.py#L485-L492) (`leave_club`)
 * **Mechanism**:
   - `join_club()` counts active members in the database and adds 1:
@@ -128,10 +344,9 @@ The table below provides exact technical evidence for all 18 unconstrained relat
   If User A joins while User B leaves concurrently:
   - Thread A counts active members ($N$) and flushes $N + 1$.
   - Thread B reads existing `club.member_count` ($N$) and flushes $N - 1$.
-  - Depending on commit order, the final value in `clubs.member_count` permanently diverges from the actual count of rows in `club_members`.
-* **Missing Database Mechanism**: Counter should be derived on read or updated via atomic SQL expressions (`UPDATE clubs SET member_count = member_count + 1 WHERE id = :id`).
+  - Depending on commit order, `clubs.member_count` permanently diverges from the actual row count in `club_members`.
 
-### 3. General Attendance Duplicate Insertion Vulnerability
+#### C. General Attendance Duplicate Insertion Vulnerability
 * **Location**: [`backend/routes/attendance.py:43-68`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/attendance.py#L43-L68)
 * **Mechanism**:
   ```python
@@ -150,295 +365,273 @@ The table below provides exact technical evidence for all 18 unconstrained relat
   db.commit()
   ```
 * **Failure Scenario**:
-  Because [`backend/models/attendance.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/attendance.py#L7) **lacks a database-level unique constraint on `(student_id, date, subject_code)`**, two simultaneous requests for the same student on the same date will both evaluate `existing == None`, and both insert duplicate attendance rows.
-* **Positive Comparison**: In contrast, [`backend/models/qr_attendance.py:133`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L133) defines `UniqueConstraint("session_id", "roll_number", name="uq_session_roll")`, and [`backend/routes/qr_attendance.py:745-754`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/qr_attendance.py#L745-L754) properly catches `IntegrityError` and rolls back, completely neutralizing concurrent duplicate QR scans.
+  Because [`backend/models/attendance.py:7`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/attendance.py#L7) lacks a database-level unique constraint on `(student_id, date, subject_code)`, two simultaneous requests for the same student on the same date will both evaluate `existing == None`, and both insert duplicate attendance rows.
+
+#### D. QR Attendance Duplicate Scan Protection (Positive Implementation)
+* **Location**: [`backend/models/qr_attendance.py:133`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L133) and [`backend/routes/qr_attendance.py:745-754`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/qr_attendance.py#L745-L754)
+* **Mechanism**:
+  [`backend/models/qr_attendance.py:133`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L133) defines `UniqueConstraint("session_id", "roll_number", name="uq_session_roll")`. When concurrent scans occur, the database rejects the duplicate insert, raising `IntegrityError`. The route explicitly catches this exception:
+  ```python
+  except IntegrityError:
+      db.rollback()
+      raise HTTPException(status_code=409, detail="Attendance already marked for this session")
+  ```
+* **Status**: **Fully Protected Operation** against duplicate concurrent writes.
+
+#### E. Complaint Creation Non-Atomic Multi-Commit Writes
+* **Location**: [`backend/routes/complaint.py:80-109`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/complaint.py#L80-L109)
+* **Mechanism**:
+  ```python
+  # Write 1: Commit complaint
+  new_complaint = Complaint(...)
+  db.add(new_complaint)
+  db.commit()
+  db.refresh(new_complaint)
+
+  # Write 2: Commit initial complaint history
+  history_entry = ComplaintHistory(complaint_id=new_complaint.id, ...)
+  db.add(history_entry)
+  db.commit()
+  ```
+* **Failure Scenario**:
+  If the process crashes or database fails between Write 1 and Write 2, the complaint is stored without an initial audit history entry, breaking audit continuity.
+
+### 2. Concurrency Operation Classification
+
+| Operation / Endpoint | Concurrency Status | Protection Mechanism | Potential Failure Mode |
+|---|---|---|---|
+| **QR Attendance Scan** (`POST /qr-attendance/student/scan-qr`) | **Protected** | Database `UniqueConstraint("session_id", "roll_number")` + `IntegrityError` rollback | None; second request receives clean 409 Conflict. |
+| **Event Registration** (`POST /events/registrations`) | **Confirmed Race Condition** | None (application memory check only) | Over-subscription beyond `max_participants`. |
+| **General Attendance Marking** (`POST /attendance/`) | **Confirmed Race Condition** | None (application memory check only) | Duplicate attendance rows for same student/date/subject. |
+| **Club Join / Leave** (`POST /clubs/{id}/join`, `/leave`) | **Confirmed Race Condition** | None (application counter math) | Counter drift in `clubs.member_count`. |
+| **Complaint Creation** (`POST /complaints/`) | **Potential Race Condition** | None (split non-atomic commits) | Partial write: complaint created with missing history log. |
+| **Study Task Updates** (`PUT /study-tasks/{id}`) | **Untested Operation** | Sequential read-then-write | Lost updates under rapid concurrent client modifications. |
+| **Student Record Updates** (`PUT /students/{id}`) | **Untested Operation** | Sequential read-then-write | Lost updates when multiple administrators edit simultaneously. |
 
 ---
 
-## 5. Database Transaction & Session Lifecycle Analysis
+## 6. SQLite & PostgreSQL Compatibility Analysis
 
-### Session Lifecycle Architecture
-Sessions are provisioned per HTTP request using FastAPI's dependency injection ([`backend/database.py:41-50`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/database.py#L41-L50)):
-```python
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    except Exception as e:
-        db.rollback()
-        raise
-    finally:
-        db.close()
-```
-* **Strengths**: Guarantees that unhandled exceptions exiting the route handler trigger session rollback and close.
-* **Weaknesses**: If a route executes multiple separate commits, failure in step 2 leaves step 1 permanently committed.
+### 1. File Inspection & Dialect Evidence
 
-### Non-Atomic Multi-Commit Operations
-1. **Complaint Creation Partial Write**:
-   In [`backend/routes/complaint.py:80-109`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/complaint.py#L80-L109):
-   ```python
-   # Step 1: Insert and commit Complaint
-   new_complaint = Complaint(...)
-   db.add(new_complaint)
-   db.commit()
-   db.refresh(new_complaint)
+#### A. Database Connection & Engine Configuration
+* **Audited Files**:
+  - Actual file: [`backend/database.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/database.py)
+  - Assumed/Alias path: `backend/core/database.py` does **not exist** in the repository. All database configuration resides in `backend/database.py`.
+  - Configuration: [`backend/core/config.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/core/config.py)
+* **Dialect Compatibility**:
+  In [`backend/database.py:18-33`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/database.py#L18-L33):
+  ```python
+  if DATABASE_URL.startswith("sqlite"):
+      connect_args = {"check_same_thread": False}
+  else:
+      connect_args = {}
 
-   # Step 2: Insert and commit ComplaintHistory
-   history_entry = ComplaintHistory(complaint_id=new_complaint.id, ...)
-   db.add(history_entry)
-   db.commit()
-   ```
-   If step 2 fails due to a network disruption, server crash, or database lock, the complaint is permanently stored **without an initial history entry**, corrupting audit history. Both models should be flushed in a single transaction before committing.
+  engine = create_engine(
+      DATABASE_URL,
+      connect_args=connect_args,
+      echo=settings.DB_ECHO and settings.is_development
+  )
+  ```
+  The code branches for SQLite to disable `check_same_thread`. However, when connected to PostgreSQL:
+  - `settings.DB_POOL_SIZE` (default 5) and `settings.DB_MAX_OVERFLOW` (default 10) are ignored.
+  - `pool_pre_ping=True` is not configured, which will cause dropped connection errors after network timeouts.
 
-2. **Inconsistent Route-Level Rollback Hygiene**:
-   - Explicit `try...except IntegrityError: db.rollback()` is present in:
-     - [`backend/routes/clubs.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/clubs.py) (14 rollback handlers)
-     - [`backend/routes/events.py:407`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/events.py#L407)
-     - [`backend/routes/qr_attendance.py:746`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/qr_attendance.py#L746)
-   - Zero route-level rollback handlers exist in:
-     - [`backend/routes/attendance.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/attendance.py)
-     - [`backend/routes/auth.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/auth.py)
-     - [`backend/routes/complaint.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/complaint.py)
-     - [`backend/routes/risk.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/risk.py)
-     - [`backend/routes/schedule.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/schedule.py)
-     - [`backend/routes/schedule_feedback.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/schedule_feedback.py)
-     - [`backend/routes/students.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/students.py)
-     - [`backend/routes/study_task.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/study_task.py)
-   - When an unhandled database error occurs in these routes, the request crashes with an unhandled 500 Internal Server Error rather than returning a 400 or 409 client response.
-
----
-
-## 6. SQLite & PostgreSQL Compatibility Evidence
-
-### 1. Hardcoded SQLite PRAGMA DDL in Startup Code
-In [`backend/seed_data.py:42-132`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/seed_data.py#L42-L132):
-```python
-result = conn.execute(text("PRAGMA table_info(students)")).fetchall()
-...
-result = conn.execute(text("PRAGMA table_info(users)")).fetchall()
-...
-result = conn.execute(text("PRAGMA table_info(clubs)")).fetchall()
-...
-result = conn.execute(text("PRAGMA table_info(complaints)")).fetchall()
-...
-result = conn.execute(text("PRAGMA table_info(attendance)")).fetchall()
-```
-* **Verified Behavior**: `PRAGMA table_info` is a SQLite-only command. Under PostgreSQL, executing this text raises:
+#### B. Hardcoded SQLite PRAGMA DDL in Startup Code
+* **Audited File**: [`backend/seed_data.py:42-132`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/seed_data.py#L42-L132)
+* **Evidence**:
+  ```python
+  result = conn.execute(text("PRAGMA table_info(students)")).fetchall()
+  ...
+  result = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+  ...
+  result = conn.execute(text("PRAGMA table_info(clubs)")).fetchall()
+  ...
+  result = conn.execute(text("PRAGMA table_info(complaints)")).fetchall()
+  ...
+  result = conn.execute(text("PRAGMA table_info(attendance)")).fetchall()
+  ```
+* **PostgreSQL Incompatibility**: `PRAGMA` is exclusive to SQLite. On PostgreSQL, executing this raises:
   `psycopg2.errors.SyntaxError: syntax error at or near "PRAGMA"`
-* Because `ensure_schema()` is called unconditionally during `backend/main.py::startup_event()`, the application will crash during startup if pointed to a PostgreSQL database.
+  Because `ensure_schema()` is called during application startup (`backend/main.py::startup_event()`), the server immediately crashes before serving any HTTP traffic.
 
-### 2. Dependency Incompatibility on Windows Platforms
-In [`requirements.txt:9`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/requirements.txt#L9):
-```text
-psycopg2-binary>=2.9.9; platform_system != "Windows"
-```
-* **Verified Behavior**: On Windows systems, `pip install -r requirements.txt` skips installation of `psycopg2-binary`.
-* Any attempt to connect to a PostgreSQL instance on Windows raises:
+#### C. Driver Dependency Availability on Windows
+* **Audited File**: [`requirements.txt:9`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/requirements.txt#L9)
+* **Evidence**:
+  ```text
+  psycopg2-binary>=2.9.9; platform_system != "Windows"
+  ```
+* **Impact**: On Windows systems, `pip install -r requirements.txt` skips `psycopg2-binary`. Running against PostgreSQL on Windows immediately fails with:
   `ModuleNotFoundError: No module named 'psycopg2'`
 
-### 3. Ignored Connection Pool Settings
-In [`backend/core/config.py:86-87`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/core/config.py#L86-L87):
-```python
-DB_POOL_SIZE: int = Field(default=5)
-DB_MAX_OVERFLOW: int = Field(default=10)
-```
-In [`backend/database.py:29-33`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/database.py#L29-L33):
-```python
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connect_args,
-    echo=settings.DB_ECHO and settings.is_development
-)
-```
-* **Verified Behavior**: `settings.DB_POOL_SIZE` and `settings.DB_MAX_OVERFLOW` are never passed into `create_engine()`. In PostgreSQL, SQLAlchemy will use default pool settings rather than the configured application settings. Furthermore, `pool_pre_ping=True` is not enabled, leading to stale connection errors after idle timeouts.
+#### D. Boolean, Enum, and Sequence Type Differences
+1. **Booleans**: SQLite stores booleans as integer 0 and 1. PostgreSQL enforces native `BOOLEAN` (`true`/`false`). In [`backend/models/schedule.py:24`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/schedule.py#L24), `is_active` is explicitly `Column(Integer, default=1)`.
+2. **Primary Key Auto-Increment**: SQLite relies on implicit `ROWID` auto-increment. PostgreSQL uses sequences (`SERIAL` / `BIGSERIAL` / `IDENTITY`). Direct table copies without sequence creation will cause primary key collisions on insert.
+3. **Case Sensitivity**: SQLite `LIKE` operator is case-insensitive for ASCII strings. PostgreSQL `LIKE` is strictly case-sensitive (requiring `ILIKE`). Search queries in [`backend/routes/students.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/students.py) using `filter(Student.name.like(...))` will behave differently across dialects.
 
-### 4. Compatibility Classification Verdict
+### 2. Compatibility Classification Verdict
 **CLASSIFICATION: PARTIALLY IMPLEMENTED (UNSUPPORTED IN PRODUCTION)**
-PostgreSQL support is only partially documented in `.env.example` and configuration files. It is not functional in production due to startup PRAGMA crashes, missing Windows drivers, and lack of connection pool wiring.
+While the ORM layer uses SQLAlchemy declarative syntax, the application is **not currently supported on PostgreSQL** due to hardcoded SQLite PRAGMA statements, excluded Windows drivers, and lack of connection pool configuration.
 
 ---
 
-## 7. Migration & Backup Readiness Audit
+## 7. Migration and Backup Readiness Audit
+
+### 1. Framework and Migration Assessment
 
 | Dimension | Repository Audit Finding | Evidence & Source Verification |
 |---|---|---|
-| **Alembic Configuration** | **Absent** | No `alembic.ini`, no `alembic/` folder, no `alembic` in `requirements.txt`. |
-| **Migration Scripts** | **Absent** | Zero version-controlled schema revision scripts. |
-| **Schema Evolution** | **Ad-hoc Procedural** | Procedural `ALTER TABLE` statements inside `seed_data.py::ensure_schema()`. |
-| **Database Versioning** | **Absent** | No schema version table (`alembic_version`). |
-| **Automated Backups** | **Absent** | Zero backup scripts, cron triggers, or automated snapshot tools. |
-| **Restore Procedures** | **Absent** | No disaster recovery runbook or restoration script. |
-| **Tracked Database Files** | **Present in Git History** | `SP0511---MAJOR-PROJECT--master/campusautomation_QR_attendence/database.db` and `SP0511---MAJOR-PROJECT--master/test.db` are tracked in Git. |
+| **Alembic Configuration** | **Absent (Confirmed)** | `alembic.ini` is missing; no `alembic/` folder exists; `alembic` is not listed in `requirements.txt`. |
+| **Versioned Migration Files** | **Absent (Confirmed)** | Zero versioned `.py` migration files exist in the repository. |
+| **Schema Evolution Method** | **Ad-hoc Procedural** | Procedural `ALTER TABLE` statements inside [`backend/seed_data.py::ensure_schema()`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/seed_data.py#L36). |
+| **Database Version Table** | **Absent (Confirmed)** | No `alembic_version` or schema metadata table exists in SQLite. |
+| **Automated Backups** | **Absent (Confirmed)** | No backup scripts, cron triggers, or automated snapshot tools exist. |
+| **Restore Procedures** | **Absent (Confirmed)** | Zero disaster recovery scripts or restore documentation exist. |
+| **Database Integrity Verification** | **Absent (Confirmed)** | No automated integrity checks (`PRAGMA integrity_check`) or checksums. |
+
+### 2. Legacy Database Files Tracked by Git
+
+A recursive filesystem scan identified two SQLite database files checked into Git:
+
+1. **`SP0511---MAJOR-PROJECT--master/campusautomation_QR_attendence/database.db`**
+   - **File Size**: 20,480 bytes
+   - **Tracked in Git**: Yes
+   - **Table Inventory**: Single table `users` (`id`, `role`, `user_id`, `password`).
+   - **Data Contents**: Contains 2 active user records storing **unhashed plaintext credentials**:
+     - Row 1: Teacher test credentials (`user_id`: `T101`, password plaintext: `1234`)
+     - Row 2: Student test credentials (`user_id`: `S201`, password plaintext: `1234`)
+   - **Risk**: Severe credential exposure in Git history.
+
+2. **`SP0511---MAJOR-PROJECT--master/test.db`**
+   - **File Size**: 221,184 bytes
+   - **Tracked in Git**: Yes
+   - **Table Inventory**: 18 tables reflecting an older schema (`users`, `students`, `attendance`, `complaints`, `announcements`, `schedules`, `schedule_feedback`, etc.).
+   - **Data Contents**: Contains sample student records with names, roll numbers, feedback submissions, and institutional announcements. (Raw credentials or secrets are not exposed in this report).
+   - **Risk**: Tracking binary database files bloats repository history and risks leaking student PII.
 
 ---
 
 ## 8. Database Test Coverage Review
 
-| Database Dimension | Test Coverage Classification | Test Evidence & Source Reference |
-|---|:---:|---|
-| **Foreign Key Enforcement** | **Not Tested** | Zero tests assert that foreign key violations trigger database integrity exceptions. |
-| **Unique Constraints** | **Indirect Application Test** | [`test_qr_security.py:L116`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/test_qr_security.py#L116) verifies duplicate QR scan error; [`test_auth_security.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/test_auth_security.py) checks duplicate username. |
-| **Orphan Records & Cascades** | **Not Tested** | Zero tests delete parent records (`Student`, `User`, `Event`, `Club`) and assert child record cascade behaviors. |
-| **Transaction Rollback** | **Indirect Application Test** | [`test_qr_security.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/test_qr_security.py) verifies session rollback on duplicate scan. |
-| **Concurrent Event Registration** | **Not Tested** | No concurrent or multithreaded registration tests exist. |
-| **Concurrent General Attendance** | **Not Tested** | No concurrent attendance write tests exist. |
-| **QR Duplicate Prevention** | **Direct Automated Test** | [`test_qr_security.py:test_qr_security_suite`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/test_qr_security.py) and [`test_comprehensive_security_audit.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/test_comprehensive_security_audit.py) directly test duplicate rejection. |
+The table below audits test coverage across all critical database behaviors, evaluating against the 188 automated tests passing in the test suite.
+
+| Database Behavior | Test Coverage Classification | Test Evidence & Source Verification |
+|---|---|---|
+| **Foreign-Key Enforcement** | **Not Tested** | SQLite foreign keys are not enabled (`PRAGMA foreign_keys = ON` is omitted). No test attempts to insert orphan child rows or verify cascade deletion. |
+| **Unique Constraint Enforcement** | **Direct Automated Test** (Partial) | QR attendance unique constraint `uq_session_roll` is directly tested in [`tests/test_qr_security.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/test_qr_security.py). `Student.roll_no` and `Club.name` unique rejection are tested indirectly. |
+| **Orphan Record Cascades** | **Not Tested** | No test verifies that deleting an `Event` deletes its registrations, or that deleting a `Club` deletes members. |
+| **Event Capacity Concurrency** | **Not Tested** | No concurrent or multi-threaded tests exist for event registration capacity checks. |
+| **Transaction Rollback** | **Direct Automated Test** (Partial) | QR attendance rollback on `IntegrityError` is verified in [`tests/test_qr_security.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/test_qr_security.py). General route rollbacks are not tested. |
 | **Database Session Cleanup** | **Indirect Application Test** | Verified via test fixture `override_get_db` teardown in [`tests/conftest.py:35`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/conftest.py#L35). |
+| **Cross-Student Data Isolation** | **Direct Automated Test** | Tested at the route/application layer via RBAC and IDOR tests in [`tests/test_comprehensive_security_audit.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/test_comprehensive_security_audit.py). |
 | **PostgreSQL Compatibility** | **Not Tested** | 100% of the 188 automated tests execute against in-memory SQLite (`sqlite://`). |
 | **Migration Execution** | **Not Tested** | No migration test harness exists. |
 | **Backup and Restore** | **Not Tested** | No backup test procedures exist. |
+| **Multi-Tenant Isolation** | **Not Tested** | Feature does not exist in application or database schema. |
 
 ---
 
-## 9. Reassessed Findings & Vulnerability Matrix
+## 9. Multi-College Readiness Assessment
 
-Findings are categorized below distinguishing **Security Vulnerabilities** (confidentiality, authorization, tenant isolation) from **Operational & Reliability Risks** (concurrency, data loss, integrity) and **Deployability & Maintainability Deficiencies**.
+### 1. Answers to 12 Core Architectural Questions
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                               REASSESSED FINDINGS MATRIX                               │
-├─────────────────────────┬───────┬──────────────────────────────────────────────────────┤
-│ Category                │ Level │ Finding Summary                                      │
-├─────────────────────────┼───────┼──────────────────────────────────────────────────────┤
-│ Security / Multi-Tenancy│ CRIT  │ 1. Zero Tenant Isolation / Global Unique Collision   │
-│ Deployability           │ CRIT  │ 2. Complete Absence of Database Migration Framework  │
-│ Reliability / Concur.   │ CRIT  │ 3. Event Capacity TOCTOU Concurrency Race Condition  │
-│ Compatibility           │ CRIT  │ 4. PostgreSQL Incompatibility (PRAGMA DDL & Drivers) │
-├─────────────────────────┼───────┼──────────────────────────────────────────────────────┤
-│ Relational Integrity    │ HIGH  │ 5. 18 Missing Foreign Keys (Orphan Record Exposure)  │
-│ Data Integrity          │ HIGH  │ 6. Missing Unique Constraints (Attendance Duplicate) │
-│ Privacy / Security      │ HIGH  │ 7. Unencrypted Geolocation & Device PII at Rest      │
-│ Disaster Recovery       │ HIGH  │ 8. Total Absence of Automated Backup and Recovery    │
-├─────────────────────────┼───────┼──────────────────────────────────────────────────────┤
-│ Data Integrity          │ MED   │ 9. Denormalized Counter Drift in Clubs and Events    │
-│ Transaction Hygiene     │ MED   │ 10. Non-Atomic Writes (Complaints) & Missing Rollback│
-│ Scalability / Config    │ MED   │ 11. Configured Connection Pool Settings Ignored      │
-│ Schema Portability      │ MED   │ 12. Inconsistent Boolean and Enum Column Types       │
-│ Security Hygiene        │ MED   │ 13. Tracked Legacy SQLite Files in Git History       │
-├─────────────────────────┼───────┼──────────────────────────────────────────────────────┤
-│ Query Performance       │ LOW   │ 14. Missing B-Tree Indexes on Foreign Keys           │
-│ Data Modeling           │ LOW   │ 15. Unbounded Varchar Lengths Across SQLite Models   │
-│ Quality Assurance       │ LOW   │ 16. In-Memory SQLite Testing Masking Production DB   │
-└─────────────────────────┴───────┴──────────────────────────────────────────────────────┘
-```
+1. **Does a College or Institution model exist?**
+   **NO.** No `College`, `Institution`, or `Campus` model exists in `backend/models/`.
+2. **Is there a `college_id` or equivalent tenant identifier?**
+   **NO.** None of the 22 database tables contain a `college_id` column.
+3. **Are students associated with a specific college?**
+   **NO.** The `Student` model only contains `department`, `semester`, and `section`.
+4. **Are faculty associated with a specific college?**
+   **NO.** The `User` model contains only `role` (`faculty`), `username`, and `email`, with no institution identifier.
+5. **Are departments and sections college-specific?**
+   **NO.** Departments are plain un-namespaced strings (e.g., `"CSE"`, `"ECE"`).
+6. **Are schedules isolated by institution?**
+   **NO.** `Schedule` queries in [`backend/routes/schedule.py`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/schedule.py) return all schedules globally.
+7. **Are attendance records isolated by institution?**
+   **NO.** `Attendance` and `QRAttendanceRecord` records are linked only to `student_id` and `session_id`.
+8. **Are clubs, events, complaints, and academic risk records isolated?**
+   **NO.** All entities reside in flat, shared global tables.
+9. **Can an authenticated user access records belonging to another college?**
+   **YES.** Because routes filter only by user ownership or role, an administrator or faculty member from College A can query, view, and modify records belonging to College B.
+10. **Are database queries consistently scoped by ownership?**
+    **PARTIALLY.** Queries are scoped to the individual user where RBAC applies, but institutional scoping is entirely absent.
+11. **Do foreign keys enforce relationships within the same institution?**
+    **NO.** Foreign keys only validate table-level primary keys, without tenant boundary checks.
+12. **Could two colleges have overlapping student roll numbers safely?**
+    **NO.** [`backend/models/student.py:10`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/student.py#L10) enforces a global unique constraint: `roll_no = Column(String, unique=True)`. If College A and College B both have a student with roll number `2024CS001`, the second record will be rejected by the database.
 
-### Detailed Finding Evaluations
+### 2. Tenant-Isolation Matrix Across 11 Core Modules
 
-#### Finding 1 (CRITICAL): Zero Tenant Isolation & Global Unique Key Collision
-* **Category**: Security / Multi-Tenant Architecture
-* **Evidence**: [`backend/models/student.py:10`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/student.py#L10) (`roll_no = Column(String, unique=True)`), [`backend/models/club.py:11`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L11) (`name = Column(String, unique=True)`).
-* **Impact**: Total barrier to multi-institution platform deployment. Data confidentiality breach across colleges.
-* **Failure Likelihood**: 100% on multi-college deployment.
-* **Remediation**: Create `colleges` table; add `college_id` foreign key to all tables; convert global unique constraints to composite `UniqueConstraint("college_id", "roll_no")` and `UniqueConstraint("college_id", "name")`.
-
-#### Finding 2 (CRITICAL): Complete Absence of Database Migration Framework
-* **Category**: Deployability & Maintainability
-* **Evidence**: [`backend/seed_data.py:36-132`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/seed_data.py#L36-L132) (`ensure_schema()`).
-* **Impact**: Inability to version, apply, or rollback database schema changes safely in staging and production.
-* **Failure Likelihood**: High across application lifecycle.
-* **Remediation**: Initialize Alembic (`alembic init alembic`); generate baseline schema revision; remove procedural DDL from startup code.
-
-#### Finding 3 (CRITICAL): Event Capacity TOCTOU Concurrency Race Condition
-* **Category**: Reliability / Concurrency
-* **Evidence**: [`backend/routes/events.py:336-405`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/events.py#L336-L405).
-* **Impact**: Simultaneous registrations exceed physical room/event capacity, leading to over-subscription.
-* **Failure Likelihood**: High during popular campus event registration windows.
-* **Remediation**: Execute atomic SQL conditional update (`UPDATE events SET current_participants = current_participants + 1 WHERE id = :id AND current_participants < max_participants`) or use `with_for_update()`.
-
-#### Finding 4 (CRITICAL): PostgreSQL Incompatibility via SQLite PRAGMAs & Missing Drivers
-* **Category**: Deployability & Platform Compatibility
-* **Evidence**: [`backend/seed_data.py:42`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/seed_data.py#L42), [`requirements.txt:9`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/requirements.txt#L9).
-* **Impact**: Immediate crash on application startup when connecting to PostgreSQL.
-* **Failure Likelihood**: 100% upon PostgreSQL deployment.
-* **Remediation**: Remove SQLite PRAGMA statements from Python code; update `requirements.txt` to include `psycopg[binary]>=3.1.18` unconditionally.
-
-#### Finding 5 (HIGH): 18 Missing Database Foreign Keys Across Core Entities
-* **Category**: Referential Integrity
-* **Evidence**: Documented in Section 3 table (e.g. `qr_attendance_records.student_id`, `event_registrations.student_id`, `risk_logs.student_id`).
-* **Impact**: Orphan records accumulate indefinitely when students or staff accounts are deleted; joins require type casting.
-* **Failure Likelihood**: 100% when deleting parent records.
-* **Remediation**: Add explicit `ForeignKey("students.id", ondelete="CASCADE")` and `ForeignKey("users.id")` constraints.
-
-#### Finding 6 (HIGH): Missing Database Unique Constraints on Attendance and Clubs
-* **Category**: Data Integrity
-* **Evidence**: [`backend/models/attendance.py:7`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/attendance.py#L7), [`backend/models/club.py:94`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/club.py#L94).
-* **Impact**: Duplicate attendance records created under concurrent requests.
-* **Failure Likelihood**: Moderate to High during batch attendance submissions.
-* **Remediation**: Add composite `UniqueConstraint("student_id", "date", "subject_code")` to `attendance`.
-
-#### Finding 7 (HIGH): Unencrypted Geolocation and Device PII at Rest
-* **Category**: Security / Data Privacy
-* **Evidence**: [`backend/models/qr_attendance.py:155-168`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/models/qr_attendance.py#L155-L168).
-* **Impact**: Exposure of exact student physical locations, IP addresses, and device fingerprints in case of database leakage.
-* **Failure Likelihood**: High if database backups or files are compromised.
-* **Remediation**: Truncate GPS coordinates to classroom radius; hash device fingerprints; establish data retention purge policy.
-
-#### Finding 8 (HIGH): Absence of Automated Database Backup and Recovery
-* **Category**: Availability / Disaster Recovery
-* **Evidence**: Repository infrastructure contains zero backup scripts or dump utilities.
-* **Impact**: Catastrophic, irreversible data loss in case of disk failure, corruption, or accidental deletion.
-* **Failure Likelihood**: Critical risk over operational lifespan.
-* **Remediation**: Add automated backup script (`backend/scripts/backup_db.py`) supporting SQLite dump and PostgreSQL `pg_dump`.
-
-#### Finding 9 (MEDIUM): Denormalized Counter Drift in Clubs and Events
-* **Category**: Data Consistency
-* **Evidence**: [`backend/routes/clubs.py:448-454`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/clubs.py#L448-L454).
-* **Impact**: Displayed club member counts and event participant counts diverge from actual database rows.
-* **Failure Likelihood**: Moderate under concurrent membership updates.
-* **Remediation**: Derive counters dynamically via `COUNT()` subqueries or update atomically via database triggers.
-
-#### Finding 10 (MEDIUM): Non-Atomic Writes & Inconsistent Route-Level Rollbacks
-* **Category**: Transaction Integrity
-* **Evidence**: [`backend/routes/complaint.py:80-109`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/routes/complaint.py#L80-L109) (dual commit); 8 route files lack route-level rollback handlers.
-* **Impact**: Partial database writes if intermediate commits fail; unhandled 500 errors on database exceptions.
-* **Failure Likelihood**: Moderate under network or lock contention.
-* **Remediation**: Group related inserts into single atomic transaction; wrap route commits in structured try-except blocks.
-
-#### Finding 11 (MEDIUM): Configured Connection Pool Settings Ignored by Engine
-* **Category**: Performance & Scalability
-* **Evidence**: [`backend/core/config.py:86-87`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/core/config.py#L86-L87), [`backend/database.py:29-33`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/backend/database.py#L29-L33).
-* **Impact**: Connection exhaustion or stale dropped connections under PostgreSQL.
-* **Failure Likelihood**: High under production concurrency.
-* **Remediation**: Wire `pool_size`, `max_overflow`, and `pool_pre_ping=True` into `create_engine()`.
-
-#### Finding 12 (MEDIUM): Inconsistent Boolean and Enum Column Types
-* **Category**: Schema Portability
-* **Evidence**: `Schedule.is_active` (`Integer`), `Announcement.is_active` (`Integer`), `RiskLog.resolved` (`Integer`), versus `User.is_active` (`Boolean`).
-* **Impact**: Dialect incompatibilities and confusing schema contracts in PostgreSQL.
-* **Failure Likelihood**: Low in SQLite; Moderate in PostgreSQL.
-* **Remediation**: Standardize all boolean flags to SQLAlchemy `Boolean(create_constraint=True)`.
-
-#### Finding 13 (MEDIUM): Tracked Legacy SQLite Files in Git History
-* **Category**: Security & Repository Hygiene
-* **Evidence**: `SP0511---MAJOR-PROJECT--master/campusautomation_QR_attendence/database.db` and `SP0511---MAJOR-PROJECT--master/test.db`.
-* **Impact**: Repository bloat; potential leakage of test/development credentials.
-* **Failure Likelihood**: Low (files are in inactive legacy folder).
-* **Remediation**: Remove tracked `.db` binaries from Git tracking via `git rm --cached`.
-
-#### Finding 14 (LOW): Missing B-Tree Indexes on Frequently Filtered Foreign Keys
-* **Category**: Performance
-* **Evidence**: `Attendance.student_id`, `RiskLog.student_id`, `EventRegistration.registration_date`.
-* **Impact**: Full table scans as dataset grows beyond tens of thousands of rows.
-* **Failure Likelihood**: Low currently; High as database scales.
-* **Remediation**: Add `index=True` on all foreign key columns.
-
-#### Finding 15 (LOW): Unbounded Varchar Lengths Across SQLite Models
-* **Category**: Data Modeling
-* **Evidence**: `Student.name`, `Student.department`, `Student.roll_no`, `Complaint.title`, `Club.name` define `String` with no length limit.
-* **Impact**: In PostgreSQL, unbounded `String` maps to `TEXT`, preventing fixed-width memory optimizations.
-* **Failure Likelihood**: Low.
-* **Remediation**: Add explicit character limits (e.g. `String(100)`).
-
-#### Finding 16 (LOW): Ephemeral SQLite In-Memory Testing Masking Production Dialects
-* **Category**: Quality Assurance
-* **Evidence**: [`tests/conftest.py:15-19`](file:///C:/Users/ruetk/OneDrive/Desktop/Campus-Automation-System/MARVEL-main/tests/conftest.py#L15-L19).
-* **Impact**: Automated test suite passes 188/188 tests, but fails to test PostgreSQL sequences, locking, or PRAGMA incompatibilities.
-* **Failure Likelihood**: Low for current SQLite target; High when migrating to PostgreSQL.
-* **Remediation**: Add a containerized PostgreSQL test target in CI/CD pipeline.
+| Module | Tenant Identifier | Query-Level Isolation | Database-Level Isolation | Risk Assessment |
+|---|---|---|---|---|
+| **Students** | None | None | None | **CRITICAL**: Cross-college student enumeration; roll number collisions. |
+| **Attendance** | None | User-level only | None | **CRITICAL**: Faculty can view and mark attendance across colleges. |
+| **QR Attendance** | None | Faculty-level only | None | **CRITICAL**: QR sessions can be scanned by students across institutions. |
+| **Complaints** | None | Student/Staff-level only | None | **CRITICAL**: Grievances visible across college boundaries. |
+| **Schedules** | None | None | None | **HIGH**: Schedules, exams, and holidays completely shared across colleges. |
+| **Clubs** | None | None | None | **HIGH**: Club name collisions (`unique=True`); cross-campus rosters. |
+| **Events** | None | Creator-level only | None | **HIGH**: Events visible across colleges; room capacity contention. |
+| **Academic Risk** | None | Student-level only | None | **CRITICAL**: Confidential student risk scores exposed across institutions. |
+| **Study Tasks** | None | User-level only | None | **MEDIUM**: Personal tasks isolated by `user_id`, but lacks tenant namespace. |
+| **Analytics** | None | None | None | **HIGH**: Administrative dashboards aggregate data across all colleges. |
+| **AI / Agent** | None | User-level only | None | **HIGH**: AI agents lack institutional knowledge graph boundaries. |
 
 ---
 
-## 10. Prioritized Remediation Roadmap (Task 18+)
+## 10. Reassessed Findings & Vulnerability Matrix
+
+```
++----------------------------------------------------------------------------------------+
+|                               REASSESSED FINDINGS MATRIX                               |
++-------------------------+-------+------------------------------------------------------+
+| Category                | Level | Finding Summary                                      |
++-------------------------+-------+------------------------------------------------------+
+| Security / Multi-Tenancy| CRIT  | 1. Zero Tenant Isolation / Global Unique Collision   |
+| Deployability           | CRIT  | 2. Complete Absence of Database Migration Framework  |
+| Reliability / Concur.   | CRIT  | 3. Event Capacity TOCTOU Concurrency Race Condition  |
+| Compatibility           | CRIT  | 4. PostgreSQL Incompatibility (PRAGMA DDL & Drivers) |
++-------------------------+-------+------------------------------------------------------+
+| Relational Integrity    | HIGH  | 5. 18 Missing Foreign Keys (Orphan Record Exposure)  |
+| Data Integrity          | HIGH  | 6. Missing Unique Constraints (Attendance Duplicate) |
+| Privacy / Security      | HIGH  | 7. Unencrypted Geolocation & Device PII at Rest      |
+| Disaster Recovery       | HIGH  | 8. Total Absence of Automated Backup and Recovery    |
++-------------------------+-------+------------------------------------------------------+
+| Data Integrity          | MED   | 9. Denormalized Counter Drift in Clubs and Events    |
+| Transaction Hygiene     | MED   | 10. Non-Atomic Writes (Complaints) & Missing Rollback|
+| Scalability / Config    | MED   | 11. Configured Connection Pool Settings Ignored      |
+| Schema Portability      | MED   | 12. Inconsistent Boolean and Enum Column Types       |
+| Security Hygiene        | MED   | 13. Tracked Legacy SQLite Files in Git History       |
++-------------------------+-------+------------------------------------------------------+
+| Query Performance       | LOW   | 14. Missing B-Tree Indexes on Foreign Keys           |
+| Data Modeling           | LOW   | 15. Unbounded Varchar Lengths Across SQLite Models   |
+| Quality Assurance       | LOW   | 16. In-Memory SQLite Testing Masking Production DB   |
++-------------------------+-------+------------------------------------------------------+
+```
+
+### Breakdown by Severity and Category
+* **Critical Findings (4)**:
+  - 1 Security / Multi-Tenant Isolation finding (Zero tenant isolation).
+  - 1 Concurrency finding (Event capacity TOCTOU).
+  - 2 Deployability & Compatibility findings (Missing Alembic, PostgreSQL PRAGMA crash).
+* **High Findings (4)**:
+  - 1 Referential integrity finding (18 missing foreign keys).
+  - 1 Data integrity finding (Missing attendance unique constraint).
+  - 1 Security / Privacy finding (Unencrypted GPS / device telemetry).
+  - 1 Disaster recovery finding (No backups).
+* **Medium Findings (5)**:
+  - 1 Concurrency finding (Counter drift).
+  - 1 Transaction finding (Non-atomic writes & rollbacks).
+  - 1 Scalability finding (Connection pool parameters ignored).
+  - 1 Schema portability finding (Inconsistent boolean types).
+  - 1 Security hygiene finding (Plaintext passwords in tracked legacy database).
+* **Low Findings (3)**:
+  - 1 Performance finding (Missing FK indexes).
+  - 1 Data modeling finding (Unbounded string lengths).
+  - 1 QA finding (In-memory testing masking production database).
+
+---
+
+## 11. Prioritized Remediation Roadmap (Task 18+)
 
 ```mermaid
 flowchart TD
@@ -498,3 +691,13 @@ flowchart TD
    - `students`: Replace global `unique=True` on `roll_no` with `UniqueConstraint("college_id", "roll_no", name="uq_college_student_roll")`.
    - `clubs`: Replace global `unique=True` on `name` with `UniqueConstraint("college_id", "name", name="uq_college_club_name")`.
 4. **Tenant Scoping Middleware**: Implement FastAPI dependency to automatically extract `current_user.college_id` and inject tenant filter clauses into all repository and route queries.
+
+---
+
+## 12. Explicit Limitations and Unverified Assumptions
+
+1. **Audit Boundary**: This audit was strictly observational and read-only. No application code, database schema migrations, or configurations were modified.
+2. **No Live PostgreSQL Cluster**: PostgreSQL findings were verified through static code analysis of raw SQL, startup routines, and driver specifications. No active PostgreSQL server was provisioned during this audit.
+3. **No Multi-Threaded Concurrency Load Testing**: Concurrency vulnerabilities (event capacity TOCTOU, counter drift) were identified by source-code control flow analysis. No high-concurrency siege/benchmark runs were executed against SQLite disk files.
+4. **Test Fixture Masking**: All 188 automated tests execute against in-memory SQLite, meaning automated test passes cannot be construed as proof of production PostgreSQL compatibility or concurrency safety.
+5. **Production Infrastructure Assumptions**: External production infrastructure (cloud firewalls, VPC peering, Kubernetes secrets, or automated cloud storage volume snapshots) was not evaluated, as the audit was confined to repository source code and local Git history.
