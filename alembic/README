@@ -1,0 +1,16 @@
+# Alembic Migrations for Campus Automation System (MARVEL)
+
+This directory contains version-controlled database schema migrations for the Campus Automation System.
+
+## Commands
+
+- Create a new migration revision:
+  `python -m alembic revision -m "description_of_change"`
+- Apply all pending migrations:
+  `python -m alembic upgrade head`
+- Revert the last applied migration:
+  `python -m alembic downgrade -1`
+- View current revision of database:
+  `python -m alembic current`
+- View revision history:
+  `python -m alembic history`
