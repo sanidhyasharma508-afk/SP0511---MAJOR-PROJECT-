@@ -217,3 +217,51 @@ def test_10_sqlite_backup_and_integrity_verification(tmp_path):
     r_rows = r_conn.execute("SELECT text_val FROM test_data;").fetchall()
     r_conn.close()
     assert r_rows == [("backup_verification_record",)]
+
+
+def test_11_database_verifier_on_complete_baseline(alembic_cfg, temp_db_path):
+    """Test 11: Verify DatabaseVerifier approves stamping when all 22 models are present before alembic_version."""
+    # Create all tables via Base.metadata directly (simulating pre-existing unversioned DB)
+    engine = create_engine(f"sqlite:///{temp_db_path.as_posix()}")
+    Base.metadata.create_all(bind=engine)
+
+    verifier = DatabaseVerifier(engine)
+    report = verifier.verify_schema()
+    engine.dispose()
+
+    assert report.is_valid is True
+    assert report.can_stamp is True
+    assert len(report.missing_tables) == 0
+    assert len(report.missing_columns) == 0
+    assert report.integrity_status == "ok"
+    assert "eligible for safe baseline stamping" in report.summary
+
+
+def test_12_isolated_baseline_stamping_preserves_data(alembic_cfg, temp_db_path):
+    """Test 12: Verify alembic stamp adds alembic_version and preserves 100% of existing rows without table recreation."""
+    engine = create_engine(f"sqlite:///{temp_db_path.as_posix()}")
+    Base.metadata.create_all(bind=engine)
+
+    # Insert a student and user record into unversioned DB
+    with engine.begin() as conn:
+        conn.exec_driver_sql("INSERT INTO students (id, name, roll_no, department) VALUES (999, 'Test Student', 'ROLL999', 'CS');")
+        conn.exec_driver_sql("INSERT INTO users (id, username, email, hashed_password, role, is_active, created_at, updated_at) VALUES (999, 'testuser', 'test@college.edu', 'hash', 'student', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);")
+    engine.dispose()
+
+    # Verify and stamp
+    command.stamp(alembic_cfg, "0001_initial_baseline")
+
+    # Verify post-stamp state
+    conn = sqlite3.connect(temp_db_path)
+    cursor = conn.cursor()
+    tables = [r[0] for r in cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';").fetchall()]
+    assert "alembic_version" in tables
+    assert len(tables) == 23
+
+    # Verify data preserved
+    student_row = cursor.execute("SELECT id, name, roll_no FROM students WHERE id = 999;").fetchone()
+    user_row = cursor.execute("SELECT id, username FROM users WHERE id = 999;").fetchone()
+    conn.close()
+
+    assert student_row == (999, "Test Student", "ROLL999")
+    assert user_row == (999, "testuser")
