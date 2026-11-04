@@ -92,20 +92,39 @@ async def startup_event():
     validate_production_settings()
     logger.log_event("startup_event", level="INFO", environment=settings.ENV, debug=get_debug_mode())
 
-    # Verify database schema readiness (Alembic is the authoritative schema manager)
-    from sqlalchemy import inspect
-    inspector = inspect(engine)
-    existing_tables = set(inspector.get_table_names())
-    required_tables = set(student.Base.metadata.tables.keys())
-    missing_tables = required_tables - existing_tables
-    if missing_tables:
-        err_msg = (
-            f"Database schema is incomplete: missing required tables {sorted(list(missing_tables))}. "
-            "Automatic schema creation on startup is disabled. "
-            "Please initialize or upgrade the database using 'alembic upgrade head' or adopt the baseline."
+    # Verify database migration readiness & schema integrity (Alembic is the authoritative schema manager)
+    from backend.core.database_verifier import DatabaseVerifier, DatabaseReadinessStatus
+    verifier = DatabaseVerifier(engine)
+    readiness = verifier.check_readiness()
+
+    if not readiness.can_start:
+        logger.log_event(
+            "database_readiness_error",
+            level="CRITICAL",
+            status=readiness.status.value,
+            summary=readiness.summary,
+            action_required=readiness.action_required,
         )
-        logger.log_event("missing_schema_error", level="CRITICAL", missing_tables=sorted(list(missing_tables)))
-        raise RuntimeError(err_msg)
+        raise RuntimeError(
+            f"Database startup check failed [{readiness.status.value}]: {readiness.summary} "
+            f"Action required: {readiness.action_required}"
+        )
+
+    if readiness.status == DatabaseReadinessStatus.COMPATIBLE_UNSTAMPED:
+        logger.log_event(
+            "database_readiness_notice",
+            level="WARNING",
+            status=readiness.status.value,
+            summary=readiness.summary,
+            action_required=readiness.action_required,
+        )
+    else:
+        logger.log_event(
+            "database_readiness_ok",
+            level="INFO",
+            status=readiness.status.value,
+            revision=readiness.revision,
+        )
 
     # Auto-seed database if empty (Development only)
     if settings.is_production:
