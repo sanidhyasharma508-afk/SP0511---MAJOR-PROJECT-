@@ -39,8 +39,8 @@ load_dotenv()
 setup_logging()
 logger = get_logger(__name__)
 
-# Create tables
-student.Base.metadata.create_all(bind=engine)
+# Note: Schema management is handled exclusively by Alembic migrations.
+# Automatic Base.metadata.create_all() has been removed to enforce migration ownership.
 
 # Create FastAPI app with environment-specific config
 app = FastAPI(
@@ -92,23 +92,38 @@ async def startup_event():
     validate_production_settings()
     logger.log_event("startup_event", level="INFO", environment=settings.ENV, debug=get_debug_mode())
 
-    # Ensure schema and auto-seed database if empty (Development only)
-    try:
-        from backend.seed_data import ensure_schema, seed_database, seed_default_users
-        ensure_schema()
-        if settings.is_production:
-            logger.log_event("production_startup", level="INFO", message="Skipping mock data seeding in production environment")
-        else:
-            from backend.database import SessionLocal
-            from backend.models.student import Student
-            db = SessionLocal()
+    # Verify database schema readiness (Alembic is the authoritative schema manager)
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    required_tables = set(student.Base.metadata.tables.keys())
+    missing_tables = required_tables - existing_tables
+    if missing_tables:
+        err_msg = (
+            f"Database schema is incomplete: missing required tables {sorted(list(missing_tables))}. "
+            "Automatic schema creation on startup is disabled. "
+            "Please initialize or upgrade the database using 'alembic upgrade head' or adopt the baseline."
+        )
+        logger.log_event("missing_schema_error", level="CRITICAL", missing_tables=sorted(list(missing_tables)))
+        raise RuntimeError(err_msg)
+
+    # Auto-seed database if empty (Development only)
+    if settings.is_production:
+        logger.log_event("production_startup", level="INFO", message="Skipping mock data seeding in production environment")
+    else:
+        from backend.database import SessionLocal
+        from backend.models.student import Student
+        from backend.seed_data import seed_default_users, seed_database
+        db = SessionLocal()
+        try:
             seed_default_users(db)
             if db.query(Student).count() == 0:
                 logger.log_event("auto_seeding_database", level="INFO")
                 seed_database()
+        except Exception as e:
+            logger.log_event("auto_seeding_error", level="WARNING", error=str(e))
+        finally:
             db.close()
-    except Exception as e:
-        logger.log_event("auto_seeding_error", level="WARNING", error=str(e))
 
     # Register event-driven agents (Phase 2)
     register_agents()

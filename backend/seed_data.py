@@ -34,102 +34,16 @@ from backend.models.qr_attendance import QRAttendanceSession, QRAttendanceRecord
 
 
 def ensure_schema():
-    """Ensure all required columns and tables exist in SQLite database"""
-    Base.metadata.create_all(bind=engine)
-    with engine.connect() as conn:
-        try:
-            from sqlalchemy import text
-            result = conn.execute(text("PRAGMA table_info(students)")).fetchall()
-            cols = [r[1] for r in result]
-            if "section" not in cols and len(cols) > 0:
-                conn.execute(text("ALTER TABLE students ADD COLUMN section VARCHAR DEFAULT '_'"))
-                conn.commit()
-                print("[MIGRATION] Added missing 'section' column to students table.")
-        except Exception as e:
-            print(f"[MIGRATION WARNING students] {e}")
-
-        try:
-            from sqlalchemy import text
-            result = conn.execute(text("PRAGMA table_info(users)")).fetchall()
-            cols = [r[1] for r in result]
-            if "avatar" not in cols and len(cols) > 0:
-                conn.execute(text("ALTER TABLE users ADD COLUMN avatar TEXT"))
-                conn.commit()
-                print("[MIGRATION] Added missing 'avatar' column to users table.")
-        except Exception as e:
-            print(f"[MIGRATION WARNING users] {e}")
-
-        try:
-            from sqlalchemy import text
-            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_qr_attendance_session_roll ON qr_attendance_records (session_id, roll_number)"))
-            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_qr_attendance_session_student ON qr_attendance_records (session_id, student_id)"))
-            conn.commit()
-            print("[MIGRATION] Verified unique indexes on qr_attendance_records.")
-        except Exception as e:
-            print(f"[MIGRATION WARNING qr_attendance_records] {e}")
-
-        # Clubs table migration
-        try:
-            from sqlalchemy import text
-            result = conn.execute(text("PRAGMA table_info(clubs)")).fetchall()
-            cols = [r[1] for r in result]
-            if "created_by" not in cols and len(cols) > 0:
-                conn.execute(text("ALTER TABLE clubs ADD COLUMN created_by INTEGER"))
-                conn.commit()
-                print("[MIGRATION] Added 'created_by' column to clubs table.")
-        except Exception as e:
-            print(f"[MIGRATION WARNING clubs] {e}")
-
-        # Club members unique index migration
-        try:
-            from sqlalchemy import text
-            conn.execute(text("DELETE FROM club_members WHERE id NOT IN (SELECT MIN(id) FROM club_members GROUP BY club_id, student_id)"))
-            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_club_member_club_student ON club_members (club_id, student_id)"))
-            conn.commit()
-            print("[MIGRATION] Verified unique index on club_members (club_id, student_id).")
-        except Exception as e:
-            print(f"[MIGRATION WARNING club_members] {e}")
-
-        # Event registrations unique index migration
-        try:
-            from sqlalchemy import text
-            conn.execute(text("DELETE FROM event_registrations WHERE id NOT IN (SELECT MIN(id) FROM event_registrations GROUP BY event_id, student_id)"))
-            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_event_reg_event_student ON event_registrations (event_id, student_id)"))
-            conn.commit()
-            print("[MIGRATION] Verified unique index on event_registrations (event_id, student_id).")
-        except Exception as e:
-            print(f"[MIGRATION WARNING event_registrations] {e}")
-
-        # Complaints table migration
-        try:
-            from sqlalchemy import text
-            result = conn.execute(text("PRAGMA table_info(complaints)")).fetchall()
-            cols = [r[1] for r in result]
-            if "resolution_notes" not in cols and len(cols) > 0:
-                conn.execute(text("ALTER TABLE complaints ADD COLUMN resolution_notes TEXT"))
-            if "assigned_to" not in cols and len(cols) > 0:
-                conn.execute(text("ALTER TABLE complaints ADD COLUMN assigned_to INTEGER"))
-            conn.commit()
-            print("[MIGRATION] Verified resolution_notes and assigned_to columns in complaints table.")
-        except Exception as e:
-            print(f"[MIGRATION WARNING complaints] {e}")
-
-        # Attendance table migration
-        try:
-            from sqlalchemy import text
-            result = conn.execute(text("PRAGMA table_info(attendance)")).fetchall()
-            cols = [r[1] for r in result]
-            if "subject_code" not in cols and len(cols) > 0:
-                conn.execute(text("ALTER TABLE attendance ADD COLUMN subject_code VARCHAR(50)"))
-            if "faculty_id" not in cols and len(cols) > 0:
-                conn.execute(text("ALTER TABLE attendance ADD COLUMN faculty_id VARCHAR(50)"))
-            if "session_name" not in cols and len(cols) > 0:
-                conn.execute(text("ALTER TABLE attendance ADD COLUMN session_name VARCHAR(100)"))
-            conn.commit()
-            print("[MIGRATION] Verified subject_code, faculty_id, session_name columns in attendance table.")
-        except Exception as e:
-            print(f"[MIGRATION WARNING attendance] {e}")
-
+    """
+    DEPRECATED: Procedural schema creation has been replaced by Alembic migrations.
+    This function no longer creates tables or executes ALTER TABLE statements.
+    Use 'alembic upgrade head' for schema provisioning.
+    """
+    print(
+        "[DEPRECATION NOTICE] ensure_schema() is deprecated and disabled. "
+        "Schema management is handled exclusively by Alembic migrations. "
+        "Run 'alembic upgrade head' to apply schema migrations."
+    )
 
 def seed_default_users(db: Session):
     """
@@ -141,6 +55,15 @@ def seed_default_users(db: Session):
     if settings.is_production:
         print("[AUTH NOTICE] Production mode detected. Automatic user seeding skipped.")
         return
+
+    from sqlalchemy import inspect
+    bind = db.get_bind()
+    inspector = inspect(bind)
+    if "users" not in inspector.get_table_names():
+        raise RuntimeError(
+            "Cannot seed default users: 'users' table is missing. "
+            "Please run 'alembic upgrade head' before seeding."
+        )
 
     from backend.core.auth import hash_password
     from backend.models.user import User
@@ -209,7 +132,17 @@ def seed_database():
         print("[SEED NOTICE] Production mode detected. Automatic database seeding skipped.")
         return
 
-    ensure_schema()
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    required = {"students", "users", "clubs", "events", "schedules"}
+    missing = required - existing_tables
+    if missing:
+        raise RuntimeError(
+            f"Cannot seed database: required tables are missing: {sorted(list(missing))}. "
+            "Please run 'alembic upgrade head' before seeding."
+        )
+
     db: Session = SessionLocal()
 
     try:

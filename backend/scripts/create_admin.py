@@ -25,7 +25,11 @@ from backend.core.auth import hash_password
 
 
 def create_admin(username: str, email: str, password: str, full_name: str = "System Administrator"):
-    Base.metadata.create_all(bind=engine)
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    if "users" not in inspector.get_table_names():
+        print("[ERROR] Database has not been migrated. Run 'alembic upgrade head' before creating an admin account.")
+        return False
     db = SessionLocal()
     try:
         existing = db.query(User).filter((User.username == username) | (User.email == email)).first()

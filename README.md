@@ -75,12 +75,18 @@ Copy-Item .env.example .env
 cp .env.example .env
 ```
 
-### 4. Database Initialization & Seeding (Development Only)
+### 4. Database Migrations & Initial Seeding
 
-Initialize database tables and seed test accounts and sample campus data:
+Apply official Alembic schema migrations:
 
 ```bash
-python backend/seed_data.py
+alembic upgrade head
+```
+
+For development or testing environments, seed initial accounts and sample data:
+
+```bash
+python -m backend.seed_data
 ```
 
 ### 5. Running the Backend Server
@@ -174,7 +180,9 @@ ADMIN_USERNAME=sysadmin ADMIN_EMAIL=sysadmin@institution.edu ADMIN_PASSWORD=Stro
   - Supports high concurrency, connection pooling, and multi-instance scaling.
   - Legacy `postgres://` connection strings are automatically normalized to `postgresql://`.
 - **Schema Migrations:**
-  - `backend/seed_data.py` provides `ensure_schema()` which creates tables and performs non-destructive column/index migrations automatically upon startup.
+  - Database schema is managed exclusively by **Alembic** migrations (`alembic/versions/`).
+  - Automatic procedural schema creation on application startup is disabled.
+  - Apply migrations explicitly using `alembic upgrade head`.
 
 ### 4. Running Production ASGI Server (Gunicorn + Uvicorn Workers)
 
@@ -253,6 +261,8 @@ When running strictly in development or testing mode (`ENV=development`), `backe
 ## 📁 Repository Structure
 
 ```
+├── alembic/                # Version-controlled schema migrations
+│   └── versions/           # Migration revisions (0001_initial_baseline.py)
 ├── backend/
 │   ├── ai/                 # AI agents & RAG pipelines
 │   ├── core/               # Auth, security, config, RBAC, logging, event bus
@@ -262,7 +272,7 @@ When running strictly in development or testing mode (`ENV=development`), `backe
 │   ├── scripts/            # Admin creation and maintenance scripts
 │   ├── main.py             # FastAPI entrypoint and middleware assembly
 │   ├── database.py         # SQLAlchemy engine & session dependency
-│   └── seed_data.py        # Database schema migrations & development seeder
+│   └── seed_data.py        # Development data seeder (idempotent, data-only)
 ├── frontend/
 │   ├── js/                 # Vanilla JavaScript client modules (auth, dashboard, qr)
 │   ├── styles/             # Application stylesheets
