@@ -157,13 +157,72 @@ When running against a compatible legacy database such as `campus_automation.db`
    [WARNING] status: compatible_unstamped. Schema matches 22-model baseline, but alembic_version table is absent.
    Action required: Adopt baseline by executing 'alembic stamp 0001_initial_baseline' after creating an authorized backup.
    ```
-2. Operator action (when ready to adopt version tracking):
-   ```bash
-   # 1. Take a safe hot backup
-   cp campus_automation.db campus_automation.db.bak_$(date +%Y%m%d%H%M%S)
+2. Operator action (to be performed during a scheduled maintenance window):
 
-   # 2. Stamp baseline revision
+   **Step 1 — Application Quiescence:**
+   Ensure all active application processes (FastAPI / Uvicorn / Gunicorn workers) are stopped so that no write transactions are in progress:
+   ```powershell
+   # Windows PowerShell:
+   Stop-Process -Name "uvicorn" -ErrorAction SilentlyContinue
+   # Linux:
+   pkill -f "uvicorn" || true
+   ```
+
+   **Step 2 — Point-in-Time Consistent Backup (SQLite Online Backup API):**
+   Do **NOT** use ordinary file-copy (`cp` or `copy`) while the database is live, as page tearing and inconsistent WAL states can corrupt the snapshot. Instead, execute the verified backup utility using the official SQLite Online Backup API (`sqlite3.backup`):
+   ```python
+   from pathlib import Path
+   from backend.core.backup_utils import backup_sqlite_database
+   backup_path, checksum = backup_sqlite_database(
+       source_db_path=Path("campus_automation.db"),
+       backup_dir=Path("backups"),
+       prefix="pre_baseline_adoption",
+   )
+   print(f"Verified point-in-time backup created: {backup_path}")
+   print(f"Backup SHA-256: {checksum}")
+   ```
+
+   **Step 3 — Backup Checksum & SQLite Integrity Verification:**
+   The backup utility automatically computes the SHA-256 hash and executes `PRAGMA integrity_check;`. Verify that the backup returns `ok`:
+   ```python
+   import sqlite3
+   conn = sqlite3.connect(backup_path)
+   assert conn.execute("PRAGMA integrity_check;").fetchall() == [("ok",)]
+   conn.close()
+   ```
+
+   **Step 4 — Foreign-Key Relational Verification:**
+   Ensure no orphan child rows or relational violations exist before stamping:
+   ```python
+   conn = sqlite3.connect("campus_automation.db")
+   fk_violations = conn.execute("PRAGMA foreign_key_check;").fetchall()
+   conn.close()
+   assert len(fk_violations) == 0, f"Foreign key check failed: {fk_violations}"
+   ```
+
+   **Step 5 — Schema Verification Gatekeeper:**
+   Verify that the physical database schema matches all 22 models and is eligible for baseline stamping:
+   ```python
+   from sqlalchemy import create_engine
+   from backend.core.database_verifier import DatabaseVerifier
+   engine = create_engine("sqlite:///campus_automation.db")
+   verifier = DatabaseVerifier(engine)
+   report = verifier.verify_schema()
+   assert report.can_stamp, f"Stamping aborted: {report.summary}"
+   ```
+
+   **Step 6 — Execute Baseline Stamping:**
+   Only after Steps 1–5 pass completely, stamp the baseline revision:
+   ```bash
    alembic stamp 0001_initial_baseline
+   ```
+
+   **Step 7 — Post-Stamp Verification:**
+   Verify that `alembic_version` contains `0001_initial_baseline` and the database readiness transitions to State B (`migrated`):
+   ```python
+   readiness = verifier.check_readiness()
+   assert readiness.status.value == "migrated"
+   assert readiness.can_start is True
    ```
 3. Database status transitions to State B (`migrated`).
 

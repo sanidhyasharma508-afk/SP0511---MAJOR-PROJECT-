@@ -247,15 +247,26 @@ Because Stage A passed with 100% verification, the system is fully prepared for 
      Stop-Process -Name "uvicorn" -ErrorAction SilentlyContinue
      ```
 
-2. **Step 2: Pre-Stamp Backup Creation**
-   - Execute the verified backup utility:
+2. **Step 2: Pre-Stamp Backup Creation (SQLite Online Backup API)**
+   - Never use raw file copying (`cp` or `copy`) while the database is active. Execute the verified backup utility powered by `sqlite3.backup`:
      ```python
+     from pathlib import Path
      from backend.core.backup_utils import backup_sqlite_database
-     backup_path, checksum = backup_sqlite_database("campus_automation.db", "backups", prefix="pre_adoption")
+     backup_path, checksum = backup_sqlite_database(Path("campus_automation.db"), Path("backups"), prefix="pre_adoption")
      print(f"Created verified backup: {backup_path} (SHA-256: {checksum})")
      ```
 
-3. **Step 3: Schema Verification Gatekeeper**
+3. **Step 3: SQLite Integrity and Foreign Key Checks**
+   - Verify backup file integrity and live database foreign key constraints before stamping:
+     ```python
+     import sqlite3
+     conn = sqlite3.connect("campus_automation.db")
+     assert conn.execute("PRAGMA integrity_check;").fetchall() == [("ok",)]
+     assert len(conn.execute("PRAGMA foreign_key_check;").fetchall()) == 0, "Foreign key violations detected"
+     conn.close()
+     ```
+
+4. **Step 4: Schema Verification Gatekeeper**
    - Verify that the schema is untouched and conforms to `Base.metadata`:
      ```python
      from sqlalchemy import create_engine
@@ -266,18 +277,18 @@ Because Stage A passed with 100% verification, the system is fully prepared for 
      assert report.can_stamp, f"Stamping aborted: {report.summary}"
      ```
 
-4. **Step 4: Execute Alembic Stamping**
-   - Run the stamping command:
+5. **Step 5: Execute Alembic Stamping**
+   - Run the stamping command only after all prior checks succeed:
      ```bash
      alembic -c alembic.ini stamp 0001_initial_baseline
      ```
 
-5. **Step 5: Post-Stamp Verification**
+6. **Step 6: Post-Stamp Verification**
    - Verify that `alembic_version` holds `'0001_initial_baseline'` and `PRAGMA integrity_check` is `'ok'`.
    - Verify total row count remains 60.
 
-6. **Rollback Procedure (Disaster Recovery)**:
-   - If any anomaly is detected during Step 4 or Step 5, execute immediate rollback:
+7. **Rollback Procedure (Disaster Recovery)**:
+   - If any anomaly is detected during Step 5 or Step 6, execute immediate rollback:
      ```python
      from backend.core.backup_utils import restore_sqlite_database
      restore_sqlite_database("backups/pre_adoption_<timestamp>_campus_automation.db", "campus_automation.db", overwrite=True)

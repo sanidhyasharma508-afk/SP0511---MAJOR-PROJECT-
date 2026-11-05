@@ -28,7 +28,10 @@ class DatabaseReadinessStatus(str, Enum):
     UNKNOWN_REVISION = "unknown_revision"  # State E: alembic_version table exists with an unknown or inconsistent revision
 
 
-# Canonical recognized revisions established by the repository
+# The canonical target (head) revision expected by the deployed application code
+EXPECTED_REVISION: str = "0001_initial_baseline"
+
+# Canonical recognized revisions established by repository history
 KNOWN_REVISIONS: Set[str] = {"0001_initial_baseline"}
 
 
@@ -91,9 +94,16 @@ class ReadinessReport:
 class DatabaseVerifier:
     """Verifies schema conformance against Base.metadata and classifies migration readiness."""
 
-    def __init__(self, engine: Engine):
+    def __init__(
+        self,
+        engine: Engine,
+        expected_revision: str = EXPECTED_REVISION,
+        known_revisions: Optional[Set[str]] = None,
+    ):
         self.engine = engine
         self.target_metadata = Base.metadata
+        self.expected_revision = expected_revision
+        self.known_revisions = known_revisions if known_revisions is not None else KNOWN_REVISIONS
 
     def _inspect_structural_details(self, inspector, existing_tables: Set[str], expected_tables: Set[str]):
         """Perform comprehensive inspection of tables, columns, types, nullability, PKs, FKs, and indexes."""
@@ -359,15 +369,29 @@ class DatabaseVerifier:
 
         # State E: Unknown or inconsistent Alembic revision
         if has_alembic:
-            if not current_revision or current_revision not in KNOWN_REVISIONS:
+            if not current_revision or current_revision not in self.known_revisions:
                 return ReadinessReport(
                     status=DatabaseReadinessStatus.UNKNOWN_REVISION,
                     can_start=False,
                     revision=current_revision,
                     summary=f"Database has unknown or inconsistent Alembic revision: '{current_revision}'.",
                     action_required=(
-                        f"Verify migration history. Expected recognized revisions: {sorted(list(KNOWN_REVISIONS))}. "
+                        f"Verify migration history. Expected recognized revisions: {sorted(list(self.known_revisions))}. "
                         "Do not start application with unrecognized database revision."
+                    ),
+                )
+            if current_revision != self.expected_revision:
+                return ReadinessReport(
+                    status=DatabaseReadinessStatus.INCOMPATIBLE,
+                    can_start=False,
+                    revision=current_revision,
+                    summary=(
+                        f"Database schema revision '{current_revision}' is outdated. "
+                        f"Current expected revision is '{self.expected_revision}'."
+                    ),
+                    action_required=(
+                        "Upgrade database schema using 'alembic upgrade head'. "
+                        f"The application cannot start against outdated revision '{current_revision}'."
                     ),
                 )
 
@@ -450,7 +474,7 @@ class DatabaseVerifier:
             )
 
         # State B: Migrated Database
-        if has_alembic and current_revision in KNOWN_REVISIONS:
+        if has_alembic and current_revision == self.expected_revision:
             return ReadinessReport(
                 status=DatabaseReadinessStatus.MIGRATED,
                 can_start=True,

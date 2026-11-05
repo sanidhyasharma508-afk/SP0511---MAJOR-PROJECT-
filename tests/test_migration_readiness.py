@@ -93,7 +93,6 @@ def test_1_fresh_empty_database_detected_as_unmigrated_startup_refuses(temp_db_p
 
     engine.dispose()
 
-
 def test_2_correct_baseline_migrated_database_passes_readiness_startup_proceeds(alembic_cfg, temp_db_path):
     """Test 2: Correct baseline-migrated database passes readiness; startup proceeds."""
     command.upgrade(alembic_cfg, "head")
@@ -119,7 +118,6 @@ def test_2_correct_baseline_migrated_database_passes_readiness_startup_proceeds(
         asyncio.run(startup_event())
 
     engine.dispose()
-
 
 def test_3_compatible_unstamped_legacy_database_warning_emitted_startup_proceeds(temp_db_path):
     """Test 3: Compatible but unstamped legacy database detected; warning emitted; startup proceeds."""
@@ -147,7 +145,6 @@ def test_3_compatible_unstamped_legacy_database_warning_emitted_startup_proceeds
 
     engine.dispose()
 
-
 def test_4_database_missing_required_table_fails_readiness_startup_refuses(alembic_cfg, temp_db_path):
     """Test 4: Database missing required table fails readiness; startup refuses to proceed."""
     command.upgrade(alembic_cfg, "head")
@@ -173,7 +170,6 @@ def test_4_database_missing_required_table_fails_readiness_startup_refuses(alemb
         assert "events" in str(exc_info.value)
 
     engine.dispose()
-
 
 def test_5_database_missing_required_column_fails_readiness_startup_refuses(alembic_cfg, temp_db_path):
     """Test 5: Database missing required column fails readiness; startup refuses to proceed."""
@@ -203,7 +199,6 @@ def test_5_database_missing_required_column_fails_readiness_startup_refuses(alem
         assert "missing columns" in str(exc_info.value)
 
     engine.dispose()
-
 
 def test_6_database_with_incompatible_column_type_fails_readiness_startup_refuses(alembic_cfg, temp_db_path):
     """Test 6: Database with incompatible column type fails readiness; startup refuses to proceed."""
@@ -244,7 +239,6 @@ def test_6_database_with_incompatible_column_type_fails_readiness_startup_refuse
         assert "type mismatches" in str(exc_info.value)
 
     engine.dispose()
-
 
 def test_7_database_missing_foreign_key_fails_readiness_startup_refuses(alembic_cfg, temp_db_path):
     """Test 7: Database missing foreign key fails readiness; startup refuses to proceed."""
@@ -288,7 +282,6 @@ def test_7_database_missing_foreign_key_fails_readiness_startup_refuses(alembic_
 
     engine.dispose()
 
-
 def test_8_database_missing_unique_constraint_fails_readiness_startup_refuses(alembic_cfg, temp_db_path):
     """Test 8: Database missing unique constraint fails readiness; startup refuses to proceed."""
     command.upgrade(alembic_cfg, "head")
@@ -326,7 +319,6 @@ def test_8_database_missing_unique_constraint_fails_readiness_startup_refuses(al
 
     engine.dispose()
 
-
 def test_9_database_missing_important_index_fails_readiness_startup_refuses(alembic_cfg, temp_db_path):
     """Test 9: Database missing important index fails readiness; startup refuses to proceed."""
     command.upgrade(alembic_cfg, "head")
@@ -352,7 +344,6 @@ def test_9_database_missing_important_index_fails_readiness_startup_refuses(alem
         assert "indexes" in str(exc_info.value) or "events" in str(exc_info.value)
 
     engine.dispose()
-
 
 def test_10_database_with_unknown_alembic_revision_fails_readiness_startup_refuses(alembic_cfg, temp_db_path):
     """Test 10: Database with unknown Alembic revision fails readiness; startup refuses to proceed."""
@@ -381,7 +372,6 @@ def test_10_database_with_unknown_alembic_revision_fails_readiness_startup_refus
 
     engine.dispose()
 
-
 def test_11_verifier_execution_causes_zero_ddl_operations(alembic_cfg, temp_db_path):
     """Test 11: Verifier execution causes zero DDL operations."""
     command.upgrade(alembic_cfg, "head")
@@ -400,7 +390,6 @@ def test_11_verifier_execution_causes_zero_ddl_operations(alembic_cfg, temp_db_p
         _ = verifier.verify_schema()
 
     engine.dispose()
-
     conn = sqlite3.connect(temp_db_path)
     cursor = conn.cursor()
     schema_after = cursor.execute("SELECT type, name, sql FROM sqlite_master ORDER BY name;").fetchall()
@@ -432,7 +421,6 @@ def test_12_verifier_execution_does_not_stamp_or_migrate_database(temp_db_path):
     assert tables_before == tables_after
     engine.dispose()
 
-
 def test_13_existing_application_startup_behavior_preserved_for_valid_databases(alembic_cfg, temp_db_path):
     """Test 13: Existing application startup behavior preserved for valid databases."""
     command.upgrade(alembic_cfg, "head")
@@ -459,7 +447,6 @@ def test_13_existing_application_startup_behavior_preserved_for_valid_databases(
     assert session.query(User).count() == len(users)
     session.close()
     engine.dispose()
-
 
 def test_14_existing_auth_and_authorization_regression_verification(alembic_cfg, temp_db_path):
     """Test 14: Existing authentication and authorization regression verification."""
@@ -488,4 +475,36 @@ def test_14_existing_auth_and_authorization_regression_verification(alembic_cfg,
     assert payload.email == "admin@campus.edu"
 
     session.close()
+    engine.dispose()
+
+
+def test_15_recognized_outdated_alembic_revision_fails_readiness_startup_refuses(alembic_cfg, temp_db_path):
+    """Test 15: Database with recognized but outdated revision fails readiness; startup refuses to proceed."""
+    command.upgrade(alembic_cfg, "head")
+
+    engine = create_engine(f"sqlite:///{temp_db_path.as_posix()}")
+
+    # Simulate an application that expects revision '0002_future_feature', while the database
+    # has '0001_initial_baseline'. Both are recognized, but '0001_initial_baseline' is outdated.
+    verifier = DatabaseVerifier(
+        engine,
+        expected_revision="0002_future_feature",
+        known_revisions={"0001_initial_baseline", "0002_future_feature"},
+    )
+    readiness = verifier.check_readiness()
+
+    assert readiness.status == DatabaseReadinessStatus.INCOMPATIBLE
+    assert readiness.can_start is False
+    assert readiness.revision == "0001_initial_baseline"
+    assert "outdated" in readiness.summary.lower()
+    assert "alembic upgrade head" in readiness.action_required
+
+    # Verify startup_event refuses to start with an outdated revision
+    TestingSession = sessionmaker(bind=engine)
+    with patch("backend.core.database_verifier.DatabaseVerifier", return_value=verifier):
+        with patch("backend.main.engine", engine), patch("backend.database.SessionLocal", TestingSession):
+            with pytest.raises(RuntimeError) as exc_info:
+                asyncio.run(startup_event())
+            assert "outdated" in str(exc_info.value).lower() or "alembic upgrade head" in str(exc_info.value).lower()
+
     engine.dispose()

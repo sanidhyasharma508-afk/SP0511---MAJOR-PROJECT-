@@ -131,17 +131,23 @@ uvicorn backend.main:app --reload
 ### 5.2 Existing Database Baseline Adoption
 For environments already running with `campus_automation.db` (containing pre-existing records):
 ```bash
-# 1. Stop application workers
-# 2. Create verified backup
-python -c "from backend.core.backup_utils import backup_sqlite_database; backup_sqlite_database('campus_automation.db', 'backups')"
+# 1. Application Quiescence (Stop application workers)
+# Stop-Process -Name "uvicorn" -ErrorAction SilentlyContinue
 
-# 3. Verify schema conformance against Base.metadata
-python -c "from sqlalchemy import create_engine; from backend.core.database_verifier import DatabaseVerifier; v = DatabaseVerifier(create_engine('sqlite:///campus_automation.db')); assert v.verify_schema().can_stamp"
+# 2. Create verified point-in-time backup via SQLite Online Backup API (never use raw file copy)
+python -c "from pathlib import Path; from backend.core.backup_utils import backup_sqlite_database; p, c = backup_sqlite_database(Path('campus_automation.db'), Path('backups'), prefix='pre_baseline'); print(f'Backup: {p}, SHA-256: {c}')"
 
-# 4. Stamp baseline revision during authorized maintenance window
+# 3. Run SQLite integrity and foreign-key relational checks
+python -c "import sqlite3; conn = sqlite3.connect('campus_automation.db'); assert conn.execute('PRAGMA integrity_check;').fetchall() == [('ok',)]; assert len(conn.execute('PRAGMA foreign_key_check;').fetchall()) == 0; conn.close()"
+
+# 4. Verify schema conformance against Base.metadata gatekeeper
+python -c "from sqlalchemy import create_engine; from backend.core.database_verifier import DatabaseVerifier; v = DatabaseVerifier(create_engine('sqlite:///campus_automation.db')); assert v.verify_schema().can_stamp, 'Schema not eligible for stamping'"
+
+# 5. Stamp baseline revision during authorized maintenance window
 alembic stamp 0001_initial_baseline
 
-# 5. Restart application
+# 6. Verify post-stamp readiness state and restart application
+python -c "from sqlalchemy import create_engine; from backend.core.database_verifier import DatabaseVerifier; v = DatabaseVerifier(create_engine('sqlite:///campus_automation.db')); assert v.check_readiness().status.value == 'migrated'"
 ```
 
 ### 5.3 Authoring Future Schema Migrations

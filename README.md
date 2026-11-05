@@ -179,10 +179,37 @@ ADMIN_USERNAME=sysadmin ADMIN_EMAIL=sysadmin@institution.edu ADMIN_PASSWORD=Stro
   - Set `DATABASE_URL=postgresql://user:password@host:port/database_name`.
   - Supports high concurrency, connection pooling, and multi-instance scaling.
   - Legacy `postgres://` connection strings are automatically normalized to `postgresql://`.
-- **Schema Migrations:**
+- **Schema Migrations & Baseline Adoption:**
   - Database schema is managed exclusively by **Alembic** migrations (`alembic/versions/`).
   - Automatic procedural schema creation on application startup is disabled.
   - Apply migrations explicitly using `alembic upgrade head`.
+  - **Adopting Baseline on Existing Unstamped SQLite Database:**
+    To safely adopt version tracking without data loss:
+    1. Stop application workers (quiescence).
+    2. Create a verified point-in-time backup using the SQLite Online Backup API (`backend/core/backup_utils.py`):
+       ```python
+       from pathlib import Path
+       from backend.core.backup_utils import backup_sqlite_database
+       backup_path, checksum = backup_sqlite_database(Path("campus_automation.db"), Path("backups"), prefix="pre_baseline")
+       ```
+    3. Verify integrity and foreign key constraints:
+       ```python
+       import sqlite3
+       conn = sqlite3.connect("campus_automation.db")
+       assert conn.execute("PRAGMA integrity_check;").fetchall() == [("ok",)]
+       assert len(conn.execute("PRAGMA foreign_key_check;").fetchall()) == 0
+       conn.close()
+       ```
+    4. Verify schema conformance via `DatabaseVerifier`:
+       ```python
+       from sqlalchemy import create_engine
+       from backend.core.database_verifier import DatabaseVerifier
+       assert DatabaseVerifier(create_engine("sqlite:///campus_automation.db")).verify_schema().can_stamp
+       ```
+    5. Stamp the baseline revision:
+       ```bash
+       alembic stamp 0001_initial_baseline
+       ```
 
 ### 4. Running Production ASGI Server (Gunicorn + Uvicorn Workers)
 
