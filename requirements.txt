@@ -7,7 +7,7 @@ starlette>=0.40.0
 # Database & ORM
 SQLAlchemy>=2.0.0
 alembic>=1.13.0
-psycopg2-binary>=2.9.9; platform_system != "Windows"
+psycopg[binary]>=3.2.0
 
 # Data Validation & Configuration
 pydantic>=2.8.0

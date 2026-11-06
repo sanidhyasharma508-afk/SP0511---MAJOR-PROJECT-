@@ -28,8 +28,9 @@ def get_url() -> str:
     # Allow command line or environment override if passed
     url = config.get_main_option("sqlalchemy.url")
     if url:
-        return url
-    return settings.get_database_url()
+        from backend.core.config import normalize_database_url
+        return normalize_database_url(url)
+    return settings.get_normalized_database_url()
 
 
 def run_migrations_offline() -> None:

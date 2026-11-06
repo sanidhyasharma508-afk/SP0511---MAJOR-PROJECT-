@@ -3,8 +3,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional, List, Set, Any
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, field_validator
 import logging
+from sqlalchemy.engine.url import make_url
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,58 @@ if not _env_files:
     _env_files.append(".env")
 
 
+def normalize_database_url(url: str) -> str:
+    """Normalize and validate database connection URLs.
+
+    Supports:
+      - SQLite: sqlite:///...
+      - PostgreSQL: postgresql+psycopg://..., postgresql://..., postgres://...
+    Maps legacy/bare PostgreSQL schemes to modern Psycopg 3 (postgresql+psycopg://).
+    Never exposes raw passwords in exceptions or logs.
+    """
+    if not url or not isinstance(url, str) or not url.strip():
+        raise ValueError("DATABASE_URL must be a non-empty string.")
+
+    clean_url = url.strip()
+
+    # Normalize PostgreSQL URL schemes to modern psycopg 3
+    if clean_url.startswith("postgres://"):
+        clean_url = "postgresql+psycopg://" + clean_url[len("postgres://") :]
+    elif clean_url.startswith("postgresql://"):
+        clean_url = "postgresql+psycopg://" + clean_url[len("postgresql://") :]
+
+    try:
+        parsed = make_url(clean_url)
+    except Exception as e:
+        raise ValueError(f"Invalid database URL format: {e}") from None
+
+    backend = parsed.get_backend_name()
+    if backend not in ("sqlite", "postgresql"):
+        raise ValueError(
+            f"Unsupported database dialect '{backend}'. Campus Automation System (MARVEL) supports 'sqlite' and 'postgresql'."
+        )
+
+    if backend == "postgresql":
+        if not parsed.host and not parsed.database:
+            raise ValueError(
+                "Invalid PostgreSQL connection URL: host or database name must be specified."
+            )
+
+    return clean_url
+
+
+def mask_database_url(url: str) -> str:
+    """Safely mask password credentials in a database URL for logging or diagnostics."""
+    if not url or not isinstance(url, str):
+        return ""
+    try:
+        if url.startswith("sqlite:///./") or url.startswith("sqlite:///:memory:"):
+            return url
+        return make_url(url).render_as_string(hide_password=True)
+    except Exception:
+        return "[MASKED_URL]"
+
+
 class Environment(str, Enum):
     """Application environments"""
 
@@ -80,11 +133,42 @@ class Settings(BaseSettings):
     PORT: int = Field(default=8000)
     API_PREFIX: str = Field(default="/api/v1")
 
-    # Database
+    # Database Configuration (Phase 19 Dual-Engine)
     DATABASE_URL: str = Field(default="sqlite:///./campus_automation.db")
     DB_ECHO: bool = Field(default=False)
     DB_POOL_SIZE: int = Field(default=5)
     DB_MAX_OVERFLOW: int = Field(default=10)
+    DB_POOL_TIMEOUT: int = Field(default=30)
+    DB_POOL_RECYCLE: int = Field(default=1800)
+    DB_POOL_PRE_PING: bool = Field(default=True)
+
+    @field_validator("DB_POOL_SIZE")
+    @classmethod
+    def validate_pool_size(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("DB_POOL_SIZE must be greater than or equal to 1.")
+        return v
+
+    @field_validator("DB_MAX_OVERFLOW")
+    @classmethod
+    def validate_max_overflow(cls, v: int) -> int:
+        if v < 0:
+            raise ValueError("DB_MAX_OVERFLOW must be greater than or equal to 0.")
+        return v
+
+    @field_validator("DB_POOL_TIMEOUT")
+    @classmethod
+    def validate_pool_timeout(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("DB_POOL_TIMEOUT must be greater than or equal to 1.")
+        return v
+
+    @field_validator("DB_POOL_RECYCLE")
+    @classmethod
+    def validate_pool_recycle(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("DB_POOL_RECYCLE must be greater than or equal to 1.")
+        return v
 
     # Authentication - No insecure default in production
     SECRET_KEY: Optional[str] = Field(default=None)
@@ -190,7 +274,7 @@ class Settings(BaseSettings):
         return self.ENVIRONMENT == Environment.TESTING
 
     def get_database_url(self) -> str:
-        """Get database URL based on environment, resolving relative SQLite paths to project root"""
+        """Get database URL based on environment, resolving relative SQLite paths to project root."""
         if self.is_testing:
             return "sqlite:///:memory:"
         if self.DATABASE_URL.startswith("sqlite:///./"):
@@ -198,6 +282,14 @@ class Settings(BaseSettings):
             abs_db_path = (BASE_DIR / rel_name).resolve().as_posix()
             return f"sqlite:///{abs_db_path}"
         return self.DATABASE_URL
+
+    def get_normalized_database_url(self) -> str:
+        """Get normalized and validated database URL ensuring proper DBAPI driver."""
+        return normalize_database_url(self.get_database_url())
+
+    def get_masked_database_url(self) -> str:
+        """Get safe database URL with credentials masked for logging or diagnostics."""
+        return mask_database_url(self.get_database_url())
 
 
 def validate_production_settings(cfg: Optional[Settings] = None) -> bool:
@@ -241,6 +333,13 @@ def validate_production_settings(cfg: Optional[Settings] = None) -> bool:
         logger.warning(
             "Production note: SQLite is configured. For high-concurrency production, PostgreSQL is recommended."
         )
+    else:
+        try:
+            norm_url = normalize_database_url(target.DATABASE_URL)
+            masked = mask_database_url(norm_url)
+            logger.info(f"Production database target configured: {masked}")
+        except Exception as e:
+            errors.append(f"Invalid DATABASE_URL in production: {e}")
 
     if errors:
         for err in errors:
