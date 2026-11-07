@@ -48,7 +48,7 @@ class Event(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(200), nullable=False, index=True)
     description = Column(Text, nullable=False)
-    category = Column(SQLEnum(EventCategory), nullable=False, index=True)
+    category = Column(SQLEnum(EventCategory, name="eventcategory"), nullable=False, index=True)
     
     # Event images and media
     banner_image = Column(String(500), nullable=True)  # URL or path to banner image
@@ -73,7 +73,7 @@ class Event(Base):
     organizer_phone = Column(String(20), nullable=True)
     
     # Event configuration
-    status = Column(SQLEnum(EventStatus), default=EventStatus.UPCOMING)
+    status = Column(SQLEnum(EventStatus, name="eventstatus"), default=EventStatus.UPCOMING)
     requires_approval = Column(Boolean, default=False)
     team_event = Column(Boolean, default=False)
     min_team_size = Column(Integer, nullable=True)
@@ -146,7 +146,7 @@ class EventRegistration(Base):
     
     # Registration details
     registration_date = Column(DateTime, default=datetime.utcnow)
-    status = Column(SQLEnum(RegistrationStatus), default=RegistrationStatus.PENDING)
+    status = Column(SQLEnum(RegistrationStatus, name="registrationstatus"), default=RegistrationStatus.PENDING)
     payment_status = Column(String(50), default="pending")  # pending, completed, failed
     transaction_id = Column(String(100), nullable=True)
     

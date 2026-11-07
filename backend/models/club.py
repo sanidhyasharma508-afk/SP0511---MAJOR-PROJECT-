@@ -8,9 +8,9 @@ class Club(Base):
     __tablename__ = "clubs"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, unique=True)
+    name = Column(String(200), nullable=False, unique=True)
     description = Column(Text, nullable=True)
-    category = Column(String, nullable=False)  # Technical, Cultural, Sports, etc.
+    category = Column(String(100), nullable=False)  # Technical, Cultural, Sports, etc.
     
     # Enhanced club information
     detailed_description = Column(Text, nullable=True)  # Rich text description
@@ -25,9 +25,9 @@ class Club(Base):
     social_media_links = Column(Text, nullable=True)  # JSON object with social links
     
     # Contact and administration
-    advisor = Column(String, nullable=False)  # Faculty advisor name
+    advisor = Column(String(100), nullable=False)  # Faculty advisor name
     advisor_email = Column(String(200), nullable=True)
-    president = Column(String, nullable=True)  # Student president name
+    president = Column(String(100), nullable=True)  # Student president name
     president_email = Column(String(200), nullable=True)
     contact_email = Column(String(200), nullable=True)
     contact_phone = Column(String(20), nullable=True)
@@ -57,15 +57,15 @@ class ClubActivity(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
-    title = Column(String, nullable=False)
+    title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
-    activity_type = Column(String, nullable=False)  # Event, Workshop, Competition, Meeting, etc.
+    activity_type = Column(String(50), nullable=False)  # Event, Workshop, Competition, Meeting, etc.
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=True)
-    location = Column(String, nullable=True)
+    location = Column(String(200), nullable=True)
     expected_participants = Column(Integer, default=0)
     actual_participants = Column(Integer, default=0)
-    status = Column(String, default="Planned")  # Planned, Ongoing, Completed, Cancelled
+    status = Column(String(50), default="Planned")  # Planned, Ongoing, Completed, Cancelled
     remarks = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -96,10 +96,10 @@ class ClubAttendance(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
-    student_name = Column(String, nullable=False)
-    roll_number = Column(String, nullable=True)
-    section = Column(String, nullable=True)
-    status = Column(String, nullable=False)  # Present / Absent
+    student_name = Column(String(100), nullable=False)
+    roll_number = Column(String(50), nullable=True)
+    section = Column(String(20), nullable=True)
+    status = Column(String(50), nullable=False)  # Present / Absent
     attendance_date = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 

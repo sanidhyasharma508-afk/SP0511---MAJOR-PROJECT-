@@ -8,8 +8,8 @@ class RiskLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, nullable=True)  # Can be null for general logs
-    risk_type = Column(String, nullable=False)  # Academic, Behavioral, Health, Attendance, Other
-    severity = Column(String, default="Medium", nullable=False)  # Low, Medium, High, Critical
+    risk_type = Column(String(50), nullable=False)  # Academic, Behavioral, Health, Attendance, Other
+    severity = Column(String(50), default="Medium", nullable=False)  # Low, Medium, High, Critical
     description = Column(Text, nullable=False)
     action_taken = Column(Text, nullable=True)
     resolved = Column(Integer, default=0)

@@ -6,8 +6,8 @@ class Student(Base):
     __tablename__ = "students"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    roll_no = Column(String, unique=True, nullable=False)
-    department = Column(String, nullable=False)
+    name = Column(String(100), nullable=False)
+    roll_no = Column(String(50), unique=True, nullable=False)
+    department = Column(String(100), nullable=False)
     semester = Column(Integer)
-    section = Column(String, default="_")
+    section = Column(String(20), default="_")

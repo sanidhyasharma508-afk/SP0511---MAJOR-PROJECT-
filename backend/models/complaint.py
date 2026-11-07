@@ -9,11 +9,11 @@ class Complaint(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
-    title = Column(String, nullable=False)
+    title = Column(String(200), nullable=False)
     description = Column(Text, nullable=False)
-    category = Column(String, nullable=False)  # Academic, Conduct, Health, Other, Facility, Mess, Schedule
-    status = Column(String, default="Pending", nullable=False)  # Pending, Under Review, In Progress, Resolved, Closed, Rejected
-    priority = Column(String, default="Normal", nullable=False)  # Low, Normal, High, Urgent
+    category = Column(String(50), nullable=False)  # Academic, Conduct, Health, Other, Facility, Mess, Schedule
+    status = Column(String(50), default="Pending", nullable=False)  # Pending, Under Review, In Progress, Resolved, Closed, Rejected
+    priority = Column(String(50), default="Normal", nullable=False)  # Low, Normal, High, Urgent
     resolution_notes = Column(Text, nullable=True)
     assigned_to = Column(Integer, nullable=True)  # Staff User ID
     created_at = Column(DateTime, default=datetime.utcnow)

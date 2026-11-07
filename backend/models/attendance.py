@@ -13,7 +13,7 @@ class Attendance(Base):
     faculty_id = Column(String(50), nullable=True, index=True)
     session_name = Column(String(100), nullable=True)
     date = Column(DateTime, default=datetime.utcnow, nullable=False)
-    status = Column(String, nullable=False)  # Present, Absent, Late, Excused
-    remarks = Column(String, nullable=True)
+    status = Column(String(50), nullable=False)  # Present, Absent, Late, Excused
+    remarks = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
