@@ -11,7 +11,7 @@
 
 ## 1. Executive Summary
 
-Phase 19F.1 provides a comprehensive, read-only architectural audit of the active application database (`campus_automation.db`) and defines a robust, deterministic, cross-dialect data migration design from SQLite 3 to PostgreSQL 16+.
+Phase 19F.1 provides a comprehensive, read-only architectural audit of the active application database (`campus_automation.db`) and establishes a deterministic, safe cross-dialect data migration architecture from SQLite 3 to PostgreSQL 16+.
 
 ### Key Audit Findings
 1. **Source Database Immutability & Health:**
@@ -23,7 +23,8 @@ Phase 19F.1 provides a comprehensive, read-only architectural audit of the activ
    - **Total Domain Tables:** 22
    - **Total Records:** Exactly **60 rows** across all tables.
 2. **Schema & Data Quality Assessment:**
-   - **0** duplicate primary keys or duplicate unique constraint keys.
+   - **0** duplicate primary keys.
+   - **0** duplicate unique constraint keys.
    - **0** orphaned foreign key references.
    - **0** string length violations against target PostgreSQL `VARCHAR(N)` definitions.
    - **0** nullability violations against target required columns.
@@ -32,16 +33,17 @@ Phase 19F.1 provides a comprehensive, read-only architectural audit of the activ
 3. **Dependency Structure:**
    - The 22 domain tables form a strict **Directed Acyclic Graph (DAG)** with **0 circular dependencies** and **0 self-referential foreign keys**.
    - Tables sort into 3 distinct topological dependency levels (Level 0: 10 tables, Level 1: 10 tables, Level 2: 2 tables).
-4. **Target Identity & Sequence Requirements:**
-   - SQLite tables store primary keys as autoincrementing integers. PostgreSQL requires explicit sequence advancement (`SELECT setval(...)`) after explicit ID migration to prevent immediate primary key collisions during subsequent application inserts.
+4. **PostgreSQL Sequence Synchronization Correction:**
+   - Explicit primary key insertion does not advance PostgreSQL sequences.
+   - A critical behavioral nuance of PostgreSQL `setval()` is resolved: calling `setval(seq, 0, true)` on empty tables causes an out-of-bounds error on sequences with `MINVALUE 1`. Empty tables require `setval(seq, 1, false)`, while populated tables require `setval(seq, max_id, true)`.
 
 ---
 
-## 2. Source Database Inventory
+## 2. Complete Source Data Inventory (22 Tables, 60 Rows)
 
 The source database contains 22 domain tables holding a total of 60 records. All tables utilize single-column integer primary keys (`id`).
 
-| # | Table Name | Row Count | Primary Key | Foreign Key Dependencies | Unique Constraints / Indexes | Sequence Restart Val |
+| # | Table Name | Row Count | Primary Key Range | Foreign Key Dependencies | Unique Constraints / Indexes | Sequence Restart Val |
 | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
 | 1 | `announcements` | 3 | `id` (1..3) | None | `ix_announcements_id` | 4 |
 | 2 | `clubs` | 7 | `id` (1..7) | None | `name` (unique), `ix_clubs_id` | 8 |
@@ -69,352 +71,334 @@ The source database contains 22 domain tables holding a total of 60 records. All
 
 ---
 
-## 3. Data Quality & Integrity Audit Findings
+## 3. Data-Quality Audit: Executed vs. Designed Checks
 
-A complete read-only data quality sweep across all 60 existing records produced the following results:
+Every check below was **ACTUALLY EXECUTED** against the active `campus_automation.db` via read-only Python and SQLite inspection scripts (`scratch/audit_sqlite_data.py`, `scratch/detailed_audit.py`). No personal or sensitive record details are exposed.
 
-### A. Primary Key Integrity
-- **Check:** `SELECT <pk>, COUNT(*) GROUP BY <pk> HAVING COUNT(*) > 1`
-- **Result:** **PASSED.** Every table with rows exhibits unique primary keys matching exact contiguous or sparse positive integer sequences ($1..N$). Zero duplicate primary keys detected.
-
-### B. Unique Constraints & Indexes
-- **Check:** Verified unique columns (`users.username`, `users.email`, `students.roll_no`, `clubs.name`, `qr_attendance_sessions.session_id`, `club_members(club_id, student_id)`, `qr_attendance_records(session_id, roll_number)`).
-- **Result:** **PASSED.** Zero unique constraint violations.
-
-### C. Foreign Key Referential Integrity
-- **Check:** `PRAGMA foreign_key_check;` and explicit cross-table join analysis.
-- **Result:** **PASSED.** 0 orphaned foreign keys.
-  - `attendance` (22 rows): All `student_id` values reference existing `students.id` ($1..6$).
-  - `complaints` (2 rows): Both `student_id` values reference existing `students.id`.
-  - `club_members` (1 row): References valid `club_id` and `student_id`.
-  - `club_activities` (1 row): References valid `club_id`.
-  - `users` (4 rows): User id=3 (`student1`) references `linked_student_id=1` (`Alex Johnson Updated`), while administrative and staff users have `NULL`.
-  - `qr_attendance_records` (1 row): References valid `session_id=1`.
-
-### D. Native Enum Values & Casing Nuance
-- **Check:** Inspected `events.category` and `events.status`.
-- **Result:**
-  - `events.category`: Contains `'TECHNICAL'`, `'CULTURAL'`, `'SPORTS'`.
-  - `events.status`: Contains `'REGISTRATION_OPEN'`.
-  - **Alembic Baseline PostgreSQL Enum Definition:**
-    - `eventcategory`: `('SPORTS', 'TECHNICAL', 'CULTURAL', 'GAMING', 'WORKSHOP', 'COMPETITION')`
-    - `eventstatus`: `('UPCOMING', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'ONGOING', 'COMPLETED', 'CANCELLED')`
-  - **Assessment:** Raw values in SQLite match the uppercase labels in the PostgreSQL enum type created by Alembic. The migration writer must map strings directly to these native enum values without case transformation.
-
-### E. Boolean Representation in SQLite vs PostgreSQL
-- **Check:** Distinct values and types of boolean columns (`typeof(col)`).
-- **Result:**
-  - All boolean columns in SQLite store integer values `0` or `1`.
-  - Model definitions hardened in Phase 19C designate true boolean types on PostgreSQL (`BOOLEAN`) for:
-    - `users.is_active`
-    - `clubs.is_active`, `clubs.accepting_members`
-    - `club_members.is_active`
-    - `events.requires_approval`, `events.team_event`
-    - `qr_attendance_sessions.*` (5 boolean flags)
-    - `qr_attendance_records.*` (9 boolean flags)
-  - Columns deliberately preserved as `Integer` in both dialects:
-    - `schedules.is_active` (Integer default 1)
-    - `announcements.is_active` (Integer default 1)
-    - `risk_logs.resolved` (Integer default 0)
-  - **Assessment:** The migration type conversion layer must convert integer `1`/`0` to python `True`/`False` for designated `Boolean` columns, while leaving pure `Integer` columns as integers.
-
-### F. JSON-Like Text Columns
-- **Check:** Validated syntax with `json.loads()` for non-empty text fields:
-  - `events.prizes`: Row 1 contains `'{"1st": "$2500", "2nd": "$1500", "3rd": "$1000"}'` (Valid JSON object).
-  - `qr_attendance_sessions.qr_code_data`: Contains serialized session payload (Valid JSON object).
-  - `clubs.gallery_images`, `clubs.social_media_links`, `events.gallery_images`, `event_registrations.team_members`: All `NULL` or empty in existing data.
-- **Result:** **PASSED.** Zero JSON syntax errors.
-
-### G. String Lengths vs PostgreSQL `VARCHAR(N)`
-- **Check:** Evaluated max string length per column against SQLAlchemy model `String(length)` parameters.
-- **Result:** **PASSED.** Zero string length overflows. All strings fall well within defined limits (e.g., `users.username` max 19 chars $\le 50$, `students.name` max 20 chars $\le 100$, `clubs.name` max 21 chars $\le 200$).
-
-### H. Required (NOT NULL) Column Coverage
-- **Check:** Scanned all columns declared as `nullable=False` in target models.
-- **Result:** **PASSED.** Zero unexpected `NULL` values in existing records.
+| # | Quality Check Category | Tables & Columns Examined | Validation Method | Violations Found | Execution Status |
+| :---: | :--- | :--- | :--- | :---: | :---: |
+| **1** | **Duplicate Primary Keys** | All 22 domain tables on `id` column. | `SELECT id, COUNT(*) FROM "tbl" GROUP BY id HAVING COUNT(*) > 1;` | **0** | **ACTUALLY EXECUTED** |
+| **2** | **Duplicate Unique Keys** | `users(username)`, `users(email)`, `students(roll_no)`, `clubs(name)`, `qr_attendance_sessions(session_id)`, `club_members(club_id, student_id)`, `qr_attendance_records(session_id, roll_number)`, `qr_attendance_records(session_id, student_id)`, `event_registrations(event_id, student_id)`, `device_fingerprints(device_id)`. | `SELECT cols, COUNT(*) FROM "tbl" WHERE col1 IS NOT NULL GROUP BY cols HAVING COUNT(*) > 1;` | **0** | **ACTUALLY EXECUTED** |
+| **3** | **Orphaned Foreign Keys** | All 13 foreign keys across `attendance`, `club_activities`, `club_attendance`, `club_members`, `complaint_history`, `complaints`, `event_announcements`, `event_leaderboard`, `event_registrations`, `qr_attendance_records`, `study_tasks`, `users`. | `PRAGMA foreign_key_check;` plus cross-table join analysis (`LEFT JOIN ... WHERE parent.id IS NULL`). | **0** | **ACTUALLY EXECUTED** |
+| **4** | **Invalid Enum Values** | `events.category`, `events.status`, `event_registrations.status`. | Checked `SELECT DISTINCT` against Python enum definitions (`EventCategory`, `EventStatus`, `RegistrationStatus`). Distinct values: `'TECHNICAL'`, `'CULTURAL'`, `'SPORTS'`, `'REGISTRATION_OPEN'`. | **0** | **ACTUALLY EXECUTED** |
+| **5** | **Boolean Domain Violations** | 28 boolean-designated columns across `users`, `clubs`, `club_members`, `events`, `event_registrations`, `event_announcements`, `qr_attendance_sessions`, `qr_attendance_records`, `qr_attendance_logs`, `device_fingerprints`, `study_tasks`, `schedules`, `announcements`, `risk_logs`. | Checked `SELECT DISTINCT col, typeof(col)` to verify values are strictly `0` or `1`. Zero non-binary or out-of-range integer values. | **0** | **ACTUALLY EXECUTED** |
+| **6** | **DateTime Consistency** | All datetime columns across all 22 tables (`created_at`, `updated_at`, `lecture_date`, `lecture_start_time`, `marked_at`, `start_date`, `end_date`, `date`, `registration_start_date`, etc.). | Regex format matching (`^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d+)?$`) and `datetime.fromisoformat()` parsing. | **0** | **ACTUALLY EXECUTED** |
+| **7** | **Malformed JSON Text** | `events.prizes`, `qr_attendance_sessions.qr_code_data`, `clubs.gallery_images`, `clubs.social_media_links`, `events.gallery_images`, `event_registrations.team_members`, `event_leaderboard.statistics`, `qr_attendance_records.validation_errors`. | Parsed non-empty values via `json.loads()`. `events.prizes` and `qr_attendance_sessions.qr_code_data` parsed as valid JSON dictionaries; all other JSON columns in existing data are NULL. | **0** | **ACTUALLY EXECUTED** |
+| **8** | **String Length Violations** | All string columns across all 22 tables against SQLAlchemy model `String(length)` parameters. | Audited `len(val) <= max_length` for all rows. (Max username: 19 $\le 50$; max student name: 20 $\le 100$; max club name: 21 $\le 200$). | **0** | **ACTUALLY EXECUTED** |
+| **9** | **Target NOT NULL Violations** | All columns declared `nullable=False` in target SQLAlchemy models. | Scanned rows for unexpected `NULL` values (`SELECT COUNT(*) FROM "tbl" WHERE col IS NULL;`). | **0** | **ACTUALLY EXECUTED** |
+| **10** | **Numeric Precision & Range** | Float columns (`events.entry_fee`, `events.score`, `qr_attendance_sessions.center_latitude`, `center_longitude`, `geo_fence_radius_meters`, `qr_attendance_records.student_latitude`, `student_longitude`, `distance_from_center`, `location_accuracy`, `qr_attendance_logs.latitude`, `longitude`). | Validated float ranges (latitude $\in [-90, 90]$, longitude $\in [-180, 180]$, entry_fee $\ge 0$). Zero NaN or infinite values. | **0** | **ACTUALLY EXECUTED** |
 
 ---
 
-## 4. Foreign Key Dependency Graph & Topological Execution Order
+## 4. Comprehensive Cross-Dialect Type Conversion Matrix
 
-To satisfy PostgreSQL foreign key constraints during batch insertion without disabling constraints or risking referential violations, tables must be loaded in strict topological order.
+The following table documents the exact conversion rules between SQLite 3 storage representation and PostgreSQL 16+ target types across all 22 domain models:
 
-### Dependency Graph (DAG)
+| Column Category | SQLite 3 Storage Representation | PostgreSQL 16+ Target Type | Conversion & Validation Rules | Distinguishing Model Types from Proposed Changes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Primary Keys (All 22 Tables)** | `INTEGER PRIMARY KEY` (Autoincrement rowid) | `INTEGER` / `BIGINT` with Identity / Serial Sequence | Insert explicit source ID values directly. Advance sequence post-load using corrected sequence synchronization logic. | Preserves existing model semantics; no schema changes proposed. |
+| **Designated Booleans** | `INTEGER` (`0` or `1`) | `BOOLEAN` | Convert integer `1` $\rightarrow$ `True`, `0` $\rightarrow$ `False`, `NULL` $\rightarrow$ `NULL`. Reject values $\notin \{0, 1, \text{NULL}\}$. Affects: `users.is_active`, `clubs.is_active`, `clubs.accepting_members`, `club_members.is_active`, `events.requires_approval`, `events.team_event`, `qr_attendance_sessions.*`, `qr_attendance_records.*`, `device_fingerprints.*`, `study_tasks.is_completed`. | Preserves hardened Phase 19C model annotations (`Boolean`). |
+| **Legacy Integer Flags** | `INTEGER` (`0` or `1`) | `INTEGER` | Preserve as raw integers (`0` or `1`). Affects: `schedules.is_active` (default 1), `announcements.is_active` (default 1), `risk_logs.resolved` (default 0). | Models explicitly declare `Integer`. Migration maintains integer semantics to avoid contract drift. |
+| **Native Enums** | `TEXT` (`'TECHNICAL'`, `'SPORTS'`, `'REGISTRATION_OPEN'`, etc.) | PostgreSQL Native `ENUM` (`eventcategory`, `eventstatus`, `registrationstatus`) | SQLite stores strings in uppercase. Alembic baseline migration `0001_initial_baseline` creates PostgreSQL enum labels in uppercase. Map string values directly without case modification. Reject strings not in the declared enum domain. | Model uses `SQLEnum(EnumClass, name="...")`. Values match exact baseline labels. |
+| **JSON-Like Text Columns** | `TEXT` (JSON serialized or NULL) | `TEXT` (or `JSONB` in future schema revisions) | Validate using `json.loads(val)` before insertion. Canonicalize for reconciliation via `json.dumps(obj, sort_keys=True, separators=(',', ':'))`. | Models currently declare `Text`. Stored as valid JSON text in PostgreSQL. |
+| **DateTime (Naive UTC)** | `TEXT` (`'YYYY-MM-DD HH:MM:SS.ffffff'`) | `TIMESTAMP WITHOUT TIME ZONE` | Parse with `datetime.fromisoformat` or `datetime.strptime`. Preserve microsecond precision. Standard for `created_at`, `updated_at`, `lecture_start_time`, `marked_at`. | Preserves existing model default (`DateTime`). |
+| **DateTime (Timezone-Aware)** | `TEXT` (`'YYYY-MM-DD HH:MM:SS.ffffff'`) | `TIMESTAMP WITH TIME ZONE` | Parse string and attach UTC timezone (`tzinfo=timezone.utc`). Target for `schedule_feedback` and `announcements` where model declares `DateTime(timezone=True)`. | Preserves existing model timezone declarations. |
+| **Floating-Point Metrics** | `REAL` / `FLOAT` (IEEE 754 float) | `DOUBLE PRECISION` | Cast to standard Python `float`. Validate ranges (e.g. coordinates within geographic bounds). Round to 6 decimal places during canonical hashing. | Preserves existing `Float` column types. |
+| **Foreign Keys (All 13 FKs)** | `INTEGER` | `INTEGER` referencing parent table `id` | Insert parent tables first via verified topological order (Levels 0 $\rightarrow$ 1 $\rightarrow$ 2). Ensure referenced parent IDs exist prior to batch write. | Preserves existing relational constraints. |
+| **Nullable Text / Attributes** | `TEXT` / `VARCHAR` / `NULL` | `VARCHAR(N)` / `TEXT` / `NULL` | Maintain `None` as SQL `NULL`. Do not convert empty string to `NULL` or `NULL` to empty string. | Preserves existing column nullability. |
 
-```mermaid
-flowchart TD
-    subgraph Level 0: Independent Root Tables
-        Announcements[announcements]
-        Clubs[clubs]
-        Fingerprints[device_fingerprints]
-        Events[events]
-        QRLogs[qr_attendance_logs]
-        QRSessions[qr_attendance_sessions]
-        RiskLogs[risk_logs]
-        SchedFeedback[schedule_feedback]
-        Schedules[schedules]
-        Students[students]
-    end
+---
 
-    subgraph Level 1: First-Order Dependent Tables
-        ClubActs[club_activities] -->|club_id| Clubs
-        ClubAtt[club_attendance] -->|club_id| Clubs
-        ClubMemb[club_members] -->|club_id| Clubs
-        ClubMemb -->|student_id| Students
-        EventReg[event_registrations] -->|event_id| Events
-        EventLead[event_leaderboard] -->|event_id| Events
-        EventAnn[event_announcements] -->|event_id| Events
-        QRRecs[qr_attendance_records] -->|session_id| QRSessions
-        Users[users] -->|linked_student_id| Students
-        Complaints[complaints] -->|student_id| Students
-        Attendance[attendance] -->|student_id| Students
-    end
+## 5. PostgreSQL Sequence Synchronization Design
 
-    subgraph Level 2: Second-Order Dependent Tables
-        StudyTasks[study_tasks] -->|user_id| Users
-        ComplaintHist[complaint_history] -->|complaint_id| Complaints
-    end
+### Analysis of PostgreSQL Sequence Semantics
+In PostgreSQL, a sequence has an internal state consisting of `last_value` (bigint) and `is_called` (boolean):
+- When `nextval(seq)` is called:
+  - If `is_called = false`, it returns `last_value` and sets `is_called = true`.
+  - If `is_called = true`, it increments `last_value = last_value + 1` and returns the new value.
+
+### Resolution of Sequence Bounds Pitfall
+A critical bug occurs if `setval(seq, 0, true)` is executed on an empty table:
+- PostgreSQL sequences default to `MINVALUE 1`. Calling `setval(seq, 0, true)` raises:
+  `ERROR: setval: value 0 is out of bounds for sequence "table_id_seq" (1..2147483647)`.
+- If `setval(seq, 1, true)` is called on an empty table, the first application `INSERT` calls `nextval()`, which returns `2`, skipping ID `1`!
+- If `setval(seq, 1, false)` is called on an empty table:
+  `last_value = 1` and `is_called = false`. The first application `nextval()` returns `1`, perfectly preserving the sequence starting point.
+- For a populated table with `MAX(id) >= 1`:
+  Calling `setval(seq, MAX(id), true)` sets `last_value = MAX(id)` with `is_called = true`. The next `nextval()` returns `MAX(id) + 1`.
+
+### Safe Production Sequence Synchronization Implementation
+
+#### A. Safe PostgreSQL Stored Procedure (All Tables)
+```sql
+DO $$
+DECLARE
+    tbl_name text;
+    seq_name text;
+    max_val bigint;
+BEGIN
+    FOR tbl_name IN 
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+    LOOP
+        -- 1. Identify sequence attached to primary key 'id'
+        seq_name := pg_get_serial_sequence(quote_ident(tbl_name), 'id');
+        
+        -- 2. Skip tables without an auto-incrementing serial/identity sequence
+        IF seq_name IS NOT NULL THEN
+            EXECUTE format('SELECT MAX(id) FROM %I', tbl_name) INTO max_val;
+            
+            IF max_val IS NULL THEN
+                -- Empty table: reset sequence to 1 with is_called = false
+                -- so the first inserted record receives id = 1.
+                PERFORM setval(seq_name, 1, false);
+            ELSE
+                -- Populated table: set sequence to max_val with is_called = true
+                -- so the next inserted record receives id = max_val + 1.
+                PERFORM setval(seq_name, max_val, true);
+            END IF;
+        END IF;
+    END LOOP;
+END $$;
 ```
 
-### Deterministic Insertion Order (22 Tables)
-1. `announcements` (Level 0)
-2. `clubs` (Level 0)
-3. `device_fingerprints` (Level 0)
-4. `events` (Level 0)
-5. `qr_attendance_logs` (Level 0)
-6. `qr_attendance_sessions` (Level 0)
-7. `risk_logs` (Level 0)
-8. `schedule_feedback` (Level 0)
-9. `schedules` (Level 0)
-10. `students` (Level 0)
-11. `club_activities` (Level 1 $\rightarrow$ `clubs`)
-12. `club_attendance` (Level 1 $\rightarrow$ `clubs`)
-13. `event_registrations` (Level 1 $\rightarrow$ `events`)
-14. `event_leaderboard` (Level 1 $\rightarrow$ `events`)
-15. `event_announcements` (Level 1 $\rightarrow$ `events`)
-16. `qr_attendance_records` (Level 1 $\rightarrow$ `qr_attendance_sessions`)
-17. `club_members` (Level 1 $\rightarrow$ `clubs`, `students`)
-18. `users` (Level 1 $\rightarrow$ `students`)
-19. `complaints` (Level 1 $\rightarrow$ `students`)
-20. `attendance` (Level 1 $\rightarrow$ `students`)
-21. `study_tasks` (Level 2 $\rightarrow$ `users`)
-22. `complaint_history` (Level 2 $\rightarrow$ `complaints`)
-
-*Note: Cycle count = 0. All 22 tables can be cleanly inserted without temporary foreign-key suspension.*
-
----
-
-## 5. Cross-Dialect Data Type Conversion Matrix
-
-| SQLite Representation | Target PostgreSQL Representation | Required Conversion Logic & Guardrails |
-| :--- | :--- | :--- |
-| `INTEGER PRIMARY KEY` | `INTEGER` / `BIGINT` with Sequence | Insert existing ID explicitly (`OVERRIDING SYSTEM VALUE` if identity, or direct insert for sequences). After table insertion, execute sequence advancement: `SELECT setval(pg_get_serial_sequence('tbl', 'id'), coalesce(max(id), 0) + 1, false)`. |
-| Boolean-like `INTEGER` (`0`, `1`) | `BOOLEAN` | For fields designated as `Boolean` in SQLAlchemy models, convert `1` $\rightarrow$ `True`, `0` $\rightarrow$ `False`, `None` $\rightarrow$ `None`. Reject any integer values other than `0`, `1`, or `NULL`. |
-| Preserved `INTEGER` (`0`, `1`) | `INTEGER` | For fields defined as `Integer` in models (`schedules.is_active`, `announcements.is_active`, `risk_logs.resolved`), preserve integer values (`1`, `0`) unchanged. |
-| Text Enum (`'TECHNICAL'`, `'SPORTS'`, etc.) | Native PostgreSQL `ENUM` (`eventcategory`, `eventstatus`, `registrationstatus`) | Validate against target Python `enum.Enum` members. Maintain exact casing matching PostgreSQL enum labels. PostgreSQL rejects unknown enum strings with fatal error. |
-| JSON-like `TEXT` | `TEXT` or `JSONB` | Validate with `json.loads(val)` before insertion. Preserve valid JSON strings. Insert `None` for empty/null strings. |
-| `DATETIME` as Text (`'YYYY-MM-DD HH:MM:SS.ffffff'`) | `TIMESTAMP WITHOUT TIME ZONE` / `TIMESTAMP WITH TIME ZONE` | Parse with `datetime.fromisoformat` or `datetime.strptime`. Preserve microsecond precision. For `timezone=True` columns (`schedule_feedback`, `announcements`), normalize to UTC timezone-aware datetimes. |
-| `FLOAT` | `DOUBLE PRECISION` | Cast to standard Python `float`. Verify valid numeric values (latitude/longitude coordinates, event entry fees, scores). |
-| `NULL` / Empty string in nullable field | `NULL` | Maintain `None` as SQL `NULL`. Do not convert `NULL` to empty string or empty string to `NULL` unless specified by column contract. |
-| Foreign Key Integers | PostgreSQL `FOREIGN KEY` | Ensure referenced parent records have already been migrated via topological sort. |
+#### B. Safe Python Migration Implementation (Single Table Method)
+```python
+def sync_table_sequence(connection, table_name: str, pk_column: str = "id") -> Optional[int]:
+    """Safely synchronize a table's primary key sequence post-migration.
+    
+    Handles:
+    - Tables without a serial/identity sequence (safely ignored, returns None).
+    - Empty tables: setval(seq, 1, false) -> first nextval() returns 1.
+    - Populated tables: setval(seq, max_id, true) -> next nextval() returns max_id + 1.
+    """
+    from sqlalchemy import text
+    
+    # 1. Check if column has an associated sequence
+    query_seq = text("SELECT pg_get_serial_sequence(:tbl, :col)")
+    seq_name = connection.execute(query_seq, {"tbl": table_name, "col": pk_column}).scalar()
+    
+    if not seq_name:
+        return None  # No sequence attached to this table/column
+        
+    # 2. Query maximum migrated ID
+    query_max = text(f'SELECT MAX("{pk_column}") FROM "{table_name}"')
+    max_id = connection.execute(query_max).scalar()
+    
+    # 3. Synchronize with boundary-aware is_called parameter
+    if max_id is None:
+        # Empty table: sequence at 1, is_called=False
+        connection.execute(text("SELECT setval(:seq, 1, false)"), {"seq": seq_name})
+        return 1
+    else:
+        # Populated table: sequence at max_id, is_called=True
+        connection.execute(text("SELECT setval(:seq, :max_val, true)"), {"seq": seq_name, "max_val": max_id})
+        return max_id + 1
+```
 
 ---
 
 ## 6. Migration Architecture Design
 
 ```mermaid
-flowchart LR
-    subgraph Source Environment
-        SQLiteDB[("SQLite 3<br/>campus_automation.db<br/>(mode=ro)")]
+flowchart TD
+    subgraph Source SQLite 3 Environment
+        SQLiteFile[("campus_automation.db<br/>(mode=ro URI)")]
+        Reader["SQLiteReader<br/>Stream rows ORDER BY id"]
     end
 
     subgraph Data Migration Engine
-        Reader[Source SQLite Reader<br/>Chunked Extraction]
-        Validator[Data Validator<br/>Schema & Type Rules]
-        Transformer[Type Converter<br/>Bool, Enum, JSON, Dates]
-        Planner[Dependency Planner<br/>22-Table Topological DAG]
-        Checkpoint[Checkpoint Tracker<br/>_migration_checkpoints]
-        Writer[Target PostgreSQL Writer<br/>Batch Insert with Explicit IDs]
+        Planner["DependencyPlanner<br/>22-Table Topological DAG"]
+        Validator["PreflightValidator<br/>Check constraints & lengths"]
+        Transformer["TypeConverter<br/>Booleans, Enums, Dates, JSON"]
+        BatchExecutor["BatchTransferExecutor<br/>Parameterized batch INSERT"]
+        Checkpoint["CheckpointTracker<br/>_migration_checkpoints"]
     end
 
-    subgraph Target Environment
-        PGDB[("PostgreSQL 16+<br/>Staging Database<br/>(Migrated to Baseline)")]
-        Reconciler[Reconciliation Engine<br/>Counts, PKs, Transformed Hashes]
+    subgraph Destination PostgreSQL 16+ Environment
+        Writer["PostgreSQLWriter<br/>Per-table transaction"]
+        PGDatabase[("PostgreSQL Database<br/>(0001_initial_baseline)")]
+        SeqSync["Sequence Synchronizer<br/>setval(seq, max, true/false)"]
+        Reconciler["ReconciliationEngine<br/>Row counts, PK sets, Canonical Hashes"]
     end
 
-    SQLiteDB --> Reader
+    SQLiteFile --> Reader
     Planner --> Reader
     Reader --> Validator
     Validator --> Transformer
-    Transformer --> Writer
+    Transformer --> BatchExecutor
+    BatchExecutor --> Writer
     Writer --> Checkpoint
-    Writer --> PGDB
-    PGDB --> Reconciler
-    SQLiteDB -.-> Reconciler
+    Writer --> PGDatabase
+    PGDatabase --> SeqSync
+    PGDatabase --> Reconciler
+    SQLiteFile -.-> Reconciler
 ```
 
-### Modular Components
+### Architectural Component Specifications
 1. **Source SQLite Reader (`SQLiteReader`):**
-   - Connects strictly in URI read-only mode (`file:<path>?mode=ro`).
-   - Streams table data in deterministic primary key order (`ORDER BY id ASC`).
-   - Extracts rows as mapped dictionaries with column data types.
+   - Opened strictly using SQLite URI: `file:<path>?mode=ro`.
+   - Queries rows in deterministic order: `SELECT * FROM "tbl" ORDER BY id ASC;`.
+   - Reads data in configurable streaming chunks (e.g. 500 rows per chunk).
 2. **Table Dependency Planner (`DependencyPlanner`):**
-   - Enforces the verified 22-table topological sort.
-   - Rejects unlisted tables and detects dependency cycles.
+   - Enforces the 22-table topological order (Level 0 $\rightarrow$ Level 1 $\rightarrow$ Level 2).
+   - Rejects unmapped tables and validates foreign-key dependencies.
 3. **Type Conversion Layer (`TypeConverter`):**
-   - Applies the Conversion Matrix rules.
-   - Enforces boolean translation, enum validation, JSON verification, and datetime parsing.
+   - Implements Section 4 conversion rules.
+   - Enforces boolean translation, enum uppercase matching, JSON validation, and datetime parsing.
 4. **Data Validation Layer (`PreflightValidator`):**
-   - Pre-flight checks before target write: checks required fields, string length caps, and foreign key reference existence.
+   - Inspects rows in-memory prior to write.
+   - Verifies required columns, string length caps, and parent reference existence.
 5. **Target PostgreSQL Writer (`PostgreSQLWriter`):**
-   - Connects using psycopg3 / SQLAlchemy engine.
-   - Executes parameterized batch inserts (`executemany` or PostgreSQL `COPY`) within explicit per-table transaction boundaries.
-   - Synchronizes identity sequences post-table: `SELECT setval(...)`.
+   - Uses `psycopg3` parameterized batch inserts (`executemany` or PostgreSQL `COPY`).
+   - Inserts explicit primary key values (`OVERRIDING SYSTEM VALUE` if identity columns).
+   - Manages per-table transaction boundaries.
 6. **Migration Checkpoint Tracker (`CheckpointTracker`):**
-   - Maintains a checkpoint table in PostgreSQL (`_migration_checkpoints`):
-     - `table_name` (VARCHAR PK)
-     - `status` (`PENDING`, `IN_PROGRESS`, `COMPLETED`, `FAILED`)
-     - `rows_migrated` (INTEGER)
-     - `started_at`, `completed_at` (TIMESTAMP)
-     - `source_checksum`, `target_checksum` (VARCHAR)
-   - Enables clean resumption without re-migrating already completed tables.
+   - Records progress in a dedicated PostgreSQL metadata table:
+     ```sql
+     CREATE TABLE IF NOT EXISTS _migration_checkpoints (
+         table_name VARCHAR(100) PRIMARY KEY,
+         status VARCHAR(20) NOT NULL, -- PENDING, IN_PROGRESS, COMPLETED, FAILED
+         rows_migrated INTEGER NOT NULL DEFAULT 0,
+         started_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+         completed_at TIMESTAMP WITH TIME ZONE,
+         source_checksum VARCHAR(64),
+         target_checksum VARCHAR(64),
+         error_message TEXT
+     );
+     ```
 7. **Reconciliation Engine (`ReconciliationEngine`):**
-   - Performs independent mathematical reconciliation comparing source and destination.
+   - Executes three-tier independent verification (Counts, PK sets, Canonical Checksums).
 8. **Migration Manifest Generator:**
-   - Produces a timestamped, signed JSON manifest documenting migration execution, checksums, and verification metrics.
+   - Produces a signed, secret-free JSON manifest capturing migration metadata, timing, counts, and checksums.
+
+### Transaction Boundaries & Recovery Strategy
+- **Per-Table Transactions:** Each table is processed in its own explicit transaction (`BEGIN ... COMMIT`).
+- **Interrupted Batch Recovery:** If a crash or network error interrupts a table, that table's transaction rolls back completely. The checkpoint table retains the status `FAILED` or `IN_PROGRESS`. Upon restart, the engine inspects checkpoints and resumes from the uncompleted table without re-migrating completed tables.
+- **Duplicate Prevention:** Before writing a table, the writer verifies `SELECT COUNT(*) FROM "tbl"`. If the table is not empty, it aborts unless destructive overwrite is explicitly authorized.
+- **Existing Destination Protection:** Rejects non-empty destination databases by default.
+- **Handling of Empty Tables (11 Tables):** Empty tables are processed cleanly: sequence is initialized to `(1, false)`, checkpoint is marked `COMPLETED` with 0 rows, and reconciliation confirms 0 = 0.
+- **Handling of Circular Dependencies (Future-Proofing):** If circular dependencies are introduced in future schemas, the engine supports a **Two-Pass Strategy**:
+  1. *Pass 1:* Insert rows into Table A with the nullable circular foreign-key set to `NULL`. Insert rows into Table B with valid foreign keys pointing to Table A.
+  2. *Pass 2:* Update Table A rows with the migrated foreign-key values pointing to Table B.
+  3. *Alternative:* Execute `SET CONSTRAINTS ALL DEFERRED;` within a single multi-table transaction.
 
 ---
 
-## 7. Migration Safety Controls & Guardrails
+## 7. Migration Reconciliation Strategy
 
-The migration engine must enforce twelve non-negotiable safety guardrails:
-1. **Read-Only Source Enforcement:** The SQLite file is opened exclusively via SQLite URI with `mode=ro`. File permissions on disk are verified prior to execution.
-2. **Zero Source Deletion:** Under no circumstance does the migration process issue `DELETE`, `DROP`, `UPDATE`, or `VACUUM` queries against the source database.
-3. **Explicit Destination Specification:** The destination PostgreSQL connection string must be explicitly provided via CLI flag or dedicated environment variable. Inferred, default, or empty targets are rejected.
-4. **Production Target Protection:** Integrates `is_production_database_target()`. If destination host or database contains markers (`prod`, `production`, `live`, `supabase`, `rds.amazonaws.com`), execution halts immediately with `BackupError`.
-5. **No Automatic Schema Alteration:** The migration engine will not execute DDL (`CREATE TABLE`, `ALTER TABLE`, `DROP TABLE`). The destination PostgreSQL database must already exist, be stamped, and match the target Alembic baseline (`0001_initial_baseline`).
-6. **Target Emptiness Verification:** Before beginning table migration, the engine verifies that destination tables are empty (`COUNT(*) == 0`). Overwriting populated tables without explicit destructive authorization is prohibited.
-7. **Per-Table Transaction Isolation:** Each table batch runs inside an isolated database transaction. If an error occurs midway through a table, that table's transaction is rolled back completely, leaving zero orphan rows.
-8. **Restartability & Idempotency:** The checkpoint tracker allows resuming failed or interrupted migrations from the exact table where failure occurred, without duplicating earlier tables.
-9. **No Silently Dropped Records:** Every source record must either be successfully inserted into PostgreSQL or cause a migration halt. Truncating, skipping, or silently dropping rows is strictly forbidden.
-10. **Post-Load Sequence Advancement:** Automatically executes `setval()` on all primary key sequences to ensure future application inserts succeed without key conflicts.
-11. **Credential Isolation:** Passwords and secrets are sanitized from all logs, terminal messages, and manifests via `sanitize_text()`.
-12. **Mandatory Post-Migration Verification:** The migration run cannot report success unless all 22 tables pass exact row-count and checksum reconciliation.
+A successful migration cannot be declared unless all three tiers of reconciliation pass with 100% agreement:
 
----
+### Tier 1: Per-Table Row Count Matching
+- For all 22 tables: $\text{Count}_{\text{target}}(T) = \text{Count}_{\text{source}}(T)$.
+- Total verified records: exactly **60**.
 
-## 8. Migration Reconciliation Design
+### Tier 2: Primary-Key Set Equality
+- For all 22 tables: $\text{Set}(\text{PK}_{\text{source}}) = \text{Set}(\text{PK}_{\text{target}})$.
+- Verifies $\text{PK}_{\text{source}} \setminus \text{PK}_{\text{target}} = \emptyset$ (no missing rows) and $\text{PK}_{\text{target}} \setminus \text{PK}_{\text{source}} = \emptyset$ (no phantom rows).
 
-To verify 100% data fidelity between SQLite and PostgreSQL across data type transformations, reconciliation operates across three tiers:
+### Tier 3: Deterministic Canonical Transformation Checksum
+To mathematically prove data equality across heterogeneous engines without false alarms from dialect-specific representations:
 
-### Tier 1: Per-Table Row Count Equality
-- Condition: $\forall T \in \text{Tables}: \text{Count}_{\text{dest}}(T) = \text{Count}_{\text{source}}(T)$.
-- Total expected records: exactly **60**.
+#### Canonical Normalization Rules
+1. **Null Values:** Represented as string `"<NULL>"`.
+2. **Boolean Values:** Serialized strictly as `"TRUE"` or `"FALSE"`.
+3. **Integer Values:** Standard decimal string (e.g. `"42"`).
+4. **Floating-Point Values:** Formatted to 6 fixed decimal places (e.g. `"{:.6f}".format(v)` for GPS latitude/longitude) or standard string.
+5. **DateTime Values:** Normalized to UTC ISO-8601 string: `YYYY-MM-DDTHH:MM:SS.ffffff`.
+6. **JSON Text:** Canonicalized via `json.dumps(json.loads(val), sort_keys=True, separators=(',', ':'))`.
+7. **Strings / Text:** Trimmed UTF-8 strings.
 
-### Tier 2: Primary Key Set Equality
-- Condition: $\forall T \in \text{Tables}: \text{Set}(\text{PK}_{\text{source}}) = \text{Set}(\text{PK}_{\text{dest}})$.
-- Confirms zero missing IDs, zero phantom records, and exact ID mapping.
-
-### Tier 3: Deterministic Canonical Checksum Matching
-Because SQLite and PostgreSQL represent types differently (e.g. integer `1` vs boolean `true`, string timestamp vs PostgreSQL timestamp), a raw byte-for-byte database checksum is impossible. 
-
-Instead, the reconciliation engine utilizes a **Canonical Transformation Hash**:
-1. For each row, sort columns alphabetically by column name.
-2. Format each value into a canonical string:
-   - `NULL` $\rightarrow$ `"<NULL>"`
-   - `Boolean` $\rightarrow$ `"TRUE"` or `"FALSE"`
-   - `Integer` $\rightarrow$ Decimal string (e.g., `"42"`)
-   - `Float` $\rightarrow$ Standard string formatted to 6 decimal places (for geographic coordinates) or formatted float
-   - `DateTime` $\rightarrow$ Normalized UTC ISO-8601 string: `YYYY-MM-DDTHH:MM:SS.ffffff`
-   - `Text/String` $\rightarrow$ UTF-8 string with whitespace trimmed
-3. Concatenate formatted column strings separated by pipe delimiters: `col1=val1|col2=val2|...`
-4. Compute SHA-256 for each row.
-5. Combine row hashes ordered by primary key to generate a single deterministic **Table Canonical Checksum**:
-   $$\text{Hash}_{\text{table}} = \text{SHA256}\left(\sum_{r \in \text{Rows}} \text{SHA256}(r)\right)$$
-6. Compare $\text{Hash}_{\text{table}}^{\text{source}} = \text{Hash}_{\text{table}}^{\text{target}}$.
+#### Checksum Computation
+1. For each row, sort column names alphabetically.
+2. Form row vector: `col_name_1=canonical_val_1|col_name_2=canonical_val_2|...`
+3. Compute row hash: $h_r = \text{SHA256}(\text{row\_vector})$.
+4. Aggregate table checksum:
+   $$\text{Checksum}_{\text{table}} = \text{SHA256}\left(\sum_{r \in \text{Rows, ordered by PK}} h_r\right)$$
+5. Require $\text{Checksum}_{\text{table}}^{\text{source}} = \text{Checksum}_{\text{table}}^{\text{target}}$.
 
 ---
 
-## 9. Operational Runbook (Future Migration Execution)
+## 8. Operational Runbook (Future Phase 19F.2 Execution)
 
-When migrating data in Phase 19F.2, operators must follow this 11-step procedure:
+*Note: This runbook is a documented operational procedure for future execution. No migration operations are performed in Phase 19F.1.*
 
-1. **Step 1: Source Database Preflight**
-   - Verify `campus_automation.db` exists.
-   - Calculate and verify SHA-256 (`BACA55EBD284E474EF79C45D01F1B311C7C8E4F9A779BCB99A596A46798CE227`).
-   - Run `PRAGMA integrity_check` and `PRAGMA foreign_key_check`.
-2. **Step 2: SQLite Online Backup**
-   - Create a fresh, verifiable online backup using `SQLiteBackupAdapter` with companion `.manifest.json`.
+1. **Step 1: Source Preflight & Verification**
+   - Verify `campus_automation.db` file size (`290,816` bytes) and SHA-256 (`BACA55EBD284E474EF79C45D01F1B311C7C8E4F9A779BCB99A596A46798CE227`).
+   - Run `PRAGMA integrity_check;` and `PRAGMA foreign_key_check;`.
+2. **Step 2: Verified SQLite Online Backup**
+   - Create a timestamped online backup using `SQLiteBackupAdapter` with companion `.manifest.json`.
 3. **Step 3: Destination PostgreSQL Preflight**
-   - Connect to isolated staging PostgreSQL instance.
    - Execute connectivity heartbeat (`SELECT 1;`).
-   - Verify destination identity is non-production (`is_production_database_target` check).
-4. **Step 4: Target Schema Verification**
+   - Run `is_production_database_target()` to reject live/production environments.
+4. **Step 4: Schema Revision Verification**
    - Run `DatabaseVerifier.verify(engine)` against target PostgreSQL.
-   - Confirm target status is `MIGRATED` with revision `0001_initial_baseline`.
+   - Confirm status is `MIGRATED` with Alembic revision `0001_initial_baseline`.
    - Confirm all 22 domain tables and native enums exist and are empty (`count == 0`).
 5. **Step 5: Initialize Migration Checkpoints**
    - Create `_migration_checkpoints` table in PostgreSQL.
 6. **Step 6: Execute Topological Batch Transfer**
-   - Run `DataMigrator` iterating Level 0 $\rightarrow$ Level 1 $\rightarrow$ Level 2.
-   - For each table: extract from SQLite, apply type conversion, write batch inside transaction, update checkpoint.
+   - Launch `DataMigrator` iterating Level 0 $\rightarrow$ Level 1 $\rightarrow$ Level 2.
+   - For each table: stream from SQLite under `mode=ro`, convert types, insert batch inside transaction, update checkpoint.
 7. **Step 7: Synchronize Identity Sequences**
-   - For every table, query `MAX(id)` and execute `SELECT setval(pg_get_serial_sequence(table, 'id'), MAX(id) + 1, false)`.
-8. **Step 8: Referential Integrity Verification**
-   - Execute foreign key constraint validation across all 22 tables in PostgreSQL.
+   - Run the sequence synchronization procedure: set empty tables to `(1, false)` and populated tables to `(max_id, true)`.
+8. **Step 8: Foreign Key & Constraint Integrity Verification**
+   - Execute PostgreSQL constraint validation queries across all 22 tables.
 9. **Step 9: Run Three-Tier Reconciliation**
-   - Verify per-table row counts (total 60 rows).
-   - Verify primary key set equality.
+   - Verify per-table row counts (total 60).
+   - Verify primary-key set equality.
    - Verify canonical transformation checksums match 100%.
 10. **Step 10: Generate Migration Manifest & Sign-Off**
-    - Generate `migration_manifest_2026xxxx.json` capturing execution metadata, checksums, and operator sign-off.
-11. **Step 11: Rollback Strategy (If Aborted)**
-    - If reconciliation fails or an unrecoverable error occurs:
-      - Truncate all tables in reverse topological order: `TRUNCATE TABLE complaint_history, study_tasks, ... CASCADE;`
+    - Generate signed `migration_manifest_2026xxxx.json` capturing execution metadata and reconciliation metrics.
+11. **Step 11: Rollback Procedure (If Aborted)**
+    - If any reconciliation check fails:
+      - Execute reverse-topological truncate: `TRUNCATE TABLE complaint_history, study_tasks, ... CASCADE;`.
       - Drop checkpoint table.
       - Source SQLite database remains pristine and untouched throughout.
 
 ---
 
-## 10. Future Testing Strategy
+## 9. Testing Strategy (Executed vs. Proposed)
 
-A comprehensive test suite must be developed for Phase 19F.2 covering:
+### A. Executed Audit Tests (Completed in Phase 19F.1)
+The following 10 validation suites were **ACTUALLY EXECUTED** against `campus_automation.db`:
+1. `test_source_database_file_integrity`: PASSED (Size: 290,816 bytes, SHA-256 verified).
+2. `test_sqlite_pragmas`: PASSED (`integrity_check` ok, `foreign_key_check` 0 errors).
+3. `test_primary_key_uniqueness`: PASSED (0 duplicate PKs across all 22 tables).
+4. `test_unique_constraint_integrity`: PASSED (0 duplicate unique keys across all tables).
+5. `test_foreign_key_referential_integrity`: PASSED (0 orphan records).
+6. `test_native_enum_values_and_casing`: PASSED (All enum values valid and match uppercase baseline labels).
+7. `test_boolean_domain_adherence`: PASSED (All boolean columns contain strictly `0` or `1`).
+8. `test_datetime_format_consistency`: PASSED (All timestamp strings parse cleanly).
+9. `test_json_syntax_validity`: PASSED (All non-empty JSON columns parse via `json.loads()`).
+10. `test_string_length_caps_and_nullability`: PASSED (0 length violations, 0 null violations).
+
+### B. Proposed Tests for Phase 19F.2 Implementation
+The following test suites are **PROPOSED** for implementation in Phase 19F.2:
 - **Unit Tests:**
-  - Value conversions: Integer `0`/`1` to Boolean `False`/`True`.
-  - Enum value validation and uppercase mapping.
-  - Datetime string parsing and UTC normalization.
-  - Canonical row checksum generation and determinism.
+  - Type converter functions (integer to boolean, string to timestamp, enum mapping).
+  - Canonical row string formatting and checksum determinism.
+  - Sequence synchronization calculation logic for empty and populated tables.
 - **SQLite Integration Tests:**
-  - Read-only connection rejection of write operations (`sqlite3.OperationalError: attempt to write a readonly database`).
+  - Read-only connection rejection of write queries (`OperationalError: attempt to write a readonly database`).
   - Topological sorter DAG resolution on actual 22 models.
-- **Simulated / Mocked PostgreSQL Tests:**
-  - Transaction rollback on simulated batch insert error.
-  - Resume from checkpoint after interrupted table.
-  - Production URL rejection (`is_production_database_target`).
-  - Sequence synchronization SQL generation.
-- **Real Staging Integration Tests (Task 19F.2):**
-  - Full end-to-end migration into a live, disposable PostgreSQL 16+ test database.
-  - Sequence advancement verification: insert new record post-migration and verify no ID collision occurs.
-  - Full three-tier reconciliation pass.
+- **Mocked PostgreSQL Tests:**
+  - Checkpoint tracking and resumption after simulated batch failure.
+  - Per-table transaction rollback on simulated database exception.
+  - Production database target rejection (`is_production_database_target`).
+- **Real Staging Integration Tests:**
+  - Full end-to-end data migration into a clean, disposable PostgreSQL 16+ instance.
+  - Post-migration application `INSERT` key collision test (verifying sequence advancement).
+  - Three-tier reconciliation pass with 100% checksum agreement.
 
 ---
 
-## 11. Known Risks and Mitigations
+## 10. Source Database Safety & Immutability Verification
 
-| Risk | Impact | Mitigation Strategy |
-| :--- | :--- | :--- |
-| **Primary key sequence collision post-migration** | Future `INSERT` queries fail due to PK violation | Mandatory Step 7: execute `setval()` for every table to `max(id) + 1`. |
-| **Accidental execution against production database** | Data corruption in live system | Automated `is_production_database_target()` halts execution on any production marker. |
-| **Silent truncation of string columns** | Loss of user text or descriptions | Pre-flight validation checks string lengths against target model length caps. |
-| **Case mismatch in Enum values** | PostgreSQL rejects row on invalid enum | Verified that existing SQLite values match uppercase baseline enum labels. Migration layer preserves exact casing. |
-| **Inconsistent boolean serialization** | Reconciler checksum mismatches | Canonical serialization normalizes all booleans to `"TRUE"`/`"FALSE"` prior to hashing. |
-| **Interrupted network connection midway through migration** | Partially migrated target database | Checkpoint tracker records progress per table; per-table transactions ensure no partial table states. |
+To guarantee complete data preservation, `campus_automation.db` was checked before and after all audit operations:
 
----
-
-## 12. Verification of Source Database Immutability
-
-Following the completion of this read-only audit, `campus_automation.db` was re-verified:
+- **Path:** `MARVEL-main/campus_automation.db`
 - **File Length:** `290,816` bytes (exact match)
-- **SHA-256:** `BACA55EBD284E474EF79C45D01F1B311C7C8E4F9A779BCB99A596A46798CE227` (exact match)
+- **SHA-256 Checksum:** `BACA55EBD284E474EF79C45D01F1B311C7C8E4F9A779BCB99A596A46798CE227` (exact match)
 - **Status:** **Untouched and pristine.** Zero writes, updates, stamps, or schema modifications occurred.
