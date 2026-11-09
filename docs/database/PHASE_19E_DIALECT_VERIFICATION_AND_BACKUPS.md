@@ -1,64 +1,80 @@
-# Phase 19E — Dialect-Aware Database Verification & Backup Architecture
+# Phase 19E-F — Dialect-Aware Database Verification & Backup Architecture
 
 **Project:** Campus Automation System (MARVEL)  
 **Workspace:** `C:\Users\ruetk\OneDrive\Desktop\Campus-Automation-System\MARVEL-main`  
 **Target Dialects:** SQLite 3 (Dev/Test) and PostgreSQL 16+ (Staging/Production)  
-**Mode:** Strict, Non-Destructive Implementation
+**Mode:** Strict, Non-Destructive Implementation & Safe Recovery Verification
 
 ---
 
 ## 1. Executive Summary
 
-Phase 19E establishes a robust, dialect-aware database verification and backup architecture supporting both SQLite 3 and PostgreSQL 16+. 
+Phase 19E-F finalizes the dialect-aware database verification and backup architecture supporting both SQLite 3 and PostgreSQL 16+. 
 
-Prior to this phase, `DatabaseVerifier` relied on SQLite-specific `PRAGMA integrity_check` and `PRAGMA foreign_key_check` queries that would fail against PostgreSQL engines, while `backup_utils.py` was tightly coupled to SQLite's C-level `sqlite3.backup` API without support for enterprise PostgreSQL backups.
+Prior to this phase, `DatabaseVerifier` relied on SQLite-specific `PRAGMA integrity_check` and `PRAGMA foreign_key_check` queries that failed against PostgreSQL engines, while `backup_utils.py` was tightly coupled to SQLite's C-level `sqlite3.backup` API without support for PostgreSQL enterprise backups.
 
-In Phase 19E, both modules were refactored into modular, dialect-aware architectures:
+In Phase 19E-F, both modules were refactored into modular, dialect-aware architectures:
 1. **`DatabaseVerifier` (`backend/core/database_verifier.py`)**:
    - Detects the active database dialect (`sqlite` or `postgresql`) and rejects unsupported engines.
    - Preserves portable SQLAlchemy reflection across all 22 domain tables, columns, data types, nullability, primary keys, foreign keys, unique constraints, and indexes.
    - Isolates SQLite PRAGMA checks to SQLite engines only.
    - Introduces PostgreSQL connectivity heartbeat (`SELECT 1;`), schema qualification, custom native ENUM inspection (`eventcategory`, `eventstatus`, `registrationstatus`), and sequence reflection.
    - Retains 100% backward compatibility for the five canonical migration readiness states (`FRESH`, `MIGRATED`, `COMPATIBLE_UNSTAMPED`, `INCOMPATIBLE`, `UNKNOWN_REVISION`).
-2. **Modular Backup Architecture (`backend/core/backup_utils.py`)**:
+2. **Modular Backup & Restore Architecture (`backend/core/backup_utils.py`)**:
    - Defines a structured, secret-free `BackupManifest` capturing backup identifiers, dialect, masked database identity, UTC timestamps, format, file path, size, SHA-256 checksum, Alembic revision, verification status, and tool version.
-   - Implements `SQLiteBackupAdapter` using the SQLite Online Backup API (`sqlite3.backup`) under active WAL mode, post-backup PRAGMA integrity validation, and SHA-256 hashing.
-   - Implements `PostgreSQLBackupAdapter` executing `pg_dump` with strict credential isolation via the `PGPASSWORD` process environment variable (never exposed on command line arguments or logs), custom format (`-Fc`) / plain SQL (`-Fp`) output, non-destructive restore validation via `pg_restore --list`, and missing-tool diagnostics (`BackupToolNotFoundError`).
+   - Implements `SQLiteBackupAdapter` using the SQLite Online Backup API (`sqlite3.backup`) under active WAL mode, post-backup PRAGMA integrity validation, SHA-256 hashing, and non-destructive restore.
+   - Implements `PostgreSQLBackupAdapter` with:
+     - `create_backup()`: executes `pg_dump` with custom (`-Fc`) / plain (`-Fp`) formats and strict credential isolation via the `PGPASSWORD` process environment variable (never exposed on command line arguments or logs).
+     - `verify_backup()`: inspects `b"PGDMP"` magic bytes and TOC contents via `pg_restore --list`.
+     - `validate_restore()`: validates backup existence, integrity, target database specification, and guards against accidental overwriting of the active database.
+     - `restore()`: executes `pg_restore` targeting an explicitly identified destination database with `--no-owner --no-privileges`, `clean` option, and `PGPASSWORD` environment isolation.
+     - Missing-tool diagnostics (`BackupToolNotFoundError`) and credential sanitization (`sanitize_text()`).
    - Retains backward-compatible functional wrappers (`backup_sqlite_database` and `restore_sqlite_database`).
 3. **Automated Testing Suite (`tests/test_dialect_verification_and_backups.py`)**:
-   - Added 25 comprehensive automated tests covering dialect detection, SQLite verifier checks, PostgreSQL simulated heartbeat/enums/sequences, SQLite backup/restore/manifests, PostgreSQL command argument safety/password isolation/missing tool handling, and factory dispatch.
-   - Full regression suite increased from **263 passed to 288 passed** (backend) and **20 passed** (frontend).
+   - Added 29 comprehensive automated tests covering dialect detection, SQLite verifier checks, PostgreSQL simulated heartbeat/enums/sequences, SQLite backup/restore/manifests, PostgreSQL command argument safety/password isolation/missing tool handling, restore validation, and factory dispatch.
+   - Full regression suite increased from **263 passed to 292 passed** (backend) and **20 passed** (frontend).
    - Production database `campus_automation.db` remained strictly untouched with identical SHA-256 checksum and size.
 
 ---
 
-## 2. Initial Repository Audit
+## 2. Verification Classification & Testing Distinctions
 
-An audit of the codebase prior to Phase 19E identified the following dialect-dependent behaviors:
+To ensure complete engineering transparency, test coverage and verification status are classified into distinct categories:
 
-| Component | Behavior | Dialect Classification | Remediation Strategy |
-| :--- | :--- | :--- | :--- |
-| **`database_verifier.py`** | `PRAGMA integrity_check;` and `PRAGMA foreign_key_check;` | SQLite-only | Restrict PRAGMA calls strictly to `dialect_name == "sqlite"`. |
-| **`database_verifier.py`** | `SELECT 1;` connectivity check | PostgreSQL-specific | Execute heartbeat query when `dialect_name == "postgresql"`. |
-| **`database_verifier.py`** | Custom ENUM inspection | PostgreSQL-specific | Use `inspector.get_enums(schema)` to verify `eventcategory`, `eventstatus`, and `registrationstatus` labels. |
-| **`database_verifier.py`** | Sequence / Identity reflection | PostgreSQL-specific | Inspect sequences via `inspector.get_sequence_names` or `information_schema.sequences`. |
-| **`database_verifier.py`** | Table, column, constraint, index reflection | Portable SQLAlchemy | Maintain shared reflection logic across all 22 domain models. |
-| **`database_verifier.py`** | Column type family matching | Shared with Dialect Nuance | Normalize `BOOLEAN` (compatible with `INTEGER` on SQLite) and `ENUM` (compatible with `VARCHAR` on SQLite and native `ENUM` on PG). |
-| **`backup_utils.py`** | `source_conn.backup(target_conn)` | SQLite-only | Encapsulate inside `SQLiteBackupAdapter`. |
-| **`backup_utils.py`** | CLI `pg_dump` invocation | PostgreSQL-specific | Implement `PostgreSQLBackupAdapter` with secure environment variable isolation for `PGPASSWORD`. |
-| **`backup_utils.py`** | Metadata tracking & Checksumming | Shared | Standardize on `BackupManifest` dataclass with JSON serialization and secret masking. |
+### A. Real SQLite Verification (100% Verified)
+- Real SQLite online backups executed via `sqlite3.backup` API under WAL mode.
+- Real SQLite backup integrity check executed via `PRAGMA integrity_check;`.
+- Real SQLite restore executed into isolated temporary database files and verified via table inspection and Alembic revision queries.
+- Zero mock objects used for SQLite test suites.
+
+### B. Mocked / Simulated PostgreSQL Tests (100% Passing in Mocked Environment)
+- PostgreSQL adapter tested using controlled subprocess mock fixtures (`mock_executor`, `mock_restore_executor`).
+- Verified:
+  - Command line vector generation: `['pg_dump', '-h', host, '-p', port, '-U', user, '-F', 'c', '-f', target_path, database]`.
+  - Command line vector generation: `['pg_restore', '-h', host, '-p', port, '-U', user, '-d', target_db, '--no-owner', '--no-privileges', backup_path]`.
+  - **Password Environment Isolation:** Passwords NEVER appear in command line arguments (`-W` is excluded; raw strings are absent). Passwords are provided strictly through `env["PGPASSWORD"]`.
+  - **Manifest Sanitization:** Generated `BackupManifest` contains masked database identity (`postgresql+psycopg://campus_user:***@host:5432/db`) and zero secrets.
+  - **Error Output Sanitization:** Exceptions and stderr messages pass through `sanitize_text()`, stripping raw passwords or URI credentials.
+  - **Missing Tool Handling:** Non-existent `pg_dump` or `pg_restore` binaries raise `BackupToolNotFoundError`.
+  - **Active Database Protection:** `validate_restore()` and `restore()` reject restoring over the active database when `overwrite=False`.
+
+### C. Real PostgreSQL Integration & Recovery Status (Explicitly Untested)
+- **Status:** **UNTESTED AGAINST A LIVE POSTGRESQL DAEMON**.
+- **Reason:** No local PostgreSQL 16+ server instance, Docker daemon, or CLI tools (`pg_dump`, `pg_restore`, `psql`) are installed on the local Windows development machine.
+- **Strict Compliance:** In accordance with safety rules, production and Supabase database credentials were **NEVER** used to run test restores or generate test dumps.
+- **Future Milestone:** Full live end-to-end `pg_dump` and `pg_restore` cycles must be executed in a dedicated staging environment (Task 19F) with disposable target databases.
 
 ---
 
 ## 3. Files Created and Modified
 
 ### Created Files
-- `tests/test_dialect_verification_and_backups.py`: Automated test suite containing 25 unit and integration tests.
+- `tests/test_dialect_verification_and_backups.py`: Automated test suite containing 29 unit and integration tests.
 - `docs/database/PHASE_19E_DIALECT_VERIFICATION_AND_BACKUPS.md`: This comprehensive architectural record.
 
 ### Modified Files
-- `backend/core/database_verifier.py`: Refactored to support dialect detection, PostgreSQL heartbeat, schema qualification, custom enum inspection, sequence checks, and enriched report dataclasses.
-- `backend/core/backup_utils.py`: Refactored into a modular adapter architecture with `BackupManifest`, `BaseBackupAdapter`, `SQLiteBackupAdapter`, `PostgreSQLBackupAdapter`, `get_backup_adapter`, and credential sanitization.
+- `backend/core/database_verifier.py`: Dialect detection, PostgreSQL heartbeat, schema qualification, custom enum inspection, sequence checks, and enriched report dataclasses.
+- `backend/core/backup_utils.py`: Modular adapter architecture with `BackupManifest`, `BaseBackupAdapter`, `SQLiteBackupAdapter`, `PostgreSQLBackupAdapter` (including `create_backup`, `verify_backup`, `validate_restore`, and `restore`), `get_backup_adapter`, and credential sanitization.
 
 ---
 
@@ -97,37 +113,12 @@ flowchart TD
     Classifier -->|Alembic revision unknown/mismatched| StateE[UNKNOWN_REVISION: can_start=False]
 ```
 
-### Readiness Classification Summary
-1. **`FRESH` (State A)**: Empty database with no domain tables. Startup halts; instructs operator to run `alembic upgrade head`.
-2. **`MIGRATED` (State B)**: Required 22-table schema present, structural constraints match `Base.metadata`, dialect checks pass, and `alembic_version` matches `0001_initial_baseline`. Startup proceeds cleanly.
-3. **`COMPATIBLE_UNSTAMPED` (State C)**: Schema fully matches baseline, but `alembic_version` table is absent (legacy database). Warning logged; startup proceeds; manual baseline stamping requested during maintenance window.
-4. **`INCOMPATIBLE` (State D)**: Schema has missing tables, missing columns, incompatible type families, missing constraints, or dialect integrity errors. Startup halts with critical diagnostic log.
-5. **`UNKNOWN_REVISION` (State E)**: Database contains an `alembic_version` row with an unrecognized revision string. Startup halts to prevent data corruption.
-
 ---
 
-## 5. Backup Architecture & Secret-Free Manifest
+## 5. Secret-Free Backup Manifest Example
 
-### `BackupManifest` Specification
 Backups generated by both adapters are accompanied by a companion `.manifest.json` file containing structured metadata:
 
-```json
-{
-  "backup_id": "sqlite_20261109_123736_4f9a12bc",
-  "dialect": "sqlite",
-  "database_identifier": "campus_automation.db",
-  "timestamp": "2026-11-09T12:37:36.123456+00:00",
-  "format": "sqlite_file",
-  "backup_file_path": "C:\\backups\\backup_20261109_123736_campus_automation.db",
-  "file_size_bytes": 290816,
-  "sha256_checksum": "baca55ebd284e474ef79c45d01f1b311c7c8e4f9a779bcb99a596a46798ce227",
-  "alembic_revision": "0001_initial_baseline",
-  "verification_status": "verified",
-  "tool_version": "sqlite3 3.49.1"
-}
-```
-
-For PostgreSQL backups, credentials are never included:
 ```json
 {
   "backup_id": "pg_20261109_123840_9a8b7c6d",
@@ -144,29 +135,30 @@ For PostgreSQL backups, credentials are never included:
 }
 ```
 
-### PostgreSQL Credential Isolation Security Rule
-Under `PostgreSQLBackupAdapter`:
-- The CLI command constructed is:
-  `['pg_dump', '-h', host, '-p', port, '-U', user, '-F', 'c', '-f', target_path, database]`
-- Passwords are **NEVER** passed via `-W`, query parameters, or command-line arguments. This prevents process table snooping (`ps -ef`, Process Explorer).
-- The password is provided exclusively via the subprocess environment dictionary: `env["PGPASSWORD"] = password`.
-- Any error output captured from `stderr` passes through `sanitize_text()`, which strips plain text passwords and connection URI secrets before logging or raising `BackupError`.
+---
+
+## 6. Restore Safety Controls
+
+The recovery procedure in `PostgreSQLBackupAdapter.restore()` enforces seven strict safety controls:
+1. **Explicit Target Identification:** The target database must be explicitly specified (e.g., `disposable_test_db`). Empty or inferred destinations are rejected.
+2. **Active Database Protection:** Refuses to restore over the active database (`self.database`) unless `overwrite=True` is explicitly passed.
+3. **No Automatic Restore on Startup:** Automatic restoration or database resetting on application startup is strictly prohibited.
+4. **Credential Isolation:** The password is provided exclusively via the subprocess environment dictionary: `env["PGPASSWORD"] = password`. CLI arguments never contain passwords.
+5. **Sanitized Diagnostics:** All error messages and process outputs pass through `sanitize_text()`, ensuring credentials are masked.
+6. **No Owner / Privilege Pollution:** Restores with `--no-owner --no-privileges` to avoid permission failures across environments.
+7. **Failure Cleanup Safety:** Temporary files created during failed operations are cleaned up immediately without touching existing assets.
 
 ---
 
-## 6. Test Results and Baseline Comparison
+## 7. Test Results and Baseline Comparison
 
-### Test Execution Summary
-- **Backend Test Suite:**
-  - Previous Phase 19D Baseline: **263 passed**
-  - Phase 19E New Tests: **25 passed**
-  - Total Passing Tests: **288 passed** in 43.42s
-  - Failures: 0, Errors: 0, Skipped: 0
-- **Frontend Test Suite:**
-  - Status: **20 passed** in 155.66ms
-  - Failures: 0, Errors: 0
+| Test Suite | Previous Baseline | Phase 19E-F Result | Status |
+| :--- | :--- | :--- | :--- |
+| `tests/test_dialect_verification_and_backups.py` | 0 | **29 passed** | **PASSED** (2.81s) |
+| Full Backend Regression Suite (`pytest tests/`) | 263 passed | **292 passed** | **PASSED** (36.71s) |
+| Frontend Test Suite (`npm test`) | 20 passed | **20 passed** | **PASSED** (149.92ms) |
 
-### Phase 19E Test Breakdown (`tests/test_dialect_verification_and_backups.py`)
+### Phase 19E-F Test Breakdown (`tests/test_dialect_verification_and_backups.py`)
 1. `test_verifier_accepts_sqlite`: PASSED
 2. `test_verifier_accepts_postgresql`: PASSED
 3. `test_verifier_rejects_unsupported_dialects`: PASSED
@@ -186,30 +178,34 @@ Under `PostgreSQLBackupAdapter`:
 17. `test_postgresql_missing_tool_raises_tool_not_found`: PASSED
 18. `test_postgresql_backup_sanitizes_errors`: PASSED
 19. `test_postgresql_validate_restore_guards_active_database`: PASSED
-20. `test_get_backup_adapter_sqlite_path`: PASSED
-21. `test_get_backup_adapter_sqlite_url`: PASSED
-22. `test_get_backup_adapter_postgresql_url`: PASSED
-23. `test_get_backup_adapter_from_engine`: PASSED
-24. `test_backup_sqlite_database_functional_wrapper`: PASSED
-25. `test_sanitize_text_utility`: PASSED
+20. `test_postgresql_restore_command_construction_and_password_isolation_mocked`: PASSED
+21. `test_postgresql_restore_missing_tool_raises_tool_not_found_mocked`: PASSED
+22. `test_postgresql_restore_sanitizes_errors_mocked`: PASSED
+23. `test_postgresql_restore_protects_active_database_mocked`: PASSED
+24. `test_get_backup_adapter_sqlite_path`: PASSED
+25. `test_get_backup_adapter_sqlite_url`: PASSED
+26. `test_get_backup_adapter_postgresql_url`: PASSED
+27. `test_get_backup_adapter_from_engine`: PASSED
+28. `test_backup_sqlite_database_functional_wrapper`: PASSED
+29. `test_sanitize_text_utility`: PASSED
 
 ---
 
-## 7. Production Database Safety & Integrity Verification
+## 8. Production Database Safety & Integrity Verification
 
-To adhere strictly to non-destructive constraints, the application database `campus_automation.db` was verified before and after Phase 19E implementation:
+To adhere strictly to non-destructive constraints, the application database `campus_automation.db` was verified before and after Phase 19E-F implementation:
 
 - **File Path:** `MARVEL-main/campus_automation.db`
 - **File Length:** `290,816` bytes (exact match)
 - **SHA-256 Checksum:** `BACA55EBD284E474EF79C45D01F1B311C7C8E4F9A779BCB99A596A46798CE227` (exact match)
-- **Verification Status:** Pristine and untouched. No migrations, stamping, or table modifications were executed against this database.
+- **Verification Status:** **Pristine and untouched.** No migrations, stamping, or table modifications were executed against this database.
 
 ---
 
-## 8. Limitations & Unverified Capabilities
+## 9. Explicit Limitations & Remaining Operational Requirements
 
-1. **Subprocess Mocking in Automated Tests**:
-   - PostgreSQL adapter tests were executed using simulated environments and mocked subprocess execution to ensure reproducibility on development machines without PostgreSQL client binaries installed.
-   - Live end-to-end `pg_dump` execution against a running PostgreSQL 16+ daemon requires a deployed database host and will be verified during staging deployment (Task 19F).
-2. **Restore Safety in Production**:
-   - `PostgreSQLBackupAdapter.validate_restore()` enforces dry-run safety and prevents overwriting the active database without `overwrite=True`. However, full point-in-time recovery on PostgreSQL production clusters must be orchestrated via designated staging databases or containerized instances to prevent accidental downtime.
+1. **Live PostgreSQL Daemon Verification:**
+   - Real `pg_dump` and `pg_restore` cycles against a running PostgreSQL 16+ daemon could not be performed because no local PostgreSQL server, `pg_dump`/`pg_restore` binaries, or Docker daemon exist on the Windows host.
+   - Live integration must be performed in a dedicated staging environment (Task 19F).
+2. **Standard of Completion:**
+   - As per task guidelines, PostgreSQL backup and recovery is **NOT labeled as fully verified in production** until a real isolated PostgreSQL backup and restore cycle has succeeded on a running PostgreSQL 16+ instance.

@@ -428,6 +428,99 @@ class TestPostgreSQLBackupAdapter:
             adapter.validate_restore(mock_backup, "campus_live_db", overwrite=False)
         assert "Restoration aborted to protect live data" in str(exc_info.value)
 
+    def test_postgresql_restore_command_construction_and_password_isolation_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify pg_restore command vector construction, target DB, and password env isolation."""
+        db_url = "postgresql+psycopg://campus_admin:RestoreSecret789@10.0.0.8:5432/campus_target_db"
+        adapter = PostgreSQLBackupAdapter(db_url, pg_restore_cmd="pg_restore")
+
+        mock_backup = tmp_path / "mock_valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid_archive_content")
+
+        executed_cmds = []
+        captured_envs = []
+
+        def mock_restore_executor(cmd, env=None, backup_path=None, target_db=None, **kwargs):
+            executed_cmds.append(cmd)
+            if env:
+                captured_envs.append(env)
+            mock_res = MagicMock()
+            mock_res.returncode = 0
+            return mock_res
+
+        res = adapter.restore(
+            mock_backup,
+            target_destination="disposable_test_db",
+            overwrite=True,
+            clean=True,
+            executor=mock_restore_executor,
+        )
+
+        assert res["status"] == "restored"
+        assert res["target_database"] == "disposable_test_db"
+        assert len(executed_cmds) == 1
+
+        cli_cmd = executed_cmds[0]
+        cmd_str = " ".join(cli_cmd)
+
+        # CRITICAL: Password NEVER in CLI arguments
+        assert "RestoreSecret789" not in cmd_str
+        assert "-W" not in cli_cmd
+
+        # Verify command flags
+        assert "-h" in cli_cmd and "10.0.0.8" in cli_cmd
+        assert "-p" in cli_cmd and "5432" in cli_cmd
+        assert "-U" in cli_cmd and "campus_admin" in cli_cmd
+        assert "-d" in cli_cmd and "disposable_test_db" in cli_cmd
+        assert "--no-owner" in cli_cmd
+        assert "--no-privileges" in cli_cmd
+        assert "-c" in cli_cmd
+        assert str(mock_backup) in cli_cmd
+
+        # Password strictly in environment
+        assert captured_envs[0].get("PGPASSWORD") == "RestoreSecret789"
+
+    def test_postgresql_restore_missing_tool_raises_tool_not_found_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify missing pg_restore executable raises BackupToolNotFoundError."""
+        db_url = "postgresql+psycopg://user:pass@localhost:5432/testdb"
+        adapter = PostgreSQLBackupAdapter(db_url, pg_restore_cmd="/missing/path/pg_restore_xyz")
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+
+        with pytest.raises(BackupToolNotFoundError) as exc_info:
+            adapter.restore(mock_backup, target_destination="target_disposable_db")
+        assert "pg_restore_xyz' was not found on system PATH" in str(exc_info.value)
+
+    def test_postgresql_restore_sanitizes_errors_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify pg_restore error output masks sensitive credentials."""
+        db_url = "postgresql+psycopg://user:ConfidentialPass456@localhost:5432/testdb"
+        adapter = PostgreSQLBackupAdapter(db_url)
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+
+        def failing_restore_executor(cmd, env=None, backup_path=None, target_db=None, **kwargs):
+            raise RuntimeError("pg_restore failed connecting with password=ConfidentialPass456")
+
+        with pytest.raises(BackupError) as exc_info:
+            adapter.restore(mock_backup, target_destination="disposable_db", executor=failing_restore_executor)
+
+        err = str(exc_info.value)
+        assert "ConfidentialPass456" not in err
+        assert "******" in err
+
+    def test_postgresql_restore_protects_active_database_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify pg_restore refuses to restore over active database without overwrite=True."""
+        db_url = "postgresql+psycopg://user:pass@localhost:5432/live_active_production_db"
+        adapter = PostgreSQLBackupAdapter(db_url)
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+
+        with pytest.raises(BackupError) as exc_info:
+            adapter.restore(mock_backup, target_destination="live_active_production_db", overwrite=False)
+        assert "Restoration aborted to protect live data" in str(exc_info.value)
+
 
 # ============================================================================
 # 6. Factory & Backward-Compatibility Tests

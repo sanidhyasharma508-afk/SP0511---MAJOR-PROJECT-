@@ -151,6 +151,17 @@ class BaseBackupAdapter(ABC):
         """Validate non-destructive restoration safety before applying."""
         pass
 
+    @abstractmethod
+    def restore(
+        self,
+        backup_path: Path,
+        target_destination: Any,
+        overwrite: bool = False,
+        **kwargs: Any,
+    ) -> Any:
+        """Restore a database from a verified backup artifact."""
+        pass
+
 
 class SQLiteBackupAdapter(BaseBackupAdapter):
     """Adapter for SQLite point-in-time online backups using the sqlite3.backup API."""
@@ -564,6 +575,115 @@ class PostgreSQLBackupAdapter(BaseBackupAdapter):
                     "and overwrite=False. Restoration aborted to protect live data."
                 )
         return True
+
+    def restore(
+        self,
+        backup_path: Path,
+        target_destination: Union[str, Path],
+        overwrite: bool = False,
+        clean: bool = False,
+        executor: Optional[Callable[..., Any]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Restore a PostgreSQL database from a custom-format backup artifact using pg_restore.
+
+        SAFETY CONTROLS:
+        1. Target validation: Requires explicit target database destination.
+        2. Production protection: Fails if target matches active database unless overwrite=True.
+        3. Credential isolation: PGPASSWORD passed strictly via isolated subprocess environment.
+        4. Output sanitization: Passwords and connection secrets stripped from error messages.
+
+        Args:
+            backup_path: Path to the .dump backup file.
+            target_destination: Target database name or connection URL.
+            overwrite: Whether to permit overwriting an active/existing database.
+            clean: Whether to pass -c/--clean to drop database objects before recreating.
+            executor: Optional subprocess execution callable for unit testing.
+
+        Returns:
+            Dict containing restoration metadata (status, target_database, backup_file_path, tool).
+
+        Raises:
+            BackupError: If validation fails or pg_restore encounters an unrecoverable error.
+            BackupToolNotFoundError: If pg_restore executable is missing from system PATH.
+        """
+        self.validate_restore(backup_path, target_destination, overwrite=overwrite)
+
+        backup_path = Path(backup_path).resolve()
+        dest_str = str(target_destination).strip()
+
+        # Parse target destination
+        target_host = self.host
+        target_port = self.port
+        target_user = self.user
+        target_password = self.password
+        target_db = dest_str
+
+        if "://" in dest_str:
+            norm_dest = normalize_database_url(dest_str)
+            parsed_dest = make_url(norm_dest)
+            target_host = parsed_dest.host or target_host
+            target_port = parsed_dest.port or target_port
+            target_user = parsed_dest.username or target_user
+            target_password = parsed_dest.password or target_password
+            target_db = parsed_dest.database or ""
+
+        if not target_db:
+            raise BackupError("Cannot restore: target database name could not be determined.")
+
+        resolved_restore = self._resolve_tool(self.pg_restore_cmd)
+        if not resolved_restore and not executor:
+            raise BackupToolNotFoundError(
+                f"PostgreSQL restore tool '{self.pg_restore_cmd}' was not found on system PATH. "
+                "Please install PostgreSQL client utilities (pg_restore) to enable automated restoration."
+            )
+
+        cmd = [self.pg_restore_cmd]
+        if target_host:
+            cmd.extend(["-h", target_host])
+        if target_port:
+            cmd.extend(["-p", str(target_port)])
+        if target_user:
+            cmd.extend(["-U", target_user])
+        cmd.extend(["-d", target_db, "--no-owner", "--no-privileges"])
+        if clean:
+            cmd.append("-c")
+        cmd.append(str(backup_path))
+
+        sub_env = os.environ.copy()
+        if target_password:
+            sub_env["PGPASSWORD"] = target_password
+
+        try:
+            if executor:
+                executor(cmd, env=sub_env, backup_path=backup_path, target_db=target_db)
+            else:
+                proc = subprocess.run(
+                    cmd,
+                    env=sub_env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=False,
+                )
+                if proc.returncode > 1:
+                    clean_err = sanitize_text(proc.stderr, target_password)
+                    raise BackupError(f"pg_restore failed with exit code {proc.returncode}: {clean_err}")
+        except FileNotFoundError:
+            raise BackupToolNotFoundError(
+                f"PostgreSQL restore executable '{self.pg_restore_cmd}' could not be executed."
+            )
+        except Exception as e:
+            if not isinstance(e, (BackupError, BackupToolNotFoundError)):
+                raise BackupError(f"pg_restore execution failed: {sanitize_text(str(e), target_password)}") from e
+            raise
+
+        return {
+            "status": "restored",
+            "target_database": target_db,
+            "backup_file_path": str(backup_path),
+            "tool": self.pg_restore_cmd,
+        }
 
 
 def get_backup_adapter(
