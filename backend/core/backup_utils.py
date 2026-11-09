@@ -324,6 +324,101 @@ class SQLiteBackupAdapter(BaseBackupAdapter):
         return True
 
 
+def normalize_db_identity(
+    url_or_name: str,
+    default_host: str = "localhost",
+    default_port: int = 5432,
+) -> Dict[str, Any]:
+    """Parse and normalize database connection identity for robust alias and identity comparison.
+
+    Normalizes:
+    - localhost / 127.0.0.1 / ::1 / 0.0.0.0 to 'localhost'
+    - Default port 5432
+    - Database name (case-insensitive and stripped)
+    - URL schemes (postgres, postgresql, postgresql+psycopg)
+    """
+    clean_target = str(url_or_name).strip()
+    if not clean_target:
+        return {"host": "", "port": default_port, "database": "", "username": ""}
+
+    if "://" in clean_target:
+        norm_url = normalize_database_url(clean_target)
+        parsed = make_url(norm_url)
+        host = (parsed.host or default_host).lower().strip()
+        port = parsed.port or default_port
+        database = (parsed.database or "").lower().strip()
+        username = (parsed.username or "").lower().strip()
+    elif "/" in clean_target:
+        parts = clean_target.split("/", 1)
+        host_port = parts[0].strip()
+        database = parts[1].strip().lower()
+        if ":" in host_port:
+            hp = host_port.split(":")
+            host = hp[0].lower().strip()
+            try:
+                port = int(hp[1])
+            except ValueError:
+                port = default_port
+        else:
+            host = host_port.lower().strip()
+            port = default_port
+        username = ""
+    else:
+        host = default_host.lower().strip()
+        port = default_port
+        database = clean_target.lower().strip()
+        username = ""
+
+    # Normalize local host aliases
+    if host in ("127.0.0.1", "::1", "0.0.0.0", "localhost"):
+        host = "localhost"
+
+    return {
+        "host": host,
+        "port": port,
+        "database": database,
+        "username": username,
+    }
+
+
+def is_same_database_identity(source_ident: Dict[str, Any], dest_ident: Dict[str, Any]) -> bool:
+    """Determine whether source and destination point to the same physical database instance."""
+    if not source_ident.get("database") or not dest_ident.get("database"):
+        return False
+    if source_ident["database"] != dest_ident["database"]:
+        return False
+    return (
+        source_ident.get("host") == dest_ident.get("host")
+        and source_ident.get("port") == dest_ident.get("port")
+    )
+
+
+def is_production_database_target(ident: Dict[str, Any], raw_url_or_name: str) -> bool:
+    """Detect whether a database destination targets a production environment."""
+    db_name = ident.get("database", "").lower()
+    host_name = ident.get("host", "").lower()
+    raw_lower = str(raw_url_or_name).lower()
+
+    # Reject if database name contains production markers
+    prod_markers = ["prod", "production", "live"]
+    db_tokens = re.split(r"[_\-\.]", db_name)
+    if any(m in db_tokens for m in prod_markers):
+        return True
+    if any(p in db_name for p in ["production", "_prod", "prod_"]):
+        return True
+
+    # Reject if host indicates production cloud deployment
+    cloud_prod_hosts = ["supabase.co", "supabase.com", "rds.amazonaws.com", "cloudsql", "render.com", "railway.app", "elephantsql.com"]
+    if any(c in host_name for c in cloud_prod_hosts):
+        return True
+
+    # Reject explicit production query parameters or tags
+    if "env=production" in raw_lower or "mode=production" in raw_lower or "target=prod" in raw_lower:
+        return True
+
+    return False
+
+
 class PostgreSQLBackupAdapter(BaseBackupAdapter):
     """Adapter for PostgreSQL backups and restores using pg_dump and pg_restore."""
 
@@ -349,6 +444,8 @@ class PostgreSQLBackupAdapter(BaseBackupAdapter):
         self.database = parsed.database or ""
         self.user = parsed.username or ""
         self.password = parsed.password or ""
+
+        self.source_identity = normalize_db_identity(self.raw_url, default_host=self.host, default_port=self.port)
 
         self.pg_dump_cmd = pg_dump_cmd or "pg_dump"
         self.pg_restore_cmd = pg_restore_cmd or "pg_restore"
@@ -553,27 +650,72 @@ class PostgreSQLBackupAdapter(BaseBackupAdapter):
         backup_path: Path,
         target_destination: Any,
         overwrite: bool = False,
+        target_is_empty: Optional[bool] = None,
+        allow_destructive_clean: bool = False,
+        confirm_destructive_clean_database_name: str = "",
     ) -> bool:
-        """Validate non-destructive restoration safety before applying."""
+        """Validate restoration safety before invoking restore tools.
+
+        SAFETY CONTROLS ENFORCED:
+        1. Backup artifact exists, is non-empty, and passes integrity checks.
+        2. Explicit target destination required: destination cannot be empty, None, or inferred.
+        3. Active database protection: Compares normalized host/port/database identity to detect
+           matching active database, including alternate URL aliases (127.0.0.1 vs localhost, default port, casing).
+        4. Production database rejection: Rejects any restoration targeting a production database.
+        5. Non-empty destination check: Rejects restore into existing non-empty database unless
+           allow_destructive_clean=True with confirm_destructive_clean_database_name matching the target.
+        """
         backup_path = Path(backup_path).resolve()
         if not backup_path.exists():
             raise BackupError(f"Backup file does not exist: {backup_path}")
         if not self.verify_backup(backup_path):
             raise BackupError(f"Backup artifact failed integrity verification: {backup_path}")
 
-        # Check destination URL or database name
-        dest_str = str(target_destination)
+        dest_str = str(target_destination).strip() if target_destination is not None else ""
         if not dest_str:
-            raise BackupError("Target restore destination cannot be empty.")
+            raise BackupError(
+                "Target restore destination cannot be empty. "
+                "An explicit target destination database name or connection URL is required."
+            )
 
-        # Guard against accidental restoration over active production database
-        if not overwrite:
-            # If target is identical to current database, require explicit overwrite=True
-            if self.database and self.database in dest_str:
+        # Parse and normalize destination database identity
+        dest_ident = normalize_db_identity(dest_str, default_host=self.host, default_port=self.port)
+        target_db = dest_ident["database"]
+        if not target_db:
+            raise BackupError("Cannot restore: target database name could not be determined from destination.")
+
+        # 1. Active Source Database Overwrite Protection (with alias detection)
+        if is_same_database_identity(self.source_identity, dest_ident):
+            raise BackupError(
+                f"Restoration into the active source database ('{target_db}' at {dest_ident['host']}:{dest_ident['port']}) "
+                "is strictly prohibited to protect live application data from accidental corruption."
+            )
+
+        # 2. Production Database Protection
+        if is_production_database_target(dest_ident, dest_str):
+            raise BackupError(
+                f"Restoration targeting production database ('{target_db}' at {dest_ident['host']}) is prohibited. "
+                "Automated application restores must never target production environments."
+            )
+
+        # 3. Non-Empty Destination Protection
+        if target_is_empty is False:
+            if not allow_destructive_clean:
                 raise BackupError(
-                    f"Target destination matches active database '{self.database}' "
-                    "and overwrite=False. Restoration aborted to protect live data."
+                    f"Destination database '{target_db}' is not empty. Restoring into an existing non-empty database "
+                    "without explicit destructive authorization is prohibited to prevent overwriting existing data. "
+                    "Please restore into a freshly provisioned, empty database, or explicitly set "
+                    "allow_destructive_clean=True with confirm_destructive_clean_database_name."
                 )
+
+        # 4. Destructive Clean Authorization Validation
+        if allow_destructive_clean:
+            if confirm_destructive_clean_database_name.lower().strip() != target_db:
+                raise BackupError(
+                    f"Destructive clean authorization failed: confirm_destructive_clean_database_name "
+                    f"('{confirm_destructive_clean_database_name}') does not match target database ('{target_db}')."
+                )
+
         return True
 
     def restore(
@@ -581,55 +723,78 @@ class PostgreSQLBackupAdapter(BaseBackupAdapter):
         backup_path: Path,
         target_destination: Union[str, Path],
         overwrite: bool = False,
+        allow_destructive_clean: bool = False,
+        confirm_destructive_clean_database_name: str = "",
         clean: bool = False,
+        target_is_empty: Optional[bool] = None,
         executor: Optional[Callable[..., Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Restore a PostgreSQL database from a custom-format backup artifact using pg_restore.
 
         SAFETY CONTROLS:
-        1. Target validation: Requires explicit target database destination.
-        2. Production protection: Fails if target matches active database unless overwrite=True.
-        3. Credential isolation: PGPASSWORD passed strictly via isolated subprocess environment.
-        4. Output sanitization: Passwords and connection secrets stripped from error messages.
+        1. Explicit Target Validation: Requires explicit, non-empty destination database.
+        2. Active Source Database Protection: Rejects restoring over the active source database,
+           even if addressed via alternate host/URL aliases (127.0.0.1, localhost, casing).
+        3. Production Rejection: Rejects any restoration targeting production databases.
+        4. Non-Destructive by Default: Does NOT pass --clean (-c) by default. Dropping existing
+           objects requires explicit allow_destructive_clean=True with exact database name confirmation.
+        5. Credential Isolation: PGPASSWORD passed strictly via isolated subprocess environment;
+           passwords NEVER appear in command line arguments or logs.
+        6. Output Sanitization: Stderr and exceptions are filtered through sanitize_text().
+        7. Failure Cleanup Safety: Failed restores do not touch or destroy unrelated resources.
 
         Args:
             backup_path: Path to the .dump backup file.
             target_destination: Target database name or connection URL.
             overwrite: Whether to permit overwriting an active/existing database.
-            clean: Whether to pass -c/--clean to drop database objects before recreating.
+            allow_destructive_clean: Explicit opt-in to pass -c/--clean to pg_restore.
+            confirm_destructive_clean_database_name: Must match target database name if clean requested.
+            clean: Legacy parameter. If True, requires allow_destructive_clean authorization.
+            target_is_empty: Optional pre-flight check indicating whether target database has tables.
             executor: Optional subprocess execution callable for unit testing.
 
         Returns:
             Dict containing restoration metadata (status, target_database, backup_file_path, tool).
 
         Raises:
-            BackupError: If validation fails or pg_restore encounters an unrecoverable error.
+            BackupError: If safety checks fail or pg_restore encounters an unrecoverable error.
             BackupToolNotFoundError: If pg_restore executable is missing from system PATH.
         """
-        self.validate_restore(backup_path, target_destination, overwrite=overwrite)
+        effective_clean = allow_destructive_clean or clean
+        if clean and not allow_destructive_clean:
+            dest_ident_pre = normalize_db_identity(str(target_destination), default_host=self.host, default_port=self.port)
+            if confirm_destructive_clean_database_name.lower().strip() != dest_ident_pre["database"]:
+                raise BackupError(
+                    "Destructive clean (-c) requested but not explicitly authorized. "
+                    "Passing --clean is dangerous and requires allow_destructive_clean=True "
+                    "along with confirm_destructive_clean_database_name matching the target database."
+                )
+
+        self.validate_restore(
+            backup_path=backup_path,
+            target_destination=target_destination,
+            overwrite=overwrite,
+            target_is_empty=target_is_empty,
+            allow_destructive_clean=effective_clean,
+            confirm_destructive_clean_database_name=confirm_destructive_clean_database_name,
+        )
 
         backup_path = Path(backup_path).resolve()
         dest_str = str(target_destination).strip()
+        dest_ident = normalize_db_identity(dest_str, default_host=self.host, default_port=self.port)
 
-        # Parse target destination
-        target_host = self.host
-        target_port = self.port
+        target_host = dest_ident["host"]
+        target_port = dest_ident["port"]
+        target_db = dest_ident["database"]
         target_user = self.user
         target_password = self.password
-        target_db = dest_str
 
         if "://" in dest_str:
             norm_dest = normalize_database_url(dest_str)
             parsed_dest = make_url(norm_dest)
-            target_host = parsed_dest.host or target_host
-            target_port = parsed_dest.port or target_port
             target_user = parsed_dest.username or target_user
             target_password = parsed_dest.password or target_password
-            target_db = parsed_dest.database or ""
-
-        if not target_db:
-            raise BackupError("Cannot restore: target database name could not be determined.")
 
         resolved_restore = self._resolve_tool(self.pg_restore_cmd)
         if not resolved_restore and not executor:
@@ -646,8 +811,11 @@ class PostgreSQLBackupAdapter(BaseBackupAdapter):
         if target_user:
             cmd.extend(["-U", target_user])
         cmd.extend(["-d", target_db, "--no-owner", "--no-privileges"])
-        if clean:
+
+        # Destructive clean is ONLY added if explicitly authorized and confirmed
+        if effective_clean:
             cmd.append("-c")
+
         cmd.append(str(backup_path))
 
         sub_env = os.environ.copy()
@@ -656,7 +824,10 @@ class PostgreSQLBackupAdapter(BaseBackupAdapter):
 
         try:
             if executor:
-                executor(cmd, env=sub_env, backup_path=backup_path, target_db=target_db)
+                res = executor(cmd, env=sub_env, backup_path=backup_path, target_db=target_db)
+                if hasattr(res, "returncode") and res.returncode > 1:
+                    clean_err = sanitize_text(str(getattr(res, "stderr", "")), target_password)
+                    raise BackupError(f"pg_restore failed with exit code {res.returncode}: {clean_err}")
             else:
                 proc = subprocess.run(
                     cmd,
@@ -682,6 +853,7 @@ class PostgreSQLBackupAdapter(BaseBackupAdapter):
             "status": "restored",
             "target_database": target_db,
             "backup_file_path": str(backup_path),
+            "clean_enabled": effective_clean,
             "tool": self.pg_restore_cmd,
         }
 

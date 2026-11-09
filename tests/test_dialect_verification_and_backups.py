@@ -415,31 +415,182 @@ class TestPostgreSQLBackupAdapter:
         assert "SecretKey99" not in error_message
         assert "******" in error_message
 
-    def test_postgresql_validate_restore_guards_active_database(self, tmp_path):
-        db_url = "postgresql+psycopg://user:pass@localhost:5432/campus_live_db"
-        adapter = PostgreSQLBackupAdapter(db_url)
-
-        # Create mock valid backup file with PGDMP magic
-        mock_backup = tmp_path / "mock.dump"
-        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
-
-        # Validating restore against same database without overwrite must abort
-        with pytest.raises(BackupError) as exc_info:
-            adapter.validate_restore(mock_backup, "campus_live_db", overwrite=False)
-        assert "Restoration aborted to protect live data" in str(exc_info.value)
-
-    def test_postgresql_restore_command_construction_and_password_isolation_mocked(self, tmp_path):
-        """[MOCKED TEST] Verify pg_restore command vector construction, target DB, and password env isolation."""
-        db_url = "postgresql+psycopg://campus_admin:RestoreSecret789@10.0.0.8:5432/campus_target_db"
+    def test_default_restore_does_not_include_clean_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify default restore command never includes --clean (-c)."""
+        db_url = "postgresql+psycopg://user:pass@localhost:5432/source_db"
         adapter = PostgreSQLBackupAdapter(db_url, pg_restore_cmd="pg_restore")
 
-        mock_backup = tmp_path / "mock_valid.dump"
-        mock_backup.write_bytes(b"PGDMP\x01\x02valid_archive_content")
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+
+        executed_cmds = []
+
+        def mock_executor(cmd, env=None, backup_path=None, target_db=None, **kwargs):
+            executed_cmds.append(cmd)
+            mock_res = MagicMock()
+            mock_res.returncode = 0
+            return mock_res
+
+        res = adapter.restore(
+            mock_backup,
+            target_destination="isolated_empty_db",
+            executor=mock_executor,
+        )
+
+        assert res["status"] == "restored"
+        assert res["clean_enabled"] is False
+        assert len(executed_cmds) == 1
+        cli_cmd = executed_cmds[0]
+        # CRITICAL SAFETY ASSERTION: Default restore NEVER passes -c / --clean
+        assert "-c" not in cli_cmd
+        assert "--clean" not in cli_cmd
+
+    def test_existing_non_empty_destination_is_rejected_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify restore into non-empty database without destructive authorization is rejected."""
+        db_url = "postgresql+psycopg://user:pass@localhost:5432/source_db"
+        adapter = PostgreSQLBackupAdapter(db_url)
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+
+        with pytest.raises(BackupError) as exc_info:
+            adapter.restore(
+                mock_backup,
+                target_destination="existing_populated_db",
+                target_is_empty=False,
+                allow_destructive_clean=False,
+            )
+        assert "is not empty" in str(exc_info.value)
+        assert "destructive authorization is prohibited" in str(exc_info.value)
+
+    def test_active_source_database_destination_is_rejected_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify restore refuses to target the active source database."""
+        db_url = "postgresql+psycopg://user:pass@localhost:5432/active_campus_db"
+        adapter = PostgreSQLBackupAdapter(db_url)
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+
+        with pytest.raises(BackupError) as exc_info:
+            adapter.restore(mock_backup, target_destination="active_campus_db", overwrite=False)
+        assert "active source database" in str(exc_info.value)
+        assert "strictly prohibited" in str(exc_info.value)
+
+    def test_same_database_with_alternate_url_formatting_is_detected_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify alias normalization detects identical database under alternate URL formats."""
+        db_url = "postgresql+psycopg://app_user:pass@127.0.0.1:5432/campus_system_db"
+        adapter = PostgreSQLBackupAdapter(db_url)
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+
+        # Alternate representations of the same database
+        aliases = [
+            "campus_system_db",
+            "localhost/campus_system_db",
+            "127.0.0.1:5432/campus_system_db",
+            "postgresql://other_user:diffpass@localhost:5432/campus_system_db",
+            "postgresql://other_user:diffpass@127.0.0.1/CAMPUS_SYSTEM_DB",
+        ]
+
+        for alias in aliases:
+            with pytest.raises(BackupError) as exc_info:
+                adapter.restore(mock_backup, target_destination=alias)
+            assert "active source database" in str(exc_info.value)
+
+    def test_production_targeted_restore_is_rejected_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify restore operations targeting production databases are rejected."""
+        db_url = "postgresql+psycopg://user:pass@localhost:5432/staging_db"
+        adapter = PostgreSQLBackupAdapter(db_url)
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+
+        prod_targets = [
+            "campus_production",
+            "college_prod_db",
+            "live_replica",
+            "postgresql://admin:pass@db.supabase.co:5432/campus",
+            "postgresql://admin:pass@cluster.rds.amazonaws.com:5432/campus",
+        ]
+
+        for prod_target in prod_targets:
+            with pytest.raises(BackupError) as exc_info:
+                adapter.restore(mock_backup, target_destination=prod_target)
+            assert "targeting production database" in str(exc_info.value)
+
+    def test_missing_destination_information_is_rejected_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify missing, blank, or whitespace destination is rejected."""
+        db_url = "postgresql+psycopg://user:pass@localhost:5432/source_db"
+        adapter = PostgreSQLBackupAdapter(db_url)
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+
+        for invalid_dest in ["", "   ", None]:
+            with pytest.raises(BackupError) as exc_info:
+                adapter.restore(mock_backup, target_destination=invalid_dest)
+            assert "cannot be empty" in str(exc_info.value)
+
+    def test_explicitly_authorized_destructive_behavior_cannot_be_triggered_accidentally_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify destructive clean requires explicit confirmation and cannot target production."""
+        db_url = "postgresql+psycopg://user:pass@localhost:5432/source_db"
+        adapter = PostgreSQLBackupAdapter(db_url, pg_restore_cmd="pg_restore")
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+
+        # 1. clean=True without confirmation must fail
+        with pytest.raises(BackupError) as exc_info:
+            adapter.restore(
+                mock_backup,
+                target_destination="disposable_scratch_db",
+                clean=True,
+                confirm_destructive_clean_database_name="",
+            )
+        assert "Destructive clean (-c) requested but not explicitly authorized" in str(exc_info.value)
+
+        # 2. allow_destructive_clean=True with mismatching confirmation name must fail
+        with pytest.raises(BackupError) as exc_info:
+            adapter.restore(
+                mock_backup,
+                target_destination="disposable_scratch_db",
+                allow_destructive_clean=True,
+                confirm_destructive_clean_database_name="wrong_db_name",
+            )
+        assert "Destructive clean authorization failed" in str(exc_info.value)
+
+        # 3. Valid authorization against non-production database succeeds and passes -c
+        executed_cmds = []
+
+        def mock_clean_executor(cmd, env=None, backup_path=None, target_db=None, **kwargs):
+            executed_cmds.append(cmd)
+            mock_res = MagicMock()
+            mock_res.returncode = 0
+            return mock_res
+
+        res = adapter.restore(
+            mock_backup,
+            target_destination="disposable_scratch_db",
+            allow_destructive_clean=True,
+            confirm_destructive_clean_database_name="disposable_scratch_db",
+            executor=mock_clean_executor,
+        )
+        assert res["clean_enabled"] is True
+        assert "-c" in executed_cmds[0]
+
+    def test_credential_values_never_appear_in_subprocess_arguments_or_sanitized_logs_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify password credentials never appear in CLI args and are masked in errors."""
+        db_url = "postgresql+psycopg://admin_user:SuperSecretPass999@10.0.0.12:5432/primary_source_db"
+        adapter = PostgreSQLBackupAdapter(db_url, pg_restore_cmd="pg_restore")
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
 
         executed_cmds = []
         captured_envs = []
 
-        def mock_restore_executor(cmd, env=None, backup_path=None, target_db=None, **kwargs):
+        def mock_executor(cmd, env=None, backup_path=None, target_db=None, **kwargs):
             executed_cmds.append(cmd)
             if env:
                 captured_envs.append(env)
@@ -447,37 +598,48 @@ class TestPostgreSQLBackupAdapter:
             mock_res.returncode = 0
             return mock_res
 
-        res = adapter.restore(
-            mock_backup,
-            target_destination="disposable_test_db",
-            overwrite=True,
-            clean=True,
-            executor=mock_restore_executor,
-        )
+        adapter.restore(mock_backup, target_destination="isolated_target_db", executor=mock_executor)
 
-        assert res["status"] == "restored"
-        assert res["target_database"] == "disposable_test_db"
-        assert len(executed_cmds) == 1
-
-        cli_cmd = executed_cmds[0]
-        cmd_str = " ".join(cli_cmd)
-
-        # CRITICAL: Password NEVER in CLI arguments
-        assert "RestoreSecret789" not in cmd_str
-        assert "-W" not in cli_cmd
-
-        # Verify command flags
-        assert "-h" in cli_cmd and "10.0.0.8" in cli_cmd
-        assert "-p" in cli_cmd and "5432" in cli_cmd
-        assert "-U" in cli_cmd and "campus_admin" in cli_cmd
-        assert "-d" in cli_cmd and "disposable_test_db" in cli_cmd
-        assert "--no-owner" in cli_cmd
-        assert "--no-privileges" in cli_cmd
-        assert "-c" in cli_cmd
-        assert str(mock_backup) in cli_cmd
-
+        cmd_str = " ".join(executed_cmds[0])
+        # Password NEVER in CLI arguments
+        assert "SuperSecretPass999" not in cmd_str
+        assert "-W" not in executed_cmds[0]
         # Password strictly in environment
-        assert captured_envs[0].get("PGPASSWORD") == "RestoreSecret789"
+        assert captured_envs[0].get("PGPASSWORD") == "SuperSecretPass999"
+
+        # Check error sanitization on failure
+        def failing_executor(cmd, env=None, backup_path=None, target_db=None, **kwargs):
+            raise RuntimeError("pg_restore fatal: password=SuperSecretPass999 rejected")
+
+        with pytest.raises(BackupError) as exc_info:
+            adapter.restore(mock_backup, target_destination="isolated_target_db", executor=failing_executor)
+        err_msg = str(exc_info.value)
+        assert "SuperSecretPass999" not in err_msg
+        assert "******" in err_msg
+
+    def test_failed_restore_does_not_trigger_destructive_cleanup_of_unrelated_resources_mocked(self, tmp_path):
+        """[MOCKED TEST] Verify failed restore preserves backup file and surrounding assets."""
+        db_url = "postgresql+psycopg://user:pass@localhost:5432/source_db"
+        adapter = PostgreSQLBackupAdapter(db_url)
+
+        mock_backup = tmp_path / "valid.dump"
+        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
+        unrelated_file = tmp_path / "important_data.csv"
+        unrelated_file.write_text("id,val\n1,a")
+
+        def failing_executor(cmd, env=None, backup_path=None, target_db=None, **kwargs):
+            mock_res = MagicMock()
+            mock_res.returncode = 2
+            mock_res.stderr = "FATAL: connection terminated"
+            return mock_res
+
+        with pytest.raises(BackupError):
+            adapter.restore(mock_backup, target_destination="scratch_db", executor=failing_executor)
+
+        # Unrelated assets and backup artifact MUST NOT be deleted
+        assert mock_backup.exists()
+        assert unrelated_file.exists()
+        assert unrelated_file.read_text() == "id,val\n1,a"
 
     def test_postgresql_restore_missing_tool_raises_tool_not_found_mocked(self, tmp_path):
         """[MOCKED TEST] Verify missing pg_restore executable raises BackupToolNotFoundError."""
@@ -490,36 +652,6 @@ class TestPostgreSQLBackupAdapter:
         with pytest.raises(BackupToolNotFoundError) as exc_info:
             adapter.restore(mock_backup, target_destination="target_disposable_db")
         assert "pg_restore_xyz' was not found on system PATH" in str(exc_info.value)
-
-    def test_postgresql_restore_sanitizes_errors_mocked(self, tmp_path):
-        """[MOCKED TEST] Verify pg_restore error output masks sensitive credentials."""
-        db_url = "postgresql+psycopg://user:ConfidentialPass456@localhost:5432/testdb"
-        adapter = PostgreSQLBackupAdapter(db_url)
-
-        mock_backup = tmp_path / "valid.dump"
-        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
-
-        def failing_restore_executor(cmd, env=None, backup_path=None, target_db=None, **kwargs):
-            raise RuntimeError("pg_restore failed connecting with password=ConfidentialPass456")
-
-        with pytest.raises(BackupError) as exc_info:
-            adapter.restore(mock_backup, target_destination="disposable_db", executor=failing_restore_executor)
-
-        err = str(exc_info.value)
-        assert "ConfidentialPass456" not in err
-        assert "******" in err
-
-    def test_postgresql_restore_protects_active_database_mocked(self, tmp_path):
-        """[MOCKED TEST] Verify pg_restore refuses to restore over active database without overwrite=True."""
-        db_url = "postgresql+psycopg://user:pass@localhost:5432/live_active_production_db"
-        adapter = PostgreSQLBackupAdapter(db_url)
-
-        mock_backup = tmp_path / "valid.dump"
-        mock_backup.write_bytes(b"PGDMP\x01\x02valid")
-
-        with pytest.raises(BackupError) as exc_info:
-            adapter.restore(mock_backup, target_destination="live_active_production_db", overwrite=False)
-        assert "Restoration aborted to protect live data" in str(exc_info.value)
 
 
 # ============================================================================
